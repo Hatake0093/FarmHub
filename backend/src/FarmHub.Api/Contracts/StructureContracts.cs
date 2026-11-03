@@ -39,6 +39,10 @@ public sealed record StructureLayer(int Y, int Width, int Depth, IReadOnlyList<s
 
 public sealed record StructureBlocksRequest(IReadOnlyList<StructureBlockChange> Changes);
 
-public sealed record BlockNameResponse(string Id, string EnglishName, string? SpanishName);
+public sealed record BlockNameResponse(string Id, string EnglishName, string? SpanishName, string? Color);
 
-public sealed record SpanishNameRequest(string? SpanishName);
+public sealed record SpanishNameRequest(string? SpanishName, string? Color);
+
+public sealed record ItemNameResponse(string Id, string EnglishName, string? SpanishName, string? Color);
+
+public sealed record NewItemRequest(string Name);

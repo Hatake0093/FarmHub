@@ -14,6 +14,7 @@ export function Layout() {
           <Link to="/farms">Biblioteca</Link>
           <Link to="/structures">Esquemáticos</Link>
           <Link to="/blocks">Bloques</Link>
+          <Link to="/items">Items</Link>
           <Link to="/catalogs">Catálogos</Link>
           <Link to="/farms/new" className="button button-primary">
             Nueva granja

@@ -50,6 +50,10 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("Color")
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
                     b.Property<string>("SpanishName")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -319,6 +323,25 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
                     b.HasIndex("MeasuredInVersionId");
 
                     b.ToTable("FarmProductions");
+                });
+
+            modelBuilder.Entity("FarmHub.Domain.Entities.ItemName", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.Property<string>("SpanishName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ItemNames");
                 });
 
             modelBuilder.Entity("FarmHub.Domain.Entities.MinecraftVersion", b =>

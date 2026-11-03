@@ -7,10 +7,13 @@ namespace FarmHub.Infrastructure.Catalog;
 /// <summary>Carga la lista curada de bloques y añade al catálogo los que falten, sin tocar los nombres ya escritos.</summary>
 public static class BlockCatalog
 {
-    public static IReadOnlyList<string> LoadIds()
+    public static IReadOnlyList<string> LoadIds() => LoadIds("FarmHub.common-blocks.txt");
+
+    /// <summary>Lee una lista curada embebida y devuelve identificadores con el prefijo minecraft:.</summary>
+    public static IReadOnlyList<string> LoadIds(string resourceName)
     {
-        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("FarmHub.common-blocks.txt")
-            ?? throw new InvalidOperationException("Falta el recurso common-blocks.txt.");
+        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException($"Falta el recurso {resourceName}.");
         using var reader = new StreamReader(stream);
 
         var ids = new List<string>();
@@ -38,12 +41,21 @@ public static class BlockCatalog
     {
         var existing = await db.BlockNames.Select(b => b.Id).ToHashSetAsync(ct);
         var missing = LoadIds().Where(id => !existing.Contains(id)).ToList();
-        if (missing.Count == 0)
+        if (missing.Count > 0)
         {
-            return;
+            db.BlockNames.AddRange(missing.Select(id => new Domain.Entities.BlockName { Id = id }));
         }
 
-        db.BlockNames.AddRange(missing.Select(id => new Domain.Entities.BlockName { Id = id }));
-        await db.SaveChangesAsync(ct);
+        var existingItems = await db.ItemNames.Select(i => i.Id).ToHashSetAsync(ct);
+        var missingItems = LoadIds("FarmHub.common-items.txt").Where(id => !existingItems.Contains(id)).ToList();
+        if (missingItems.Count > 0)
+        {
+            db.ItemNames.AddRange(missingItems.Select(id => new Domain.Entities.ItemName { Id = id }));
+        }
+
+        if (missing.Count > 0 || missingItems.Count > 0)
+        {
+            await db.SaveChangesAsync(ct);
+        }
     }
 }

@@ -4,6 +4,7 @@ export interface BlockEntry {
   id: string;
   englishName: string;
   spanishName: string | null;
+  color: string | null;
 }
 
 export const blocksApi = {
@@ -14,9 +15,9 @@ export const blocksApi = {
     const text = params.toString();
     return apiRequest<BlockEntry[]>(`/blocks${text ? `?${text}` : ""}`);
   },
-  setSpanish: (shortName: string, spanishName: string | null) =>
+  setSpanish: (shortName: string, spanishName: string | null, color: string | null) =>
     apiRequest<BlockEntry>(`/blocks/${shortName}`, {
       method: "PUT",
-      body: JSON.stringify({ spanishName }),
+      body: JSON.stringify({ spanishName, color }),
     }),
 };

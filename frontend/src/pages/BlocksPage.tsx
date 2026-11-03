@@ -2,17 +2,25 @@ import { useEffect, useMemo, useState } from "react";
 import { blocksApi, type BlockEntry } from "../api/blocks";
 import { errorMessage } from "../api/client";
 import { shortName } from "../lib/blockSearch";
+import { setColorOverrides } from "../lib/blockColors";
 
 export function BlocksPage() {
   const [blocks, setBlocks] = useState<BlockEntry[]>([]);
   const [search, setSearch] = useState("");
   const [onlyMissing, setOnlyMissing] = useState(true);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [colorDrafts, setColorDrafts] = useState<Record<string, string | null>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function load() {
-    blocksApi.list("", false).then(setBlocks).catch((err: unknown) => setError(errorMessage(err)));
+    blocksApi
+      .list("", false)
+      .then((list) => {
+        setBlocks(list);
+        setColorOverrides(list);
+      })
+      .catch((err: unknown) => setError(errorMessage(err)));
   }
 
   useEffect(load, []);
@@ -34,15 +42,23 @@ export function BlocksPage() {
 
   async function save(block: BlockEntry) {
     const value = (drafts[block.id] ?? block.spanishName ?? "").trim();
+    const color = block.id in colorDrafts ? colorDrafts[block.id] : block.color;
     setSavingId(block.id);
     setError(null);
     try {
-      const updated = await blocksApi.setSpanish(shortName(block.id), value || null);
-      setBlocks((current) => current.map((b) => (b.id === updated.id ? updated : b)));
+      const updated = await blocksApi.setSpanish(shortName(block.id), value || null, color);
+      const next = blocks.map((b) => (b.id === updated.id ? updated : b));
+      setBlocks(next);
+      setColorOverrides(next);
       setDrafts((current) => {
-        const next = { ...current };
-        delete next[block.id];
-        return next;
+        const copy = { ...current };
+        delete copy[block.id];
+        return copy;
+      });
+      setColorDrafts((current) => {
+        const copy = { ...current };
+        delete copy[block.id];
+        return copy;
       });
     } catch (err) {
       setError(errorMessage(err));
@@ -82,6 +98,7 @@ export function BlocksPage() {
             <th>Inglés</th>
             <th>Identificador</th>
             <th>Nombre en español</th>
+            <th>Color</th>
             <th aria-label="Acciones" />
           </tr>
         </thead>
@@ -103,10 +120,17 @@ export function BlocksPage() {
                   />
                 </td>
                 <td>
+                  <ColorField
+                    label={`Color de ${b.englishName}`}
+                    value={b.id in colorDrafts ? colorDrafts[b.id] : b.color}
+                    onChange={(color) => setColorDrafts((current) => ({ ...current, [b.id]: color }))}
+                  />
+                </td>
+                <td>
                   <button
                     type="button"
                     className="button"
-                    disabled={savingId === b.id || draft.trim() === (b.spanishName ?? "")}
+                    disabled={savingId === b.id}
                     onClick={() => void save(b)}
                   >
                     {savingId === b.id ? "Guardando…" : "Guardar"}
@@ -119,5 +143,24 @@ export function BlocksPage() {
       </table>
       {visible.length === 0 && <p className="muted">No hay bloques que coincidan.</p>}
     </section>
+  );
+}
+
+/** Selector de color con opción de volver al automático. */
+export function ColorField({ label, value, onChange }: { label: string; value: string | null; onChange: (color: string | null) => void }) {
+  return (
+    <div className="color-field">
+      <input
+        type="color"
+        aria-label={label}
+        value={value ?? "#808080"}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {value ? (
+        <button type="button" className="button-link" onClick={() => onChange(null)}>Automático</button>
+      ) : (
+        <span className="muted">Automático</span>
+      )}
+    </div>
   );
 }

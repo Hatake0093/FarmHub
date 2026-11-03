@@ -6,9 +6,18 @@ import { FarmListPage } from "./pages/FarmListPage";
 import { CatalogsPage } from "./pages/CatalogsPage";
 import { StructuresPage } from "./pages/StructuresPage";
 import { BlocksPage } from "./pages/BlocksPage";
+import { ItemsPage } from "./pages/ItemsPage";
+import { useEffect } from "react";
+import { blocksApi } from "./api/blocks";
+import { setColorOverrides } from "./lib/blockColors";
 import { StructureEditorPage } from "./pages/StructureEditorPage";
 
 export default function App() {
+  // Carga los colores elegidos al abrir la aplicación, para que todos los visores los usen.
+  useEffect(() => {
+    blocksApi.list().then(setColorOverrides).catch(() => undefined);
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -21,6 +30,7 @@ export default function App() {
           <Route path="catalogs" element={<CatalogsPage />} />
           <Route path="structures" element={<StructuresPage />} />
           <Route path="blocks" element={<BlocksPage />} />
+          <Route path="items" element={<ItemsPage />} />
           <Route path="structures/:id" element={<StructureEditorPage />} />
         </Route>
       </Routes>

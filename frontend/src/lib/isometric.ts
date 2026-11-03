@@ -1,3 +1,4 @@
+import { overrideColor, scaleHex } from "./blockColors";
 import { isAir } from "./litematicView";
 
 /** Rejilla completa: palette[blocks[(y*depth + z)*width + x]]. */
@@ -68,8 +69,10 @@ export function project(x: number, y: number, z: number, size: number): [number,
   return [(x - z) * size, (x + z) * size * 0.5 - y * size];
 }
 
-/** Color HSL de un bloque con una luminosidad dada (la cara superior es más clara). */
+/** Color de una cara: el elegido por el usuario escalado a la luminosidad pedida (55 = color exacto). */
 export function shade(block: string, lightness: number): string {
+  const chosen = overrideColor(block);
+  if (chosen) return scaleHex(chosen, lightness / 55);
   let hash = 0;
   for (let i = 0; i < block.length; i++) {
     hash = (hash * 31 + block.charCodeAt(i)) >>> 0;

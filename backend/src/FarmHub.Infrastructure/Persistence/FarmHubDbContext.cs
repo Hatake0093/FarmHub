@@ -17,6 +17,7 @@ public sealed class FarmHubDbContext(DbContextOptions<FarmHubDbContext> options)
     public DbSet<FarmDependency> FarmDependencies => Set<FarmDependency>();
     public DbSet<SavedStructure> SavedStructures => Set<SavedStructure>();
     public DbSet<BlockName> BlockNames => Set<BlockName>();
+    public DbSet<ItemName> ItemNames => Set<ItemName>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -114,6 +115,15 @@ public sealed class FarmHubDbContext(DbContextOptions<FarmHubDbContext> options)
             entity.HasKey(b => b.Id);
             entity.Property(b => b.Id).HasMaxLength(200);
             entity.Property(b => b.SpanishName).HasMaxLength(100);
+            entity.Property(b => b.Color).HasMaxLength(7);
+        });
+
+        modelBuilder.Entity<ItemName>(entity =>
+        {
+            entity.HasKey(i => i.Id);
+            entity.Property(i => i.Id).HasMaxLength(200);
+            entity.Property(i => i.SpanishName).HasMaxLength(100);
+            entity.Property(i => i.Color).HasMaxLength(7);
         });
 
         modelBuilder.Entity<SavedStructure>(entity =>
