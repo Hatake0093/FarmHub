@@ -144,4 +144,21 @@ describe("buildMesh con texturas por cara", () => {
     const bottom = faceUvs(mesh, 3);
     expect(bottom.every(([u, v]) => u >= 0 && u <= 0.5 && v >= 0 && v <= 0.5)).toBe(true);
   });
+
+  it("una antorcha genera 6 caras con la textura estirada sobre el poste", () => {
+    const g: VoxelGrid = {
+      width: 1,
+      height: 1,
+      depth: 1,
+      palette: ["minecraft:air", "minecraft:torch"],
+      blocks: new Uint16Array([1]),
+    };
+    const mesh = buildMesh(g, new Map([["minecraft:torch#side", { u0: 0, v0: 0, u1: 1, v1: 1 }]]));
+    expect(mesh.faces).toBe(6);
+    // Con fit, las coordenadas de textura recorren el rango completo 0..1 aunque el poste sea fino.
+    const us: number[] = [];
+    for (let i = 0; i < mesh.vertices.length; i += FLOATS_PER_VERTEX) us.push(mesh.vertices[i + 9]);
+    expect(Math.min(...us)).toBeCloseTo(0);
+    expect(Math.max(...us)).toBeCloseTo(1);
+  });
 });

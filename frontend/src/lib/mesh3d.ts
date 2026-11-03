@@ -181,8 +181,11 @@ function buildPart(grid: VoxelGrid, tiles: Map<string, TileRect> | null, part: "
       const lx = sel[0] ? hi[0] : lo[0];
       const ly = sel[1] ? hi[1] : lo[1];
       const lz = sel[2] ? hi[2] : lo[2];
-      const uLocal = def.uAxis === 0 ? lx : def.uAxis === 1 ? ly : lz;
-      const vLocal = def.vAxis === 0 ? lx : def.vAxis === 1 ? ly : lz;
+      const uRaw = def.uAxis === 0 ? lx : def.uAxis === 1 ? ly : lz;
+      const vRaw = def.vAxis === 0 ? lx : def.vAxis === 1 ? ly : lz;
+      // Con fit, la textura cubre la caja entera; si no, usa la posición dentro de la celda.
+      const uLocal = box.fit ? (uRaw - lo[def.uAxis]) / (hi[def.uAxis] - lo[def.uAxis]) : uRaw;
+      const vLocal = box.fit ? (vRaw - lo[def.vAxis]) / (hi[def.vAxis] - lo[def.vAxis]) : vRaw;
       const fu = def.uInvert ? 1 - uLocal : uLocal;
       const fv = def.vInvert ? 1 - vLocal : vLocal;
       vertices[v] = x + lx;
