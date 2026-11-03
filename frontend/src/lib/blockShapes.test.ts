@@ -57,4 +57,25 @@ describe("blockShapes", () => {
     expect(shapeBoxes("minecraft:redstone_torch")).toEqual(shapeBoxes("minecraft:torch"));
     expect(shapeBoxes("minecraft:soul_wall_torch[facing=north]")).toEqual(shapeBoxes("minecraft:wall_torch[facing=north]"));
   });
+
+  it("alfombras, cables de redstone y placas de presión son planos de 1/16", () => {
+    for (const id of ["minecraft:red_carpet", "minecraft:redstone_wire", "minecraft:stone_pressure_plate"]) {
+      const [box] = shapeBoxes(id);
+      expect(box.hi[1]).toBeCloseTo(1 / 16);
+    }
+  });
+
+  it("una valla tiene un brazo por cada lado conectado", () => {
+    expect(shapeBoxes("minecraft:oak_fence[east=false,north=false,south=false,west=false]")).toHaveLength(1);
+    expect(shapeBoxes("minecraft:oak_fence[east=true,north=true,south=false,west=false]")).toHaveLength(3);
+  });
+
+  it("una escalera tiene la base y un escalón", () => {
+    expect(shapeBoxes("minecraft:oak_stairs[facing=east,half=bottom]")).toHaveLength(2);
+  });
+
+  it("una trampilla cerrada y abajo ocupa solo la parte baja", () => {
+    const [box] = shapeBoxes("minecraft:oak_trapdoor[half=bottom,open=false]");
+    expect(box.hi[1]).toBeCloseTo(3 / 16);
+  });
 });

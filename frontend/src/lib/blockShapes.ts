@@ -46,6 +46,8 @@ export function shapeBoxes(block: string): Box[] {
   }
   const torch = torchBoxes(block);
   if (torch) return torch;
+  const other = otherBoxes(block);
+  if (other) return other;
   if (base === "minecraft:glass_pane" || base.endsWith("_stained_glass_pane")) {
     return [{ lo: [0.4375, 0, 0.4375], hi: [0.5625, 1, 0.5625] }];
   }
@@ -83,6 +85,91 @@ function torchBoxes(block: string): Box[] | null {
     };
     const at = center[facing ?? ""] ?? [0.5, 0.5];
     return [{ lo: [at[0] - 1 / 16, 3 / 16, at[1] - 1 / 16], hi: [at[0] + 1 / 16, 13 / 16, at[1] + 1 / 16], fit: true }];
+  }
+  return null;
+}
+
+const FLAT = 1 / 16;
+
+/** Caja de un plano de texto: lo, hi en 0..1. */
+function box(lo: [number, number, number], hi: [number, number, number], fit = false): Box {
+  return fit ? { lo, hi, fit } : { lo, hi };
+}
+
+/** Lado del que está la pared para bloques pegados a una pared, según facing (la pared está al lado contrario). */
+function wallSide(facing: string | undefined): { axis: 0 | 2; low: boolean } {
+  switch (facing) {
+    case "east": return { axis: 0, low: true };
+    case "west": return { axis: 0, low: false };
+    case "north": return { axis: 2, low: false };
+    default: return { axis: 2, low: true };
+  }
+}
+
+/** Formas de bloques finos y con estado: alfombras, placas, cables, vallas, escaleras, trampillas y escaleras de mano. */
+function otherBoxes(block: string): Box[] | null {
+  const base = baseBlock(block);
+  const props = blockProperties(block);
+
+  if (base.endsWith("_carpet") || base === "minecraft:redstone_wire") {
+    return [box([0, 0, 0], [1, FLAT, 1])];
+  }
+  if (base.endsWith("_pressure_plate")) {
+    return [box([FLAT, 0, FLAT], [1 - FLAT, FLAT, 1 - FLAT])];
+  }
+  if (base.endsWith("_fence") && !base.endsWith("_fence_gate")) {
+    // Poste central y un brazo por cada lado conectado.
+    const boxes: Box[] = [box([6 / 16, 0, 6 / 16], [10 / 16, 1, 10 / 16], true)];
+    const arm = (flag: string, lo: [number, number, number], hi: [number, number, number]) => {
+      if (props[flag] === "true") boxes.push(box(lo, hi, true));
+    };
+    arm("north", [7 / 16, 6 / 16, 0], [9 / 16, 15 / 16, 0.5]);
+    arm("south", [7 / 16, 6 / 16, 0.5], [9 / 16, 15 / 16, 1]);
+    arm("west", [0, 6 / 16, 7 / 16], [0.5, 15 / 16, 9 / 16]);
+    arm("east", [0.5, 6 / 16, 7 / 16], [1, 15 / 16, 9 / 16]);
+    return boxes;
+  }
+  if (base === "minecraft:ladder") {
+    const side = wallSide(props.facing);
+    const t = 2 / 16;
+    if (side.axis === 2) {
+      const z: [number, number] = side.low ? [0, t] : [1 - t, 1];
+      return [box([0, 0, z[0]], [1, 1, z[1]], true)];
+    }
+    const x: [number, number] = side.low ? [0, t] : [1 - t, 1];
+    return [box([x[0], 0, 0], [x[1], 1, 1], true)];
+  }
+  if (base.endsWith("_trapdoor")) {
+    const open = props.open === "true";
+    if (!open) {
+      return props.half === "top"
+        ? [box([0, 13 / 16, 0], [1, 1, 1])]
+        : [box([0, 0, 0], [1, 3 / 16, 1])];
+    }
+    // Abierta: la hoja queda vertical contra el borde del lado opuesto a facing.
+    const side = wallSide(props.facing);
+    const t = 3 / 16;
+    if (side.axis === 2) {
+      const z: [number, number] = side.low ? [0, t] : [1 - t, 1];
+      return [box([0, 0, z[0]], [1, 1, z[1]], true)];
+    }
+    const x: [number, number] = side.low ? [0, t] : [1 - t, 1];
+    return [box([x[0], 0, 0], [x[1], 1, 1], true)];
+  }
+  if (base.endsWith("_stairs")) {
+    // Escalera recta, aproximada: media celda y un escalón de media altura en el lado hacia el que sube facing.
+    // Las esquinas (shape) se dibujan como rectas.
+    const top = props.half === "top";
+    const y0 = top ? 0.5 : 0;
+    const y1 = top ? 1 : 0.5;
+    const step: Record<string, Box> = {
+      west: box([0, y0, 0], [0.5, y1, 1]),
+      north: box([0, y0, 0], [1, y1, 0.5]),
+      south: box([0, y0, 0.5], [1, y1, 1]),
+      east: box([0.5, y0, 0], [1, y1, 1]),
+    };
+    const base_ = top ? box([0, 0.5, 0], [1, 1, 1]) : box([0, 0, 0], [1, 0.5, 1]);
+    return [base_, step[props.facing ?? "east"] ?? step.east];
   }
   return null;
 }
