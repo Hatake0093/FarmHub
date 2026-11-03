@@ -751,3 +751,18 @@ section > .design-form {
 .layer-range label {
   min-width: 14rem;
 }
+
+.selection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+.selection-bar input[type="number"] {
+  width: 4.5rem;
+}
