@@ -4,6 +4,7 @@ import { errorMessage } from "../api/client";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
 import { gridFromLayers, MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
 import { IsometricView } from "./IsometricView";
+import { LayerStepper } from "./LayerStepper";
 
 interface Props {
   fileId: number;
@@ -181,10 +182,7 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
             </label>
             {mode === "layer" && (
               <>
-                <label>
-                  Capa Y: {y} / {region.height - 1}
-                  <input type="range" min={0} max={region.height - 1} value={y} onChange={(e) => setY(Number(e.target.value))} />
-                </label>
+                <LayerStepper value={y} max={region.height - 1} onChange={setY} />
                 <label>
                   Zoom
                   <input type="range" min={MIN_CELL} max={MAX_CELL} value={cellSize} onChange={(e) => setCellSize(Number(e.target.value))} />

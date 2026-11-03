@@ -5,6 +5,7 @@ import { FarmFormPage } from "./pages/FarmFormPage";
 import { FarmListPage } from "./pages/FarmListPage";
 import { CatalogsPage } from "./pages/CatalogsPage";
 import { StructuresPage } from "./pages/StructuresPage";
+import { BlocksPage } from "./pages/BlocksPage";
 import { StructureEditorPage } from "./pages/StructureEditorPage";
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="farms/:id/edit" element={<FarmFormPage />} />
           <Route path="catalogs" element={<CatalogsPage />} />
           <Route path="structures" element={<StructuresPage />} />
+          <Route path="blocks" element={<BlocksPage />} />
           <Route path="structures/:id" element={<StructureEditorPage />} />
         </Route>
       </Routes>

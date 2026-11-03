@@ -20,4 +20,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Catalog\common-blocks.txt" LogicalName="FarmHub.common-blocks.txt" />
+  </ItemGroup>
+
 </Project>

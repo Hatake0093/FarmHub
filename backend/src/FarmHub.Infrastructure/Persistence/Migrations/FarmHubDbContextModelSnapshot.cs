@@ -44,6 +44,21 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
                     b.ToTable("Authors");
                 });
 
+            modelBuilder.Entity("FarmHub.Domain.Entities.BlockName", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("SpanishName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BlockNames");
+                });
+
             modelBuilder.Entity("FarmHub.Domain.Entities.Category", b =>
                 {
                     b.Property<int>("Id")

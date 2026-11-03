@@ -38,3 +38,7 @@ public sealed record StructureDetail(
 public sealed record StructureLayer(int Y, int Width, int Depth, IReadOnlyList<string> Palette, int[] Cells);
 
 public sealed record StructureBlocksRequest(IReadOnlyList<StructureBlockChange> Changes);
+
+public sealed record BlockNameResponse(string Id, string EnglishName, string? SpanishName);
+
+public sealed record SpanishNameRequest(string? SpanishName);

@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { structuresApi, type StructureDetail, type StructureLayer } from "../api/structures";
+import { blocksApi, type BlockEntry } from "../api/blocks";
+import { blockDisplayName, searchBlocks } from "../lib/blockSearch";
 import { errorMessage } from "../api/client";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
 import { gridFromLayers, MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
 import { IsometricView } from "../components/IsometricView";
+import { LayerStepper } from "../components/LayerStepper";
 import {
   displayedBlock,
   toPatchChanges,
@@ -13,14 +16,6 @@ import {
   type Coordinates,
   type PendingChanges,
 } from "../lib/structureEdit";
-
-const COMMON_BLOCKS = [
-  "minecraft:stone", "minecraft:cobblestone", "minecraft:smooth_stone", "minecraft:oak_planks",
-  "minecraft:glass", "minecraft:iron_block", "minecraft:hopper", "minecraft:chest",
-  "minecraft:observer", "minecraft:piston", "minecraft:sticky_piston", "minecraft:dispenser",
-  "minecraft:redstone_wire", "minecraft:rail", "minecraft:powered_rail", "minecraft:lever",
-  "minecraft:water", "minecraft:sugar_cane", "minecraft:cauldron", "minecraft:dirt",
-];
 
 const BLOCK_ID = /^[a-z0-9_.-]+:[a-z0-9/_.-]+$/;
 
@@ -39,6 +34,8 @@ export function StructureEditorPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<"layer" | "iso">("layer");
+  const [catalog, setCatalog] = useState<BlockEntry[]>([]);
+  const [blockQuery, setBlockQuery] = useState("");
   const [isoGrid, setIsoGrid] = useState<VoxelGrid | null>(null);
   const [isoMessage, setIsoMessage] = useState<string | null>(null);
   const [base, setBase] = useState({ x: "0", y: "0", z: "0" });
@@ -49,6 +46,10 @@ export function StructureEditorPage() {
     if (!detail) return 16;
     return Math.max(4, Math.min(32, Math.floor(880 / detail.width)));
   }, [detail]);
+
+  useEffect(() => {
+    blocksApi.list().then(setCatalog).catch(() => setCatalog([]));
+  }, []);
 
   useEffect(() => {
     structuresApi
@@ -143,6 +144,12 @@ export function StructureEditorPage() {
     setPending((current) => withChange(current, local, target));
   }
 
+  function chooseBlock(id: string) {
+    setBlock(id);
+    setErase(false);
+    setBlockQuery("");
+  }
+
   function handleDown(event: MouseEvent<HTMLCanvasElement>) {
     const local = localAt(event);
     if (!local) return;
@@ -226,19 +233,37 @@ export function StructureEditorPage() {
           </select>
         </label>
         {mode === "layer" && (
-        <label>
-          Capa Y local: {y} / {detail.height - 1}
-          <input type="range" min={0} max={detail.height - 1} value={y} onChange={(e) => setY(Number(e.target.value))} />
-        </label>
+        <LayerStepper value={y} max={detail.height - 1} onChange={setY} />
         )}
         {mode === "layer" && (
-        <label>
-          Bloque
-          <input list="common-blocks" value={block} onChange={(e) => { setBlock(e.target.value); setErase(false); }} />
-          <datalist id="common-blocks">
-            {COMMON_BLOCKS.map((b) => <option key={b} value={b} />)}
-          </datalist>
-        </label>
+        <div className="block-picker">
+          <label>
+            Bloque: <strong>{currentBlockLabel(catalog, block)}</strong>
+            <input
+              type="search"
+              value={blockQuery}
+              placeholder="Buscar en español, inglés o id"
+              onChange={(e) => setBlockQuery(e.target.value)}
+            />
+          </label>
+          <div className="block-options">
+            {searchBlocks(catalog, blockQuery).map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                className={`block-option${b.id === block ? " selected" : ""}`}
+                onClick={() => chooseBlock(b.id)}
+              >
+                {blockDisplayName(b)} <span className="muted">{b.id}</span>
+              </button>
+            ))}
+            {BLOCK_ID.test(blockQuery.trim()) && !catalog.some((b) => b.id === blockQuery.trim()) && (
+              <button type="button" className="block-option" onClick={() => chooseBlock(blockQuery.trim())}>
+                Usar {blockQuery.trim()}
+              </button>
+            )}
+          </div>
+        </div>
         )}
         {mode === "layer" && (
         <label className="checkbox">
@@ -301,4 +326,9 @@ export function StructureEditorPage() {
       <p className="muted">Cambios pendientes en {pending.size} celdas. Capa {y}: las celdas marcadas se guardan al pulsar "Guardar cambios".</p>
     </section>
   );
+}
+
+function currentBlockLabel(catalog: BlockEntry[], id: string): string {
+  const entry = catalog.find((b) => b.id === id);
+  return entry ? blockDisplayName(entry) : id;
 }

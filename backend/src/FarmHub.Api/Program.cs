@@ -20,6 +20,13 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<FarmHubDbContext>();
+    await db.Database.MigrateAsync().ConfigureAwait(false);
+    await FarmHub.Infrastructure.Catalog.BlockCatalog.SeedAsync(db).ConfigureAwait(false);
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

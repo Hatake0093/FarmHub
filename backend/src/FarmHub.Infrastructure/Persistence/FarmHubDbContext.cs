@@ -16,6 +16,7 @@ public sealed class FarmHubDbContext(DbContextOptions<FarmHubDbContext> options)
     public DbSet<FarmProduction> FarmProductions => Set<FarmProduction>();
     public DbSet<FarmDependency> FarmDependencies => Set<FarmDependency>();
     public DbSet<SavedStructure> SavedStructures => Set<SavedStructure>();
+    public DbSet<BlockName> BlockNames => Set<BlockName>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -106,6 +107,13 @@ public sealed class FarmHubDbContext(DbContextOptions<FarmHubDbContext> options)
                   .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(f => f.StorageKey).IsUnique();
+        });
+
+        modelBuilder.Entity<BlockName>(entity =>
+        {
+            entity.HasKey(b => b.Id);
+            entity.Property(b => b.Id).HasMaxLength(200);
+            entity.Property(b => b.SpanishName).HasMaxLength(100);
         });
 
         modelBuilder.Entity<SavedStructure>(entity =>

@@ -474,3 +474,59 @@ section > .design-form {
   gap: 0.5rem;
   overflow: auto;
 }
+
+.block-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 16rem;
+}
+
+.block-picker input {
+  margin-top: 0.25rem;
+}
+
+.block-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  max-height: 9rem;
+  overflow-y: auto;
+}
+
+.block-option {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.block-option.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.layer-stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.layer-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.layer-controls input[type="range"] {
+  width: 12rem;
+}
+
+.layer-controls .button {
+  padding: 0.2rem 0.55rem;
+  line-height: 1;
+}
