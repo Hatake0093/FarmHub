@@ -1,4 +1,4 @@
-import { getTexture } from "./textures";
+import { getTextureByKey } from "./textures";
 import type { TileRect } from "./mesh3d";
 
 /** Tamaño de cada textura dentro del atlas. Las texturas de cualquier tamaño se reducen a este lado. */
@@ -11,11 +11,11 @@ export function atlasLayout(count: number, tile = TILE): { cols: number; rows: n
 }
 
 /**
- * Junta las texturas cargadas de los bloques dados en un solo canvas (el atlas). Devuelve null si
+ * Junta las texturas cargadas en un solo canvas (el atlas). Cada clave es "id#cara". Devuelve null si
  * no hay ninguna textura cargada.
  */
-export function buildAtlas(blockIds: string[]): { canvas: HTMLCanvasElement; tiles: Map<string, TileRect> } | null {
-  const loaded = blockIds.filter((id) => getTexture(id) !== undefined);
+export function buildAtlas(keys: string[]): { canvas: HTMLCanvasElement; tiles: Map<string, TileRect> } | null {
+  const loaded = keys.filter((key) => getTextureByKey(key) !== undefined);
   if (loaded.length === 0) return null;
 
   const layout = atlasLayout(loaded.length);
@@ -27,12 +27,12 @@ export function buildAtlas(blockIds: string[]): { canvas: HTMLCanvasElement; til
   ctx.imageSmoothingEnabled = false;
 
   const tiles = new Map<string, TileRect>();
-  loaded.forEach((id, index) => {
+  loaded.forEach((key, index) => {
     const col = index % layout.cols;
     const row = Math.floor(index / layout.cols);
-    const img = getTexture(id);
+    const img = getTextureByKey(key);
     if (img) ctx.drawImage(img, col * TILE, row * TILE, TILE, TILE);
-    tiles.set(id, {
+    tiles.set(key, {
       u0: (col * TILE) / layout.width,
       v0: (row * TILE) / layout.height,
       u1: ((col + 1) * TILE) / layout.width,

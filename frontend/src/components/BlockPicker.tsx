@@ -3,8 +3,10 @@ import type { BlockEntry } from "../api/blocks";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
 import { blockDisplayName } from "../lib/blockSearch";
 import { optionLabel, pushRecent, readRecent, visibleOptions, writeRecent } from "../lib/blockPicker";
-import { forgetTexture, getTexture, requestTexture } from "../lib/textures";
+import { forgetTexture, requestTexture } from "../lib/textures";
 import { hasTextureId } from "../lib/blockColors";
+import { firstTexturedFace, TEXTURE_FACES } from "../lib/blockFaces";
+import { baseBlock } from "../lib/blockShapes";
 
 interface Props {
   catalog: BlockEntry[];
@@ -60,7 +62,9 @@ export function BlockPicker({ catalog, value, onChange }: Props) {
   // Miniaturas de textura para las opciones visibles.
   useEffect(() => {
     for (const option of options.slice(0, 60)) {
-      if (hasTextureId(option.id)) requestTexture(option.id, () => setTick((t) => t + 1));
+      for (const face of TEXTURE_FACES) {
+        if (hasTextureId(option.id, face)) requestTexture(option.id, face, () => setTick((t) => t + 1));
+      }
     }
   }, [options]);
 
@@ -164,14 +168,16 @@ export function BlockPicker({ catalog, value, onChange }: Props) {
 /** Color o miniatura de textura de un bloque. */
 function Swatch({ id }: { id: string }) {
   if (isAir(id)) return <span className="swatch swatch-empty" aria-hidden="true" />;
-  const texture = getTexture(id);
-  if (texture || hasTextureId(id)) {
+  // Miniatura: la primera cara con textura (lados, arriba, abajo).
+  const base = baseBlock(id);
+  const face = firstTexturedFace((f) => hasTextureId(base, f));
+  if (face) {
     return (
       <img
         className="swatch swatch-img"
         alt=""
-        src={`/api/blocks/${id.replace("minecraft:", "")}/texture`}
-        onError={() => forgetTexture(id)}
+        src={`/api/blocks/${base.replace("minecraft:", "")}/texture/${face}`}
+        onError={() => forgetTexture(base, face)}
       />
     );
   }

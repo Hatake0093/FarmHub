@@ -117,6 +117,8 @@ public sealed class FarmHubDbContext(DbContextOptions<FarmHubDbContext> options)
             entity.Property(b => b.SpanishName).HasMaxLength(100);
             entity.Property(b => b.Color).HasMaxLength(7);
             entity.Property(b => b.TextureKey).HasMaxLength(64);
+            entity.Property(b => b.TextureKeyTop).HasMaxLength(64);
+            entity.Property(b => b.TextureKeyBottom).HasMaxLength(64);
         });
 
         modelBuilder.Entity<ItemName>(entity =>

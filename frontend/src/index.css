@@ -1514,4 +1514,21 @@ input[type="search"] {
 .theme-toggle {
   padding: 0.3rem 0.55rem;
   line-height: 1;
+
+/* Texturas por cara en la página de bloques */
+.texture-faces {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.texture-face {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.texture-face > .small {
+  min-width: 3.5rem;
 }

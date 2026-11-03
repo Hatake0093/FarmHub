@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMesh, buildMeshes } from "./mesh3d";
+import { buildMesh, buildMeshes, FLOATS_PER_VERTEX } from "./mesh3d";
 import type { VoxelGrid } from "./isometric";
 
 const palette = ["minecraft:air", "minecraft:stone", "minecraft:stone_slab[type=bottom]", "minecraft:stone_slab[type=top]"];
@@ -104,5 +104,44 @@ describe("buildMesh", () => {
       blocks: new Uint16Array([1, 1]),
     };
     expect(buildMeshes(g, null).glass.faces).toBe(10);
+  });
+});
+
+describe("buildMesh con texturas por cara", () => {
+  // Tres rectángulos distintos del atlas, uno por cara.
+  const tiles = new Map([
+    ["minecraft:stone#side", { u0: 0, v0: 0, u1: 0.5, v1: 0.5 }],
+    ["minecraft:stone#top", { u0: 0.5, v0: 0, u1: 1, v1: 0.5 }],
+  ]);
+  const cube: VoxelGrid = {
+    width: 1,
+    height: 1,
+    depth: 1,
+    palette: ["minecraft:air", "minecraft:stone"],
+    blocks: new Uint16Array([1]),
+  };
+
+  // Las caras salen en el orden +X, -X, +Y, -Y, +Z, -Z; cada una tiene 4 vértices de 12 floats.
+  function faceUvs(mesh: ReturnType<typeof buildMesh>, face: number): [number, number][] {
+    const uvs: [number, number][] = [];
+    for (let v = 0; v < 4; v++) {
+      const at = (face * 4 + v) * FLOATS_PER_VERTEX;
+      uvs.push([mesh.vertices[at + 9], mesh.vertices[at + 10]]);
+    }
+    return uvs;
+  }
+
+  it("la cara superior usa la textura de arriba y los lados la suya", () => {
+    const mesh = buildMesh(cube, tiles);
+    const top = faceUvs(mesh, 2);
+    const side = faceUvs(mesh, 0);
+    expect(top.every(([u, v]) => u >= 0.5 && u <= 1 && v >= 0 && v <= 0.5)).toBe(true);
+    expect(side.every(([u, v]) => u >= 0 && u <= 0.5 && v >= 0 && v <= 0.5)).toBe(true);
+  });
+
+  it("la cara de abajo recurre a la de lados si no tiene textura propia", () => {
+    const mesh = buildMesh(cube, tiles);
+    const bottom = faceUvs(mesh, 3);
+    expect(bottom.every(([u, v]) => u >= 0 && u <= 0.5 && v >= 0 && v <= 0.5)).toBe(true);
   });
 });

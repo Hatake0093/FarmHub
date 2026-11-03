@@ -12,4 +12,10 @@ public sealed class BlockName
 
     /// <summary>Clave en el almacén de la textura subida por el usuario (imagen pequeña del bloque). Null = sin textura.</summary>
     public string? TextureKey { get; set; }
+
+    /// <summary>Textura de la cara superior (+Y). Null = usa la de lados.</summary>
+    public string? TextureKeyTop { get; set; }
+
+    /// <summary>Textura de la cara inferior (-Y). Null = usa la de lados.</summary>
+    public string? TextureKeyBottom { get; set; }
 }

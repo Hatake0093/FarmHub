@@ -3,9 +3,9 @@ import { blockDisplayName, searchBlocks, shortName } from "./blockSearch";
 import type { BlockEntry } from "../api/blocks";
 
 const blocks: BlockEntry[] = [
-  { id: "minecraft:stone", englishName: "Stone", spanishName: "Piedra", color: null, hasTexture: false },
-  { id: "minecraft:hopper", englishName: "Hopper", spanishName: null, color: null, hasTexture: false },
-  { id: "minecraft:polished_andesite", englishName: "Polished Andesite", spanishName: null, color: null, hasTexture: false },
+  { id: "minecraft:stone", englishName: "Stone", spanishName: "Piedra", color: null, hasTexture: false, textureFaces: [] },
+  { id: "minecraft:hopper", englishName: "Hopper", spanishName: null, color: null, hasTexture: false, textureFaces: [] },
+  { id: "minecraft:polished_andesite", englishName: "Polished Andesite", spanishName: null, color: null, hasTexture: false, textureFaces: [] },
 ];
 
 describe("blockSearch", () => {
@@ -23,8 +23,8 @@ describe("blockSearch", () => {
   it("ignora tildes, mayúsculas y el orden de las palabras", () => {
     const more: BlockEntry[] = [
       ...blocks,
-      { id: "minecraft:oak_door", englishName: "Oak Door", spanishName: "Puerta de roble", color: null, hasTexture: false },
-      { id: "minecraft:grass_block", englishName: "Grass Block", spanishName: "Bloque de césped", color: null, hasTexture: false },
+      { id: "minecraft:oak_door", englishName: "Oak Door", spanishName: "Puerta de roble", color: null, hasTexture: false, textureFaces: [] },
+      { id: "minecraft:grass_block", englishName: "Grass Block", spanishName: "Bloque de césped", color: null, hasTexture: false, textureFaces: [] },
     ];
     expect(searchBlocks(more, "door oak").map((b) => b.id)).toEqual(["minecraft:oak_door"]);
     expect(searchBlocks(more, "CESPED").map((b) => b.id)).toEqual(["minecraft:grass_block"]);
@@ -34,9 +34,9 @@ describe("blockSearch", () => {
 
   it("ordena por relevancia: exacto, empieza por, resto", () => {
     const list: BlockEntry[] = [
-      { id: "minecraft:stone_bricks", englishName: "Stone Bricks", spanishName: null, color: null, hasTexture: false },
-      { id: "minecraft:smooth_stone", englishName: "Smooth Stone", spanishName: null, color: null, hasTexture: false },
-      { id: "minecraft:stone", englishName: "Stone", spanishName: null, color: null, hasTexture: false },
+      { id: "minecraft:stone_bricks", englishName: "Stone Bricks", spanishName: null, color: null, hasTexture: false, textureFaces: [] },
+      { id: "minecraft:smooth_stone", englishName: "Smooth Stone", spanishName: null, color: null, hasTexture: false, textureFaces: [] },
+      { id: "minecraft:stone", englishName: "Stone", spanishName: null, color: null, hasTexture: false, textureFaces: [] },
     ];
     expect(searchBlocks(list, "stone").map((b) => b.id)).toEqual([
       "minecraft:stone",
@@ -47,8 +47,8 @@ describe("blockSearch", () => {
 
   it("a igual relevancia prefiere el nombre más corto", () => {
     const list: BlockEntry[] = [
-      { id: "minecraft:dark_oak_door", englishName: "Dark Oak Door", spanishName: null, color: null, hasTexture: false },
-      { id: "minecraft:oak_door", englishName: "Oak Door", spanishName: null, color: null, hasTexture: false },
+      { id: "minecraft:dark_oak_door", englishName: "Dark Oak Door", spanishName: null, color: null, hasTexture: false, textureFaces: [] },
+      { id: "minecraft:oak_door", englishName: "Oak Door", spanishName: null, color: null, hasTexture: false, textureFaces: [] },
     ];
     expect(searchBlocks(list, "door oak").map((b) => b.id)).toEqual(["minecraft:oak_door", "minecraft:dark_oak_door"]);
   });

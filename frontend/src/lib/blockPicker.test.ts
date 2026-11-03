@@ -3,9 +3,9 @@ import { pushRecent, resolveRecent, visibleOptions } from "./blockPicker";
 import type { BlockEntry } from "../api/blocks";
 
 const catalog: BlockEntry[] = [
-  { id: "minecraft:stone", englishName: "Stone", spanishName: "Piedra", color: null, hasTexture: false },
-  { id: "minecraft:hopper", englishName: "Hopper", spanishName: null, color: null, hasTexture: false },
-  { id: "minecraft:chest", englishName: "Chest", spanishName: "Cofre", color: null, hasTexture: false },
+  { id: "minecraft:stone", englishName: "Stone", spanishName: "Piedra", color: null, hasTexture: false, textureFaces: [] },
+  { id: "minecraft:hopper", englishName: "Hopper", spanishName: null, color: null, hasTexture: false, textureFaces: [] },
+  { id: "minecraft:chest", englishName: "Chest", spanishName: "Cofre", color: null, hasTexture: false, textureFaces: [] },
 ];
 
 describe("blockPicker", () => {

@@ -5,8 +5,9 @@ import { buildAtlas } from "../lib/atlas";
 import { baseBlock } from "../lib/blockShapes";
 import { createRenderer, type Renderer } from "../lib/gl";
 import { lookAt, multiply, perspective, scale, translate, type Mat4, type Vec3 } from "../lib/mat4";
-import { getTexture, requestTexture } from "../lib/textures";
-import { hasTextureId } from "../lib/blockColors";
+import { requestTexture } from "../lib/textures";
+import { hasTextureId, textureKey } from "../lib/blockColors";
+import { TEXTURE_FACES } from "../lib/blockFaces";
 
 interface Props {
   grid: VoxelGrid;
@@ -43,7 +44,9 @@ export function Voxel3DView({ grid, useTextures }: Props) {
   useEffect(() => {
     if (!useTextures) return;
     for (const id of new Set(grid.palette.map(baseBlock))) {
-      if (hasTextureId(id)) requestTexture(id, () => setVersion((v) => v + 1));
+      for (const face of TEXTURE_FACES) {
+        if (hasTextureId(id, face)) requestTexture(id, face, () => setVersion((v) => v + 1));
+      }
     }
   }, [grid, useTextures]);
 
@@ -51,7 +54,13 @@ export function Voxel3DView({ grid, useTextures }: Props) {
     // version cambia cuando llega una textura nueva, y así se reconstruye el atlas.
     void version;
     if (!useTextures) return null;
-    return buildAtlas([...new Set(grid.palette.map(baseBlock))].filter((id) => hasTextureId(id) && getTexture(id) !== undefined));
+    const keys: string[] = [];
+    for (const id of new Set(grid.palette.map(baseBlock))) {
+      for (const face of TEXTURE_FACES) {
+        if (hasTextureId(id, face)) keys.push(textureKey(id, face));
+      }
+    }
+    return buildAtlas(keys);
   }, [grid, useTextures, version]);
 
   const meshes = useMemo(() => buildMeshes(grid, atlas?.tiles ?? null), [grid, atlas]);

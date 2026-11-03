@@ -26,7 +26,7 @@ public sealed class BlocksController(FarmHubDbContext db, IFileStorage storage) 
         var rows = await query.OrderBy(b => b.Id).ToListAsync(ct);
         var term = q?.Trim().ToLowerInvariant();
         var items = rows
-            .Select(b => new BlockNameResponse(b.Id, BlockCatalog.EnglishName(b.Id), b.SpanishName, b.Color, b.TextureKey != null))
+            .Select(ToResponse)
             .Where(b => term is null or ""
                 || b.Id.Contains(term, StringComparison.OrdinalIgnoreCase)
                 || b.EnglishName.Contains(term, StringComparison.OrdinalIgnoreCase)
@@ -55,7 +55,7 @@ public sealed class BlocksController(FarmHubDbContext db, IFileStorage storage) 
         db.BlockNames.Add(block);
         await db.SaveChangesAsync(ct);
         return StatusCode(StatusCodes.Status201Created,
-            new BlockNameResponse(block.Id, BlockCatalog.EnglishName(block.Id), null, null, false));
+            ToResponse(block));
     }
 
     /// <summary>Acepta #rrggbb (en minúsculas) o null para volver al color automático.</summary>
@@ -95,14 +95,40 @@ public sealed class BlocksController(FarmHubDbContext db, IFileStorage storage) 
         block.Color = NormalizeColor(request.Color);
         await db.SaveChangesAsync(ct);
 
-        return new BlockNameResponse(block.Id, BlockCatalog.EnglishName(block.Id), block.SpanishName, block.Color, block.TextureKey != null);
+        return ToResponse(block);
     }
 
-    /// <summary>Sube una imagen pequeña (PNG, JPEG o WebP) como textura del bloque. Reemplaza la anterior.</summary>
+    /// <summary>Sube la textura de los lados del bloque (PNG, JPEG o WebP). Reemplaza la anterior.</summary>
     [HttpPut("{name}/texture")]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(MaxTextureBytes)]
-    public async Task<ActionResult<BlockNameResponse>> UploadTexture(string name, IFormFile file, CancellationToken ct)
+    public Task<ActionResult<BlockNameResponse>> UploadTexture(string name, IFormFile file, CancellationToken ct) =>
+        UploadFaceAsync(name, TextureFace.Side, file, ct);
+
+    /// <summary>Sube la textura de una cara concreta: "side", "top" o "bottom".</summary>
+    [HttpPut("{name}/texture/{face}")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(MaxTextureBytes)]
+    public Task<ActionResult<BlockNameResponse>> UploadFaceTexture(string name, string face, IFormFile file, CancellationToken ct) =>
+        TryFace(face, out var parsed)
+            ? UploadFaceAsync(name, parsed, file, ct)
+            : Task.FromResult<ActionResult<BlockNameResponse>>(ValidationProblem("La cara debe ser side, top o bottom."));
+
+    [HttpGet("{name}/texture")]
+    public Task<IActionResult> GetTexture(string name, CancellationToken ct) => GetFaceAsync(name, TextureFace.Side, ct);
+
+    [HttpGet("{name}/texture/{face}")]
+    public Task<IActionResult> GetFaceTexture(string name, string face, CancellationToken ct) =>
+        TryFace(face, out var parsed) ? GetFaceAsync(name, parsed, ct) : Task.FromResult<IActionResult>(ValidationProblem("La cara debe ser side, top o bottom."));
+
+    [HttpDelete("{name}/texture")]
+    public Task<IActionResult> DeleteTexture(string name, CancellationToken ct) => DeleteFaceAsync(name, TextureFace.Side, ct);
+
+    [HttpDelete("{name}/texture/{face}")]
+    public Task<IActionResult> DeleteFaceTexture(string name, string face, CancellationToken ct) =>
+        TryFace(face, out var parsed) ? DeleteFaceAsync(name, parsed, ct) : Task.FromResult<IActionResult>(ValidationProblem("La cara debe ser side, top o bottom."));
+
+    private async Task<ActionResult<BlockNameResponse>> UploadFaceAsync(string name, TextureFace face, IFormFile file, CancellationToken ct)
     {
         var id = "minecraft:" + name.Trim();
         var block = await db.BlockNames.FirstOrDefaultAsync(b => b.Id == id, ct);
@@ -132,25 +158,22 @@ public sealed class BlocksController(FarmHubDbContext db, IFileStorage storage) 
             stored = await storage.SaveAsync(stream, ct);
         }
 
-        var previousKey = block.TextureKey;
-        block.TextureKey = stored.StorageKey;
+        var previousKey = BlockNameTextures.KeyOf(block, face);
+        BlockNameTextures.SetKey(block, face, stored.StorageKey);
         await db.SaveChangesAsync(ct);
         if (previousKey is not null)
         {
             storage.Delete(previousKey);
         }
 
-        return new BlockNameResponse(block.Id, BlockCatalog.EnglishName(block.Id), block.SpanishName, block.Color, true);
+        return ToResponse(block);
     }
 
-    [HttpGet("{name}/texture")]
-    public async Task<IActionResult> GetTexture(string name, CancellationToken ct)
+    private async Task<IActionResult> GetFaceAsync(string name, TextureFace face, CancellationToken ct)
     {
         var id = "minecraft:" + name.Trim();
-        var key = await db.BlockNames.AsNoTracking()
-            .Where(b => b.Id == id)
-            .Select(b => b.TextureKey)
-            .FirstOrDefaultAsync(ct);
+        var block = await db.BlockNames.AsNoTracking().FirstOrDefaultAsync(b => b.Id == id, ct);
+        var key = block is null ? null : BlockNameTextures.KeyOf(block, face);
         if (key is null)
         {
             return NotFound();
@@ -163,8 +186,7 @@ public sealed class BlocksController(FarmHubDbContext db, IFileStorage storage) 
         return File(stream, DetectContentType(header, read), enableRangeProcessing: false);
     }
 
-    [HttpDelete("{name}/texture")]
-    public async Task<IActionResult> DeleteTexture(string name, CancellationToken ct)
+    private async Task<IActionResult> DeleteFaceAsync(string name, TextureFace face, CancellationToken ct)
     {
         var id = "minecraft:" + name.Trim();
         var block = await db.BlockNames.FirstOrDefaultAsync(b => b.Id == id, ct);
@@ -173,14 +195,28 @@ public sealed class BlocksController(FarmHubDbContext db, IFileStorage storage) 
             return NotFound();
         }
 
-        var key = block.TextureKey;
-        block.TextureKey = null;
+        var key = BlockNameTextures.KeyOf(block, face);
+        BlockNameTextures.SetKey(block, face, null);
         await db.SaveChangesAsync(ct);
         if (key is not null)
         {
             storage.Delete(key);
         }
         return NoContent();
+    }
+
+    private static bool TryFace(string face, out TextureFace parsed) => BlockNameTextures.TryParse(face, out parsed);
+
+    private static BlockNameResponse ToResponse(BlockName block)
+    {
+        var faces = BlockNameTextures.Faces(block);
+        return new BlockNameResponse(
+            block.Id,
+            BlockCatalog.EnglishName(block.Id),
+            block.SpanishName,
+            block.Color,
+            faces.Count > 0,
+            faces);
     }
 
     private const long MaxTextureBytes = 256 * 1024;

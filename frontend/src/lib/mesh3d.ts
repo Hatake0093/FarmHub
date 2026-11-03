@@ -1,5 +1,6 @@
 import { isAir } from "./litematicView";
-import { overrideColor } from "./blockColors";
+import { overrideColor, textureKey } from "./blockColors";
+import { faceTextureFor, TEXTURE_FACES, type TextureFace } from "./blockFaces";
 import { baseBlock, isTransparent, shapeBoxes, type Box } from "./blockShapes";
 import type { VoxelGrid } from "./isometric";
 
@@ -35,6 +36,8 @@ type Axis = 0 | 1 | 2;
 interface FaceDef {
   axis: Axis;
   sign: 1 | -1;
+  /** Textura que pide la cara: arriba y abajo tienen las suyas; el resto usa la de lados. */
+  face: TextureFace;
   n: [number, number, number];
   corners: [number, number, number][];
   uAxis: Axis;
@@ -44,13 +47,19 @@ interface FaceDef {
 }
 
 const FACES: FaceDef[] = [
-  { axis: 0, sign: 1, n: [1, 0, 0], corners: [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]], uAxis: 2, uInvert: false, vAxis: 1, vInvert: true },
-  { axis: 0, sign: -1, n: [-1, 0, 0], corners: [[0, 0, 1], [0, 1, 1], [0, 1, 0], [0, 0, 0]], uAxis: 2, uInvert: true, vAxis: 1, vInvert: true },
-  { axis: 1, sign: 1, n: [0, 1, 0], corners: [[0, 1, 0], [0, 1, 1], [1, 1, 1], [1, 1, 0]], uAxis: 0, uInvert: false, vAxis: 2, vInvert: true },
-  { axis: 1, sign: -1, n: [0, -1, 0], corners: [[0, 0, 1], [0, 0, 0], [1, 0, 0], [1, 0, 1]], uAxis: 0, uInvert: false, vAxis: 2, vInvert: false },
-  { axis: 2, sign: 1, n: [0, 0, 1], corners: [[0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]], uAxis: 1, uInvert: false, vAxis: 0, vInvert: true },
-  { axis: 2, sign: -1, n: [0, 0, -1], corners: [[1, 0, 0], [0, 0, 0], [0, 1, 0], [1, 1, 0]], uAxis: 1, uInvert: false, vAxis: 0, vInvert: false },
+  { face: "side", axis: 0, sign: 1, n: [1, 0, 0], corners: [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]], uAxis: 2, uInvert: false, vAxis: 1, vInvert: true },
+  { face: "side", axis: 0, sign: -1, n: [-1, 0, 0], corners: [[0, 0, 1], [0, 1, 1], [0, 1, 0], [0, 0, 0]], uAxis: 2, uInvert: true, vAxis: 1, vInvert: true },
+  { face: "top", axis: 1, sign: 1, n: [0, 1, 0], corners: [[0, 1, 0], [0, 1, 1], [1, 1, 1], [1, 1, 0]], uAxis: 0, uInvert: false, vAxis: 2, vInvert: true },
+  { face: "bottom", axis: 1, sign: -1, n: [0, -1, 0], corners: [[0, 0, 1], [0, 0, 0], [1, 0, 0], [1, 0, 1]], uAxis: 0, uInvert: false, vAxis: 2, vInvert: false },
+  { face: "side", axis: 2, sign: 1, n: [0, 0, 1], corners: [[0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]], uAxis: 1, uInvert: false, vAxis: 0, vInvert: true },
+  { face: "side", axis: 2, sign: -1, n: [0, 0, -1], corners: [[1, 0, 0], [0, 0, 0], [0, 1, 0], [1, 1, 0]], uAxis: 1, uInvert: false, vAxis: 0, vInvert: false },
 ];
+
+/** Clave de atlas de la textura de una cara, según las caras que tienen textura. */
+function tileKeyFor(base: string, face: TextureFace, tiles: Map<string, TileRect>): TileRect | null {
+  const chosen = faceTextureFor(face, (f) => tiles.has(textureKey(base, f)));
+  return chosen ? tiles.get(textureKey(base, chosen)) ?? null : null;
+}
 
 /** Color de un bloque como valores 0..1: el elegido, o uno estable derivado del nombre. Ignora el estado. */
 export function blockRgb(block: string): [number, number, number] {
@@ -143,7 +152,14 @@ function buildPart(grid: VoxelGrid, tiles: Map<string, TileRect> | null, part: "
   });
 
   const colors = palette.map((block) => blockRgb(block));
-  const tileOf = palette.map((block) => tiles?.get(baseBlock(block)) ?? null);
+  // Por bloque, la textura de cada cara (o null si usa color). Las claves del atlas son "id#cara".
+  const tileOf = palette.map((block) => {
+    const base = baseBlock(block);
+    const result: Record<TextureFace, TileRect | null> = { side: null, top: null, bottom: null };
+    if (!tiles) return result;
+    for (const f of TEXTURE_FACES) result[f] = tileKeyFor(base, f, tiles);
+    return result;
+  });
 
   const vertices = new Float32Array(faces * 4 * FLOATS_PER_VERTEX);
   const indices = new Uint32Array(faces * 6);
@@ -155,7 +171,7 @@ function buildPart(grid: VoxelGrid, tiles: Map<string, TileRect> | null, part: "
   // con cientos de miles de caras, esa asignación es lo que más tarda.
   forEachFace(grid, part, (block, x, y, z, box, def) => {
     const [r, g, b] = colors[block];
-    const tile = tileOf[block];
+    const tile = tileOf[block][def.face];
     const base = face * 4;
     const flag = tile ? 1 : 0;
     const { lo, hi } = box;

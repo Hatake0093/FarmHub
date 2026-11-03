@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { faceTransform, getTexture, requestTexture } from "../lib/textures";
+import { faceTransform, requestTexture, resolveFaceTexture } from "../lib/textures";
+import { TEXTURE_FACES, type TextureFace } from "../lib/blockFaces";
+import { baseBlock } from "../lib/blockShapes";
 import { hasTextureId } from "../lib/blockColors";
 import { project, shade, visibleCubes, type VoxelGrid } from "../lib/isometric";
 
@@ -28,9 +30,11 @@ export function IsometricView({ grid }: Props) {
   useEffect(() => {
     const seen = new Set<string>();
     for (const cube of cubes) {
-      if (!seen.has(cube.block) && hasTextureId(cube.block)) {
-        seen.add(cube.block);
-        requestTexture(cube.block, () => setTextureTick((t) => t + 1));
+      const base = baseBlock(cube.block);
+      if (seen.has(base)) continue;
+      seen.add(base);
+      for (const face of TEXTURE_FACES) {
+        if (hasTextureId(base, face)) requestTexture(base, face, () => setTextureTick((t) => t + 1));
       }
     }
   }, [cubes]);
@@ -73,13 +77,14 @@ export function IsometricView({ grid }: Props) {
     const face = (
       corners: [number, number][],
       block: string,
+      kind: TextureFace,
       lightness: number,
       topLeft: [number, number],
       topRight: [number, number],
       bottomLeft: [number, number],
       darken: number,
     ) => {
-      const texture = getTexture(block);
+      const texture = resolveFaceTexture(block, kind);
       polygon(corners);
       if (!texture) {
         ctx.fillStyle = shade(block, lightness);
@@ -132,7 +137,8 @@ export function IsometricView({ grid }: Props) {
     for (const cube of cubes) {
       const { x, y, z, block } = cube;
 
-      if (!getTexture(block)) {
+      const anyTexture = TEXTURE_FACES.some((f) => resolveFaceTexture(block, f) !== undefined);
+      if (!anyTexture) {
         const [top, left, right] = colorsOf(block);
         ctx.fillStyle = top;
         quad(px(x, z), py(x, y + 1, z), px(x + 1, z), py(x + 1, y + 1, z), px(x + 1, z + 1), py(x + 1, y + 1, z + 1), px(x, z + 1), py(x, y + 1, z + 1));
@@ -146,19 +152,19 @@ export function IsometricView({ grid }: Props) {
       // Cara superior (+Y): sin oscurecer
       face(
         [put(x, y + 1, z), put(x + 1, y + 1, z), put(x + 1, y + 1, z + 1), put(x, y + 1, z + 1)],
-        block, 68,
+        block, "top", 68,
         put(x, y + 1, z), put(x + 1, y + 1, z), put(x, y + 1, z + 1), 0,
       );
       // Cara +Z (izquierda en pantalla)
       face(
         [put(x, y, z + 1), put(x + 1, y, z + 1), put(x + 1, y + 1, z + 1), put(x, y + 1, z + 1)],
-        block, 52,
+        block, "side", 52,
         put(x, y + 1, z + 1), put(x + 1, y + 1, z + 1), put(x, y, z + 1), 0.2,
       );
       // Cara +X (derecha en pantalla)
       face(
         [put(x + 1, y, z), put(x + 1, y, z + 1), put(x + 1, y + 1, z + 1), put(x + 1, y + 1, z)],
-        block, 40,
+        block, "side", 40,
         put(x + 1, y + 1, z), put(x + 1, y + 1, z + 1), put(x + 1, y, z), 0.4,
       );
     }

@@ -1,20 +1,28 @@
+import type { TextureFace } from "./blockFaces";
+
 /** Colores elegidos por el usuario, indexados por identificador de bloque. */
 const overrides = new Map<string, string>();
-/** Bloques que tienen textura subida por el usuario. */
+/** Texturas subidas, como "minecraft:stone#side". */
 const withTexture = new Set<string>();
 
+export function textureKey(id: string, face: TextureFace): string {
+  return `${id}#${face}`;
+}
+
 /** Sustituye los colores y las texturas conocidas (al cargar el catálogo y tras guardar). */
-export function setColorOverrides(entries: { id: string; color: string | null; hasTexture?: boolean }[]): void {
+export function setColorOverrides(entries: { id: string; color: string | null; textureFaces?: TextureFace[] }[]): void {
   overrides.clear();
   withTexture.clear();
   for (const entry of entries) {
     if (entry.color) overrides.set(entry.id, entry.color);
-    if (entry.hasTexture) withTexture.add(entry.id);
+    for (const face of entry.textureFaces ?? []) withTexture.add(textureKey(entry.id, face));
   }
 }
 
-export function hasTextureId(id: string): boolean {
-  return withTexture.has(id);
+/** Con cara, indica si esa cara tiene textura. Sin cara, si el bloque tiene alguna. */
+export function hasTextureId(id: string, face?: TextureFace): boolean {
+  if (face) return withTexture.has(textureKey(id, face));
+  return withTexture.has(textureKey(id, "side")) || withTexture.has(textureKey(id, "top")) || withTexture.has(textureKey(id, "bottom"));
 }
 
 export function overrideColor(id: string): string | undefined {

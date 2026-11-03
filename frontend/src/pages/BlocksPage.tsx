@@ -4,8 +4,15 @@ import { errorMessage } from "../api/client";
 import { shortName } from "../lib/blockSearch";
 import { setColorOverrides } from "../lib/blockColors";
 import { forgetTexture } from "../lib/textures";
+import type { TextureFace } from "../lib/blockFaces";
 import { matchTextureFiles } from "../lib/textureImport";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
+
+const TEXTURE_SLOTS: { face: TextureFace; label: string }[] = [
+  { face: "side", label: "Lados" },
+  { face: "top", label: "Arriba" },
+  { face: "bottom", label: "Abajo" },
+];
 
 export function BlocksPage() {
   useDocumentTitle("Bloques");
@@ -17,7 +24,7 @@ export function BlocksPage() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [colorDrafts, setColorDrafts] = useState<Record<string, string | null>>({});
   const [newBlock, setNewBlock] = useState("");
-  const [importPreview, setImportPreview] = useState<{ matched: { file: File; blockId: string }[]; unmatched: File[] } | null>(null);
+  const [importPreview, setImportPreview] = useState<{ matched: { file: File; blockId: string; face: TextureFace }[]; unmatched: File[] } | null>(null);
   const [importProgress, setImportProgress] = useState<string | null>(null);
   // Versión de cada textura para que la miniatura se recargue tras subir una nueva.
   const [textureVersion, setTextureVersion] = useState<Record<string, number>>({});
@@ -59,14 +66,14 @@ export function BlocksPage() {
     return nameChanged || colorChanged;
   }
 
-  async function uploadTexture(block: BlockEntry, file: File | undefined) {
+  async function uploadTexture(block: BlockEntry, face: TextureFace, file: File | undefined) {
     if (!file) return;
     setSavingId(block.id);
     setError(null);
     try {
-      const updated = await blocksApi.uploadTexture(shortName(block.id), file);
-      forgetTexture(block.id);
-      setTextureVersion((current) => ({ ...current, [block.id]: Date.now() }));
+      const updated = await blocksApi.uploadTexture(shortName(block.id), file, face);
+      forgetTexture(block.id, face);
+      setTextureVersion((current) => ({ ...current, [`${block.id}#${face}`]: Date.now() }));
       const next = blocks.map((b) => (b.id === updated.id ? updated : b));
       setBlocks(next);
       setColorOverrides(next);
@@ -77,12 +84,13 @@ export function BlocksPage() {
     }
   }
 
-  async function removeTexture(block: BlockEntry) {
+  async function removeTexture(block: BlockEntry, face: TextureFace) {
     setError(null);
     try {
-      await blocksApi.removeTexture(shortName(block.id));
-      forgetTexture(block.id);
-      const next = blocks.map((b) => (b.id === block.id ? { ...b, hasTexture: false } : b));
+      await blocksApi.removeTexture(shortName(block.id), face);
+      forgetTexture(block.id, face);
+      const faces = block.textureFaces.filter((f) => f !== face);
+      const next = blocks.map((b) => (b.id === block.id ? { ...b, textureFaces: faces, hasTexture: faces.length > 0 } : b));
       setBlocks(next);
       setColorOverrides(next);
     } catch (err) {
@@ -102,13 +110,13 @@ export function BlocksPage() {
     let done = 0;
     let failed = 0;
     let latest = blocks;
-    for (const { file, blockId } of importPreview.matched) {
+    for (const { file, blockId, face } of importPreview.matched) {
       done++;
       setImportProgress(`Subiendo ${done} de ${total}…`);
       try {
-        const updated = await blocksApi.uploadTexture(shortName(blockId), file);
-        forgetTexture(blockId);
-        setTextureVersion((current) => ({ ...current, [blockId]: Date.now() }));
+        const updated = await blocksApi.uploadTexture(shortName(blockId), file, face);
+        forgetTexture(blockId, face);
+        setTextureVersion((current) => ({ ...current, [`${blockId}#${face}`]: Date.now() }));
         latest = latest.map((b) => (b.id === updated.id ? updated : b));
       } catch {
         failed++;
@@ -296,32 +304,40 @@ export function BlocksPage() {
                   />
                 </td>
                 <td>
-                  <div className="texture-field">
-                    {b.hasTexture && (
-                      <img
-                        className="texture-thumb"
-                        alt={`Textura de ${b.englishName}`}
-                        src={`/api/blocks/${shortName(b.id)}/texture?v=${textureVersion[b.id] ?? 0}`}
-                      />
-                    )}
-                    <label className="button-link">
-                      {b.hasTexture ? "Cambiar" : "Subir imagen"}
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        aria-label={`Subir textura de ${b.englishName}`}
-                        className="visually-hidden"
-                        onChange={(e) => {
-                          void uploadTexture(b, e.target.files?.[0]);
-                          e.target.value = "";
-                        }}
-                      />
-                    </label>
-                    {b.hasTexture && (
-                      <button type="button" className="button-link button-danger" onClick={() => void removeTexture(b)}>
-                        Quitar
-                      </button>
-                    )}
+                  <div className="texture-faces">
+                    {TEXTURE_SLOTS.map(({ face, label }) => {
+                      const has = b.textureFaces.includes(face);
+                      return (
+                        <div className="texture-face" key={face}>
+                          <span className="muted small">{label}</span>
+                          {has && (
+                            <img
+                              className="texture-thumb"
+                              alt={`Textura de ${label.toLowerCase()} de ${b.englishName}`}
+                              src={`/api/blocks/${shortName(b.id)}/texture/${face}?v=${textureVersion[`${b.id}#${face}`] ?? 0}`}
+                            />
+                          )}
+                          <label className="button-link">
+                            {has ? "Cambiar" : "Subir"}
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp"
+                              aria-label={`Subir textura de ${label.toLowerCase()} de ${b.englishName}`}
+                              className="visually-hidden"
+                              onChange={(e) => {
+                                void uploadTexture(b, face, e.target.files?.[0]);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                          {has && (
+                            <button type="button" className="button-link button-danger" onClick={() => void removeTexture(b, face)}>
+                              Quitar
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </td>
                 <td>
