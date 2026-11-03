@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { authorsApi, designsApi } from "../api/designs";
+import { useState } from "react";
+import { designsApi } from "../api/designs";
 import { errorMessage } from "../api/client";
-import type { Author, FarmDesignSummary } from "../api/types";
+import type { FarmDesignSummary } from "../api/types";
+import { DesignForm, type DesignFormValues } from "./DesignForm";
 import { FILE_INPUT_ACCEPT, formatBytes, kindLabel, validateUpload } from "../lib/files";
 
 interface Props {
@@ -21,42 +22,117 @@ export function DesignSection({ farmId, designs, onChanged }: Props) {
         <DesignCard key={design.id} design={design} onChanged={onChanged} />
       ))}
 
-      <NewDesignForm farmId={farmId} onCreated={onChanged} />
+      <NewDesignSection farmId={farmId} onCreated={onChanged} />
     </section>
   );
 }
 
+type Feedback = { kind: "ok" | "error"; text: string } | null;
+
 function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChanged: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const [feedback, setFeedback] = useState<Feedback>(null);
+
+  async function handleSave(values: DesignFormValues) {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await designsApi.update(design.id, {
+        name: values.name.trim(),
+        description: values.description.trim() || null,
+        authorId: values.authorId ? Number(values.authorId) : null,
+      });
+      setEditing(false);
+      onChanged();
+    } catch (err) {
+      setSaveError(errorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    const confirmed = window.confirm(
+      `¿Borrar el diseño "${design.name}" y sus ${design.files.length} archivos? No se puede deshacer.`,
+    );
+    if (!confirmed) return;
+    try {
+      await designsApi.remove(design.id);
+      onChanged();
+    } catch (err) {
+      setFeedback({ kind: "error", text: errorMessage(err) });
+    }
+  }
+
+  async function handleRemoveFile(fileId: number, fileName: string) {
+    if (!window.confirm(`¿Borrar el archivo "${fileName}"?`)) return;
+    try {
+      await designsApi.removeFile(fileId);
+      onChanged();
+    } catch (err) {
+      setFeedback({ kind: "error", text: errorMessage(err) });
+    }
+  }
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
 
     const problem = validateUpload(file);
     if (problem) {
-      setMessage({ kind: "error", text: problem });
+      setFeedback({ kind: "error", text: problem });
       return;
     }
 
     setUploading(true);
-    setMessage(null);
+    setFeedback(null);
     try {
       await designsApi.uploadFile(design.id, file);
-      setMessage({ kind: "ok", text: `"${file.name}" subido correctamente.` });
+      setFeedback({ kind: "ok", text: `"${file.name}" subido correctamente.` });
       onChanged();
     } catch (err) {
-      setMessage({ kind: "error", text: errorMessage(err) });
+      setFeedback({ kind: "error", text: errorMessage(err) });
     } finally {
       setUploading(false);
     }
   }
 
+  if (editing) {
+    return (
+      <DesignForm
+        title="Editar diseño"
+        initial={{
+          name: design.name,
+          description: design.description ?? "",
+          authorId: design.authorId ? String(design.authorId) : "",
+        }}
+        submitLabel="Guardar cambios"
+        saving={saving}
+        error={saveError}
+        onSubmit={handleSave}
+        onCancel={() => setEditing(false)}
+      />
+    );
+  }
+
   return (
     <article className="design-card">
-      <header>
-        <h3>{design.name}</h3>
-        {design.description && <p className="muted">{design.description}</p>}
+      <header className="design-header">
+        <div>
+          <h3>{design.name}</h3>
+          {design.description && <p className="muted">{design.description}</p>}
+          {design.authorName && <p className="muted">Creador: {design.authorName}</p>}
+        </div>
+        <div className="actions">
+          <button type="button" className="button" onClick={() => setEditing(true)}>
+            Editar
+          </button>
+          <button type="button" className="button button-danger" onClick={handleDelete}>
+            Borrar diseño
+          </button>
+        </div>
       </header>
 
       {design.files.length > 0 ? (
@@ -68,7 +144,14 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
               </a>{" "}
               <span className="muted">
                 {kindLabel(file.kind)} · {formatBytes(file.sizeBytes)}
-              </span>
+              </span>{" "}
+              <button
+                type="button"
+                className="button-link button-danger"
+                onClick={() => handleRemoveFile(file.id, file.originalFileName)}
+              >
+                Borrar archivo
+              </button>
             </li>
           ))}
         </ul>
@@ -89,57 +172,19 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
         />
       </label>
       {uploading && <p className="muted">Subiendo…</p>}
-      {message && (
-        <p className={message.kind === "error" ? "error" : "muted"} role={message.kind === "error" ? "alert" : "status"}>
-          {message.text}
+      {feedback && (
+        <p className={feedback.kind === "error" ? "error" : "muted"} role={feedback.kind === "error" ? "alert" : "status"}>
+          {feedback.text}
         </p>
       )}
     </article>
   );
 }
 
-function NewDesignForm({ farmId, onCreated }: { farmId: number; onCreated: () => void }) {
+function NewDesignSection({ farmId, onCreated }: { farmId: number; onCreated: () => void }) {
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [authorId, setAuthorId] = useState("");
-  const [authors, setAuthors] = useState<Author[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (open) {
-      authorsApi.list().then(setAuthors).catch(() => setAuthors([]));
-    }
-  }, [open]);
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!name.trim()) {
-      setError("El nombre del diseño es obligatorio.");
-      return;
-    }
-
-    setSaving(true);
-    setError(null);
-    try {
-      await designsApi.create({
-        farmId,
-        name: name.trim(),
-        description: description.trim() || null,
-        authorId: authorId ? Number(authorId) : null,
-      });
-      setName("");
-      setDescription("");
-      setAuthorId("");
-      setOpen(false);
-      onCreated();
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setSaving(false);
-    }
-  }
 
   if (!open) {
     return (
@@ -149,37 +194,34 @@ function NewDesignForm({ farmId, onCreated }: { farmId: number; onCreated: () =>
     );
   }
 
+  async function handleCreate(values: DesignFormValues) {
+    setSaving(true);
+    setError(null);
+    try {
+      await designsApi.create({
+        farmId,
+        name: values.name.trim(),
+        description: values.description.trim() || null,
+        authorId: values.authorId ? Number(values.authorId) : null,
+      });
+      setOpen(false);
+      onCreated();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
-    <form className="design-form" onSubmit={handleSubmit} noValidate>
-      <h3>Nuevo diseño</h3>
-      <label htmlFor="design-name">
-        Nombre *
-        <input id="design-name" value={name} onChange={(e) => setName(e.target.value)} />
-      </label>
-      <label htmlFor="design-description">
-        Descripción
-        <textarea id="design-description" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
-      </label>
-      <label htmlFor="design-author">
-        Creador
-        <select id="design-author" value={authorId} onChange={(e) => setAuthorId(e.target.value)}>
-          <option value="">Sin indicar</option>
-          {authors.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      {error && <p className="error" role="alert">{error}</p>}
-      <div className="actions">
-        <button type="submit" className="button button-primary" disabled={saving}>
-          {saving ? "Guardando…" : "Crear diseño"}
-        </button>
-        <button type="button" className="button" onClick={() => setOpen(false)}>
-          Cancelar
-        </button>
-      </div>
-    </form>
+    <DesignForm
+      title="Nuevo diseño"
+      initial={{ name: "", description: "", authorId: "" }}
+      submitLabel="Crear diseño"
+      saving={saving}
+      error={error}
+      onSubmit={handleCreate}
+      onCancel={() => setOpen(false)}
+    />
   );
 }

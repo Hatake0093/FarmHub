@@ -44,6 +44,60 @@ public sealed class DesignsController(FarmHubDbContext db, IFileStorage storage)
         return CreatedAtAction(nameof(GetById), new { id = design.Id }, ToResponse(design));
     }
 
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<DesignResponse>> Update(int id, UpdateDesignRequest request, CancellationToken ct)
+    {
+        var design = await db.Designs
+            .Include(d => d.Files)
+            .FirstOrDefaultAsync(d => d.Id == id, ct);
+        if (design is null)
+        {
+            return NotFound();
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Name) || request.Name.Trim().Length > 200)
+        {
+            return ValidationProblem("El nombre del diseño es obligatorio y no puede superar 200 caracteres.");
+        }
+
+        if (request.AuthorId is { } authorId && !await db.Authors.AnyAsync(a => a.Id == authorId, ct))
+        {
+            return ValidationProblem("El autor indicado no existe.");
+        }
+
+        design.Name = request.Name.Trim();
+        design.Description = request.Description?.Trim();
+        design.AuthorId = request.AuthorId;
+        await db.SaveChangesAsync(ct);
+
+        return ToResponse(design);
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
+    {
+        var design = await db.Designs
+            .Include(d => d.Files)
+            .FirstOrDefaultAsync(d => d.Id == id, ct);
+        if (design is null)
+        {
+            return NotFound();
+        }
+
+        // Los archivos del disco se borran solo después de confirmar la base de datos.
+        var storageKeys = design.Files.Select(f => f.StorageKey).ToList();
+
+        db.Designs.Remove(design);
+        await db.SaveChangesAsync(ct);
+
+        foreach (var key in storageKeys)
+        {
+            storage.Delete(key);
+        }
+
+        return NoContent();
+    }
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult<DesignResponse>> GetById(int id, CancellationToken ct)
     {

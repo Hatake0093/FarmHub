@@ -33,6 +33,8 @@ public sealed record FarmDesignSummary(
     int Id,
     string Name,
     string? Description,
+    int? AuthorId,
+    string? AuthorName,
     IReadOnlyList<DesignFileResponse> Files);
 
 public sealed record PagedResponse<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);

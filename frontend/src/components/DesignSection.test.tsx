@@ -9,6 +9,8 @@ const design: FarmDesignSummary = {
   id: 5,
   name: "Diseño principal",
   description: null,
+  authorId: null,
+  authorName: null,
   files: [
     {
       id: 9,
@@ -72,5 +74,25 @@ describe("DesignSection", () => {
     expect(init.body).toBeInstanceOf(FormData);
     expect((init.body as FormData).get("file")).toBeInstanceOf(File);
     expect(init.headers).toEqual({});
+  });
+
+  it("borra el diseño solo si el usuario confirma", async () => {
+    const fetchMock = mockApi({
+      "/api/authors": [],
+      "/api/designs/5": () => ({ status: 204 }),
+    });
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal("confirm", confirm);
+    const onChanged = vi.fn();
+    render(<DesignSection farmId={1} designs={[design]} onChanged={onChanged} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Borrar diseño" }));
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls.filter((c) => (c[1] as RequestInit | undefined)?.method === "DELETE")).toHaveLength(0);
+
+    confirm.mockReturnValue(true);
+    await userEvent.click(screen.getByRole("button", { name: "Borrar diseño" }));
+    await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
+    expect(fetchMock.mock.calls.some((c) => c[0] === "/api/designs/5" && (c[1] as RequestInit).method === "DELETE")).toBe(true);
   });
 });

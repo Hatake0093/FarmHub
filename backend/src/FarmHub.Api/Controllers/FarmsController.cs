@@ -93,6 +93,7 @@ public sealed class FarmsController(FarmHubDbContext db, IFileStorage storage) :
             .Include(f => f.MinecraftVersions)
             .Include(f => f.Tags)
             .Include(f => f.Designs).ThenInclude(d => d.Files)
+            .Include(f => f.Designs).ThenInclude(d => d.Author)
             .AsSplitQuery()
             .FirstOrDefaultAsync(f => f.Id == id, ct);
 
@@ -163,6 +164,7 @@ public sealed class FarmsController(FarmHubDbContext db, IFileStorage storage) :
     {
         var farm = await db.Farms
             .Include(f => f.Designs).ThenInclude(d => d.Files)
+            .Include(f => f.Designs).ThenInclude(d => d.Author)
             .FirstOrDefaultAsync(f => f.Id == id, ct);
         if (farm is null)
         {
@@ -262,6 +264,7 @@ public sealed class FarmsController(FarmHubDbContext db, IFileStorage storage) :
             .Include(f => f.MinecraftVersions)
             .Include(f => f.Tags)
             .Include(f => f.Designs).ThenInclude(d => d.Files)
+            .Include(f => f.Designs).ThenInclude(d => d.Author)
             .AsSplitQuery()
             .FirstOrDefaultAsync(f => f.Id == id, ct);
 
@@ -289,5 +292,7 @@ public sealed class FarmsController(FarmHubDbContext db, IFileStorage storage) :
             d.Id,
             d.Name,
             d.Description,
+            d.AuthorId,
+            d.Author == null ? null : d.Author.Name,
             d.Files.OrderBy(f => f.OriginalFileName).Select(DesignFileMapping.From).ToList())).ToList());
 }

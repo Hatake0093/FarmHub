@@ -36,6 +36,8 @@ export interface FarmDesignSummary {
   id: number;
   name: string;
   description: string | null;
+  authorId: number | null;
+  authorName: string | null;
   files: DesignFile[];
 }
 

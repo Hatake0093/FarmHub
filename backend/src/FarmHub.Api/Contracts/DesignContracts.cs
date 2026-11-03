@@ -4,6 +4,8 @@ namespace FarmHub.Api.Contracts;
 
 public sealed record CreateDesignRequest(int FarmId, string Name, string? Description, int? AuthorId);
 
+public sealed record UpdateDesignRequest(string Name, string? Description, int? AuthorId);
+
 public sealed record DesignResponse(
     int Id,
     int FarmId,
