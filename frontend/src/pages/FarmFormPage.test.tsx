@@ -37,6 +37,21 @@ describe("FarmFormPage", () => {
     expect(posted).toHaveLength(0);
   });
 
+  it("marca los campos inválidos, los enlaza con su error y enfoca el primero", async () => {
+    mockApi({
+      "/api/categories": [{ id: 1, name: "Recursos", description: null }],
+      "/api/minecraft-versions": [],
+    });
+    renderNewFarm();
+
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    const name = await screen.findByLabelText(/Nombre/);
+    expect(name.getAttribute("aria-invalid")).toBe("true");
+    expect(name.getAttribute("aria-describedby")).toBe("name-error");
+    expect(document.activeElement).toBe(name);
+  });
+
   it("envía la granja con etiquetas normalizadas separadas por comas", async () => {
     const created = { id: 7, name: "Granja nueva" };
     const fetchMock = mockApi({

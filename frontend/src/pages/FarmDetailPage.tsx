@@ -7,6 +7,7 @@ import { difficultyLabel } from "../lib/labels";
 import { DesignSection } from "../components/DesignSection";
 import { FarmSheetSections } from "../components/FarmSheetSections";
 import { formatDimensions } from "../lib/format";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 export function FarmDetailPage() {
   const { id } = useParams();
@@ -16,6 +17,9 @@ export function FarmDetailPage() {
   const [farm, setFarm] = useState<FarmDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Un fallo al borrar no debe tapar la ficha: se muestra aparte, sobre ella.
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  useDocumentTitle(farm?.id === farmId ? farm.name : "Granja");
 
   const loadFarm = useCallback(() => {
     let active = true;
@@ -47,18 +51,38 @@ export function FarmDetailPage() {
     );
     if (!confirmed) return;
 
+    setDeleteError(null);
     try {
       await farmsApi.remove(farm.id);
       navigate("/farms");
     } catch (err) {
-      setError(errorMessage(err));
+      setDeleteError(errorMessage(err));
     }
   }
 
-  if (loading) return <p className="muted">Cargando granja…</p>;
-  if (error) return <p className="error" role="alert">{error}</p>;
+  if (error)
+    return (
+      <div className="empty-state">
+        <p className="alert" role="alert">
+          {error}
+        </p>
+        <div className="actions">
+          <button type="button" className="button" onClick={() => { setLoading(true); loadFarm(); }}>
+            Reintentar
+          </button>
+          <Link to="/farms" className="button">
+            Volver a la biblioteca
+          </Link>
+        </div>
+      </div>
+    );
   // Evita mostrar una granja anterior mientras se carga la nueva.
-  if (!farm || farm.id !== farmId) return <p className="muted">Cargando granja…</p>;
+  if (loading || !farm || farm.id !== farmId)
+    return (
+      <p className="muted" role="status">
+        Cargando granja…
+      </p>
+    );
 
   return (
     <article className="farm-detail">
@@ -73,11 +97,17 @@ export function FarmDetailPage() {
           <Link to={`/farms/${farm.id}/edit`} className="button">
             Editar
           </Link>
-          <button type="button" className="button button-danger" onClick={handleDelete}>
+          <button type="button" className="button button-danger" onClick={() => void handleDelete()}>
             Borrar
           </button>
         </div>
       </div>
+
+      {deleteError && (
+        <p className="alert" role="alert">
+          {deleteError}
+        </p>
+      )}
 
       <dl className="facts">
         <div>
