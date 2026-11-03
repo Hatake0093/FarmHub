@@ -4,6 +4,7 @@ import { errorMessage } from "../api/client";
 import { shortName } from "../lib/blockSearch";
 import { setColorOverrides } from "../lib/blockColors";
 import { forgetTexture } from "../lib/textures";
+import { matchTextureFiles } from "../lib/textureImport";
 
 export function BlocksPage() {
   const [blocks, setBlocks] = useState<BlockEntry[]>([]);
@@ -11,6 +12,8 @@ export function BlocksPage() {
   const [onlyMissing, setOnlyMissing] = useState(true);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [colorDrafts, setColorDrafts] = useState<Record<string, string | null>>({});
+  const [importPreview, setImportPreview] = useState<{ matched: { file: File; blockId: string }[]; unmatched: File[] } | null>(null);
+  const [importProgress, setImportProgress] = useState<string | null>(null);
   // Versión de cada textura para que la miniatura se recargue tras subir una nueva.
   const [textureVersion, setTextureVersion] = useState<Record<string, number>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -74,6 +77,36 @@ export function BlocksPage() {
     }
   }
 
+  function previewImport(files: File[]) {
+    const ids = new Set(blocks.map((b) => b.id));
+    setImportPreview(matchTextureFiles(files, ids));
+    setImportProgress(null);
+  }
+
+  async function runImport() {
+    if (!importPreview) return;
+    const total = importPreview.matched.length;
+    let done = 0;
+    let failed = 0;
+    let latest = blocks;
+    for (const { file, blockId } of importPreview.matched) {
+      done++;
+      setImportProgress(`Subiendo ${done} de ${total}…`);
+      try {
+        const updated = await blocksApi.uploadTexture(shortName(blockId), file);
+        forgetTexture(blockId);
+        setTextureVersion((current) => ({ ...current, [blockId]: Date.now() }));
+        latest = latest.map((b) => (b.id === updated.id ? updated : b));
+      } catch {
+        failed++;
+      }
+    }
+    setBlocks(latest);
+    setColorOverrides(latest);
+    setImportProgress(`Listo: ${total - failed} subidas${failed ? `, ${failed} con error` : ""}.`);
+    setImportPreview(null);
+  }
+
   async function save(block: BlockEntry) {
     const value = (drafts[block.id] ?? block.spanishName ?? "").trim();
     const color = block.id in colorDrafts ? colorDrafts[block.id] : block.color;
@@ -125,6 +158,63 @@ export function BlocksPage() {
       </div>
 
       {error && <p className="error" role="alert">{error}</p>}
+
+      <section className="import-box">
+        <h2>Carga masiva de texturas</h2>
+        <p className="muted">
+          Elige una carpeta o varias imágenes. Cada archivo se asigna al bloque con el mismo nombre (por ejemplo <code>stone.png</code> → Piedra). Revisa los que no coinciden antes de subir.
+        </p>
+        <div className="actions">
+          <label className="button">
+            Elegir carpeta
+            <input
+              type="file"
+              hidden
+              multiple
+              accept="image/png,image/jpeg,image/webp"
+              {...{ webkitdirectory: "" }}
+              onChange={(e) => previewImport(Array.from(e.target.files ?? []))}
+            />
+          </label>
+          <label className="button">
+            Elegir imágenes
+            <input
+              type="file"
+              hidden
+              multiple
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(e) => previewImport(Array.from(e.target.files ?? []))}
+            />
+          </label>
+        </div>
+
+        {importPreview && (
+          <div className="import-preview">
+            <p>
+              <strong>{importPreview.matched.length}</strong> coinciden con un bloque;{" "}
+              <strong>{importPreview.unmatched.length}</strong> no tienen bloque con ese nombre.
+            </p>
+            {importPreview.unmatched.length > 0 && (
+              <details>
+                <summary>Ver los que no coinciden</summary>
+                <p className="muted">{importPreview.unmatched.map((f) => f.name).join(", ")}</p>
+              </details>
+            )}
+            <div className="actions">
+              <button
+                type="button"
+                className="button button-primary"
+                disabled={importPreview.matched.length === 0}
+                onClick={() => void runImport()}
+              >
+                Subir {importPreview.matched.length} texturas
+              </button>
+              <button type="button" className="button" onClick={() => setImportPreview(null)}>Cancelar</button>
+            </div>
+          </div>
+        )}
+        {importProgress && <p className="muted" role="status">{importProgress}</p>}
+      </section>
 
       <table className="farm-table">
         <thead>

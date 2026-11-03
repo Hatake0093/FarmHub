@@ -583,3 +583,25 @@ section > .design-form {
   border-radius: 4px;
   background: var(--bg);
 }
+
+.import-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.import-box h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.import-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
