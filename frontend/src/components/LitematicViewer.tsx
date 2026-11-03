@@ -1,0 +1,206 @@
+import { useEffect, useRef, useState, type MouseEvent, type WheelEvent } from "react";
+import { litematicApi, type LitematicLayer, type LitematicSummary } from "../api/litematic";
+import { errorMessage } from "../api/client";
+import { blockColor, blockLabel, isAir } from "../lib/litematicView";
+
+interface Props {
+  fileId: number;
+  fileName: string;
+  onClose: () => void;
+}
+
+const MIN_CELL = 4;
+const MAX_CELL = 60;
+
+export function LitematicViewer({ fileId, fileName, onClose }: Props) {
+  const [summary, setSummary] = useState<LitematicSummary | null>(null);
+  const [regionName, setRegionName] = useState<string>("");
+  const [y, setY] = useState(0);
+  const [layer, setLayer] = useState<LitematicLayer | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [cellSize, setCellSize] = useState(16);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dragRef = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    litematicApi
+      .summary(fileId)
+      .then((data) => {
+        if (!active) return;
+        setSummary(data);
+        setRegionName(data.regions[0]?.name ?? "");
+      })
+      .catch((err: unknown) => active && setError(errorMessage(err)));
+    return () => {
+      active = false;
+    };
+  }, [fileId]);
+
+  const region = summary?.regions.find((r) => r.name === regionName);
+
+  useEffect(() => {
+    if (!regionName) return;
+    let active = true;
+    setError(null);
+    litematicApi
+      .layer(fileId, regionName, y)
+      .then((data) => active && setLayer(data))
+      .catch((err: unknown) => active && setError(errorMessage(err)));
+    return () => {
+      active = false;
+    };
+  }, [fileId, regionName, y]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !layer) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+    ctx.fillStyle = "#1b1e1a";
+    ctx.fillRect(0, 0, width, height);
+
+    // Cuadrícula de bloques: x a la derecha, z hacia abajo (vista desde arriba).
+    for (let z = 0; z < layer.depth; z++) {
+      for (let x = 0; x < layer.width; x++) {
+        const block = layer.palette[layer.cells[z * layer.width + x]];
+        if (isAir(block)) continue;
+        ctx.fillStyle = blockColor(block);
+        ctx.fillRect(offset.x + x * cellSize, offset.y + z * cellSize, cellSize - 1, cellSize - 1);
+      }
+    }
+
+    if (selected) {
+      // Borde del bloque seleccionado (se redibuja con el color del resaltado).
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      const [sx, sz] = selected.split(",").map(Number);
+      ctx.strokeRect(offset.x + sx * cellSize, offset.y + sz * cellSize, cellSize - 1, cellSize - 1);
+    }
+  }, [layer, cellSize, offset, selected]);
+
+  function cellAt(event: MouseEvent<HTMLCanvasElement>): { x: number; z: number } | null {
+    const canvas = canvasRef.current;
+    if (!canvas || !layer) return null;
+    const rect = canvas.getBoundingClientRect();
+    const px = ((event.clientX - rect.left) * canvas.width) / rect.width;
+    const py = ((event.clientY - rect.top) * canvas.height) / rect.height;
+    const x = Math.floor((px - offset.x) / cellSize);
+    const z = Math.floor((py - offset.y) / cellSize);
+    if (x < 0 || z < 0 || x >= layer.width || z >= layer.depth) return null;
+    return { x, z };
+  }
+
+  function handleClick(event: MouseEvent<HTMLCanvasElement>) {
+    const cell = cellAt(event);
+    setSelected(cell ? `${cell.x},${cell.z}` : null);
+  }
+
+  function handleWheel(event: WheelEvent<HTMLCanvasElement>) {
+    setCellSize((size) => Math.min(MAX_CELL, Math.max(MIN_CELL, size + (event.deltaY < 0 ? 2 : -2))));
+  }
+
+  function handleMouseDown(event: MouseEvent<HTMLCanvasElement>) {
+    dragRef.current = { x: event.clientX, y: event.clientY, ox: offset.x, oy: offset.y };
+  }
+
+  function handleMouseMove(event: MouseEvent<HTMLCanvasElement>) {
+    const drag = dragRef.current;
+    if (!drag) return;
+    setOffset({ x: drag.ox + (event.clientX - drag.x), y: drag.oy + (event.clientY - drag.y) });
+  }
+
+  function endDrag() {
+    dragRef.current = null;
+  }
+
+  const selectedBlock = selected && layer
+    ? layer.palette[layer.cells[Number(selected.split(",")[1]) * layer.width + Number(selected.split(",")[0])]]
+    : null;
+
+  return (
+    <section className="viewer" aria-label={`Visor de ${fileName}`}>
+      <div className="page-heading">
+        <h3>Visor de {fileName}</h3>
+        <button type="button" className="button" onClick={onClose}>Cerrar visor</button>
+      </div>
+
+      {error && <p className="error" role="alert">{error}</p>}
+      {!summary && !error && <p className="muted">Cargando archivo…</p>}
+
+      {summary && region && (
+        <>
+          <div className="viewer-controls">
+            <label>
+              Región
+              <select value={regionName} onChange={(e) => { setRegionName(e.target.value); setY(0); setSelected(null); }}>
+                {summary.regions.map((r) => (
+                  <option key={r.name} value={r.name}>{r.name}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Capa Y: {y} / {region.height - 1}
+              <input type="range" min={0} max={region.height - 1} value={y} onChange={(e) => setY(Number(e.target.value))} />
+            </label>
+            <label>
+              Zoom
+              <input type="range" min={MIN_CELL} max={MAX_CELL} value={cellSize} onChange={(e) => setCellSize(Number(e.target.value))} />
+            </label>
+            <button type="button" className="button" onClick={() => setOffset({ x: 0, y: 0 })}>Centrar</button>
+          </div>
+
+          <canvas
+            ref={canvasRef}
+            className="viewer-canvas"
+            width={900}
+            height={520}
+            onClick={handleClick}
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={endDrag}
+            onMouseLeave={endDrag}
+          />
+
+          <p className="muted">
+            Arrastra para desplazar, rueda para hacer zoom, clic para ver un bloque.
+            {" "}Dimensiones de la región: {region.width} × {region.height} × {region.depth} (coordenadas locales).
+          </p>
+          <p aria-live="polite">
+            {!selectedBlock && "Ningún bloque seleccionado."}
+            {selectedBlock && isAir(selectedBlock) && "Esta celda está vacía (aire)."}
+            {selectedBlock && !isAir(selectedBlock) && (
+              <>Bloque: <strong>{blockLabel(selectedBlock)}</strong> <span className="muted">({selectedBlock})</span></>
+            )}
+          </p>
+
+          <h4>Materiales (total del archivo, sin aire)</h4>
+          <table className="farm-table">
+            <thead>
+              <tr>
+                <th>Bloque</th>
+                <th>Cantidad</th>
+                <th>Stacks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {summary.blockCounts.slice(0, 20).map((b) => (
+                <tr key={b.block}>
+                  <td>{blockLabel(b.block)}</td>
+                  <td>{b.count}</td>
+                  <td>{b.stacks}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+    </section>
+  );
+}

@@ -4,6 +4,7 @@ import { errorMessage } from "../api/client";
 import type { FarmDesignSummary } from "../api/types";
 import { DesignForm, type DesignFormValues } from "./DesignForm";
 import { FILE_INPUT_ACCEPT, formatBytes, kindLabel, validateUpload } from "../lib/files";
+import { LitematicViewer } from "./LitematicViewer";
 
 interface Props {
   farmId: number;
@@ -35,6 +36,7 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
   const [saveError, setSaveError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const [viewing, setViewing] = useState<{ id: number; name: string } | null>(null);
 
   async function handleSave(values: DesignFormValues) {
     setSaving(true);
@@ -145,6 +147,11 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
               <span className="muted">
                 {kindLabel(file.kind)} · {formatBytes(file.sizeBytes)}
               </span>{" "}
+              {file.kind === "Litematic" && (
+                <button type="button" className="button-link" onClick={() => setViewing({ id: file.id, name: file.originalFileName })}>
+                  Ver
+                </button>
+              )}{" "}
               <button
                 type="button"
                 className="button-link button-danger"
@@ -157,6 +164,10 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
         </ul>
       ) : (
         <p className="muted">Sin archivos todavía.</p>
+      )}
+
+      {viewing && (
+        <LitematicViewer fileId={viewing.id} fileName={viewing.name} onClose={() => setViewing(null)} />
       )}
 
       <label className="upload">
