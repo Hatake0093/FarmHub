@@ -5,6 +5,7 @@ import { categoriesApi, farmsApi, versionsApi } from "../api/farms";
 import type { Category, Difficulty, FarmInput, MinecraftVersion } from "../api/types";
 import { DIFFICULTIES, difficultyLabel } from "../lib/labels";
 import { parseTags } from "../lib/tags";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 const MAX_NAME_LENGTH = 200;
 const MAX_DESCRIPTION_LENGTH = 4000;
@@ -72,13 +73,33 @@ function validate(form: FormState): FieldErrors {
 
 function FieldError({ errors, field }: { errors: FieldErrors; field: string }) {
   const messages = errors[field];
-  return messages ? <span className="field-error">{messages.join(" ")}</span> : null;
+  return messages ? (
+    <span id={`${field}-error`} className="field-error">
+      {messages.join(" ")}
+    </span>
+  ) : null;
+}
+
+/** Marca un campo como inválido y lo enlaza con su mensaje para lectores de pantalla. */
+function invalidProps(errors: FieldErrors, field: string) {
+  return errors[field] ? { "aria-invalid": true, "aria-describedby": `${field}-error` } : {};
+}
+
+function Counter({ value, max }: { value: string; max: number }) {
+  // Solo aparece cuando queda poco margen, para no añadir ruido.
+  if (value.length < max * 0.8) return null;
+  return (
+    <span className={value.length > max ? "field-error small" : "muted small"} aria-live="polite">
+      {value.length} / {max}
+    </span>
+  );
 }
 
 export function FarmFormPage() {
   const { id } = useParams();
   const editing = id !== undefined;
   const navigate = useNavigate();
+  useDocumentTitle(editing ? "Editar granja" : "Nueva granja");
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [versions, setVersions] = useState<MinecraftVersion[]>([]);
@@ -87,6 +108,15 @@ export function FarmFormPage() {
   const [saving, setSaving] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
+
+  // Avisa al cerrar o recargar la pestaña si hay cambios sin guardar.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   useEffect(() => {
     let active = true;
@@ -121,6 +151,7 @@ export function FarmFormPage() {
   }, [editing, id]);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setDirty(true);
     setForm((current) => ({ ...current, [key]: value }));
   }
 
@@ -137,7 +168,12 @@ export function FarmFormPage() {
 
     const errors = validate(form);
     setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) return;
+    const firstInvalid = Object.keys(errors)[0];
+    if (firstInvalid) {
+      // Lleva el foco al primer campo con error para no obligar a buscarlo.
+      document.getElementById(firstInvalid)?.focus();
+      return;
+    }
 
     const input: FarmInput = {
       name: form.name.trim(),
@@ -157,6 +193,7 @@ export function FarmFormPage() {
       const saved = editing
         ? await farmsApi.update(Number(id), input)
         : await farmsApi.create(input);
+      setDirty(false);
       navigate(`/farms/${saved.id}`);
     } catch (err) {
       if (err instanceof ApiError && Object.keys(err.fieldErrors).length > 0) {
@@ -168,7 +205,12 @@ export function FarmFormPage() {
     }
   }
 
-  if (loading) return <p className="muted">Cargando granja…</p>;
+  if (loading)
+    return (
+      <p className="muted" role="status">
+        Cargando granja…
+      </p>
+    );
 
   return (
     <section className="narrow">
@@ -177,10 +219,14 @@ export function FarmFormPage() {
       </div>
 
       <form className="farm-form" onSubmit={handleSubmit} noValidate>
+        <p className="muted small">Los campos marcados con * son obligatorios.</p>
         <label htmlFor="name">
           Nombre *
           <input
             id="name"
+            required
+            {...invalidProps(fieldErrors, "name")}
+            autoFocus={!editing}
             value={form.name}
             maxLength={MAX_NAME_LENGTH + 50}
             onChange={(e) => update("name", e.target.value)}
@@ -190,7 +236,13 @@ export function FarmFormPage() {
 
         <label htmlFor="categoryId">
           Categoría *
-          <select id="categoryId" value={form.categoryId} onChange={(e) => update("categoryId", e.target.value)}>
+          <select
+            id="categoryId"
+            required
+            {...invalidProps(fieldErrors, "categoryId")}
+            value={form.categoryId}
+            onChange={(e) => update("categoryId", e.target.value)}
+          >
             <option value="">Selecciona una categoría</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
@@ -200,7 +252,9 @@ export function FarmFormPage() {
           </select>
           <FieldError errors={fieldErrors} field="categoryId" />
           {categories.length === 0 && (
-            <span className="muted">No hay categorías. Créalas desde la API antes de añadir granjas.</span>
+            <span className="muted">
+              No hay categorías. <Link to="/catalogs">Créalas en Catálogos</Link> antes de añadir granjas.
+            </span>
           )}
         </label>
 
@@ -221,7 +275,9 @@ export function FarmFormPage() {
 
         <fieldset>
           <legend>Versiones de Minecraft Java</legend>
-          {versions.length === 0 && <span className="muted">No hay versiones registradas.</span>}
+          {versions.length === 0 && <span className="muted">
+              No hay versiones registradas. <Link to="/catalogs">Añádelas en Catálogos</Link>.
+            </span>}
           <div className="checkbox-grid">
             {versions.map((v) => (
               <label key={v.id} className="checkbox">
@@ -253,17 +309,17 @@ export function FarmFormPage() {
           <div className="dimension-grid">
             <label htmlFor="widthX">
               Ancho (X)
-              <input id="widthX" inputMode="numeric" value={form.widthX} onChange={(e) => update("widthX", e.target.value)} />
+              <input id="widthX" inputMode="numeric" {...invalidProps(fieldErrors, "widthX")} value={form.widthX} onChange={(e) => update("widthX", e.target.value)} />
               <FieldError errors={fieldErrors} field="widthX" />
             </label>
             <label htmlFor="heightY">
               Alto (Y)
-              <input id="heightY" inputMode="numeric" value={form.heightY} onChange={(e) => update("heightY", e.target.value)} />
+              <input id="heightY" inputMode="numeric" {...invalidProps(fieldErrors, "heightY")} value={form.heightY} onChange={(e) => update("heightY", e.target.value)} />
               <FieldError errors={fieldErrors} field="heightY" />
             </label>
             <label htmlFor="depthZ">
               Profundidad (Z)
-              <input id="depthZ" inputMode="numeric" value={form.depthZ} onChange={(e) => update("depthZ", e.target.value)} />
+              <input id="depthZ" inputMode="numeric" {...invalidProps(fieldErrors, "depthZ")} value={form.depthZ} onChange={(e) => update("depthZ", e.target.value)} />
               <FieldError errors={fieldErrors} field="depthZ" />
             </label>
           </div>
@@ -273,11 +329,13 @@ export function FarmFormPage() {
           Condiciones de funcionamiento
           <textarea
             id="operatingConditions"
+            {...invalidProps(fieldErrors, "operatingConditions")}
             rows={3}
             placeholder="p. ej. requiere agua en movimiento, iluminación exterior"
             value={form.operatingConditions}
             onChange={(e) => update("operatingConditions", e.target.value)}
           />
+          <Counter value={form.operatingConditions} max={MAX_DESCRIPTION_LENGTH} />
           <FieldError errors={fieldErrors} field="operatingConditions" />
         </label>
 
@@ -285,14 +343,20 @@ export function FarmFormPage() {
           Descripción
           <textarea
             id="description"
+            {...invalidProps(fieldErrors, "description")}
             rows={5}
             value={form.description}
             onChange={(e) => update("description", e.target.value)}
           />
+          <Counter value={form.description} max={MAX_DESCRIPTION_LENGTH} />
           <FieldError errors={fieldErrors} field="description" />
         </label>
 
-        {formError && <p className="error" role="alert">{formError}</p>}
+        {formError && (
+          <p className="alert" role="alert">
+            {formError}
+          </p>
+        )}
 
         <div className="actions">
           <button type="submit" className="button button-primary" disabled={saving}>

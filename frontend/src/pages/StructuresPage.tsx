@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { structuresApi, type StructureListItem } from "../api/structures";
 import { errorMessage } from "../api/client";
+import { MAX_DIMENSION, MAX_VOLUME, validateStructureForm } from "../lib/structureForm";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 const EMPTY = { name: "", description: "", width: "8", height: "4", depth: "8", baseX: "0", baseY: "64", baseZ: "0" };
 
@@ -10,6 +12,7 @@ function formatDate(iso: string): string {
 }
 
 export function StructuresPage() {
+  useDocumentTitle("Esquemáticos");
   const navigate = useNavigate();
   const [items, setItems] = useState<StructureListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,10 +41,13 @@ export function StructuresPage() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  const volume = (Number(form.width) || 0) * (Number(form.height) || 0) * (Number(form.depth) || 0);
+
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!form.name.trim()) {
-      setError("El nombre es obligatorio.");
+    const problem = validateStructureForm(form);
+    if (problem) {
+      setError(problem);
       return;
     }
     setSaving(true);
@@ -89,11 +95,11 @@ export function StructuresPage() {
         </div>
         <div className="structures-actions">
           <Link to="/structures/preview" className="button">Explorar archivos</Link>
-          <label className={`button${importing ? " disabled" : ""}`}>
+          <label className={`button${importing ? " disabled" : ""}`} aria-disabled={importing}>
             {importing ? "Importando…" : "Importar archivo"}
             <input
               type="file"
-              hidden
+              className="visually-hidden"
               disabled={importing}
               accept=".litematic,.schem,.nbt"
               onChange={(e) => {
@@ -111,18 +117,22 @@ export function StructuresPage() {
 
       <p className="muted small">Importa .litematic, .schem o .nbt (se usa la primera región).</p>
 
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && (
+        <p className="alert" role="alert">
+          {error}
+        </p>
+      )}
 
       {showForm && (
         <form className="farm-form narrow" onSubmit={handleCreate} noValidate>
           <h2>Nuevo esquemático</h2>
           <label>
             Nombre *
-            <input value={form.name} onChange={(e) => set("name", e.target.value)} />
+            <input value={form.name} maxLength={200} onChange={(e) => set("name", e.target.value)} />
           </label>
           <label>
             Descripción
-            <input value={form.description} onChange={(e) => set("description", e.target.value)} />
+            <input value={form.description} maxLength={4000} onChange={(e) => set("description", e.target.value)} />
           </label>
           <fieldset>
             <legend>Tamaño (bloques)</legend>
@@ -132,6 +142,9 @@ export function StructuresPage() {
               <label>Profundidad (Z)<input inputMode="numeric" value={form.depth} onChange={(e) => set("depth", e.target.value)} /></label>
             </div>
           </fieldset>
+          <p className={volume > MAX_VOLUME ? "field-error" : "muted small"} aria-live="polite">
+            Volumen: {volume.toLocaleString("es-ES")} de {MAX_VOLUME.toLocaleString("es-ES")} bloques como máximo (hasta {MAX_DIMENSION} por lado).
+          </p>
           <fieldset>
             <legend>Coordenada base del mundo (esquina mínima)</legend>
             <div className="dimension-grid">
@@ -160,7 +173,11 @@ export function StructuresPage() {
         </div>
       )}
 
-      {loading && <p className="muted">Cargando esquemáticos…</p>}
+      {loading && (
+        <p className="muted" role="status">
+          Cargando esquemáticos…
+        </p>
+      )}
 
       {!loading && items.length === 0 && (
         <div className="empty-state">

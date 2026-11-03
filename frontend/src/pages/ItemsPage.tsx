@@ -3,10 +3,14 @@ import { itemsApi, type ItemEntry } from "../api/items";
 import { errorMessage } from "../api/client";
 import { shortName } from "../lib/blockSearch";
 import { ColorField } from "./BlocksPage";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 /** Catálogo de items. Se pueden añadir nuevos con su identificador; el nombre en español y el color son editables. */
 export function ItemsPage() {
+  useDocumentTitle("Items");
   const [items, setItems] = useState<ItemEntry[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [onlyMissing, setOnlyMissing] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, { name: string; color: string | null }>>({});
@@ -15,7 +19,13 @@ export function ItemsPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
 
   function load() {
-    itemsApi.list().then(setItems).catch((err: unknown) => setError(errorMessage(err)));
+    itemsApi
+      .list()
+      .then((list) => {
+        setItems(list);
+        setLoaded(true);
+      })
+      .catch((err: unknown) => setError(errorMessage(err)));
   }
 
   useEffect(load, []);
@@ -41,6 +51,11 @@ export function ItemsPage() {
     setDrafts((current) => ({ ...current, [item.id]: { ...draftOf(item), ...patch } }));
   }
 
+  function isDirty(item: ItemEntry): boolean {
+    const draft = drafts[item.id];
+    return !!draft && (draft.name.trim() !== (item.spanishName ?? "") || draft.color !== item.color);
+  }
+
   async function save(item: ItemEntry) {
     const draft = draftOf(item);
     setSavingId(item.id);
@@ -48,6 +63,7 @@ export function ItemsPage() {
     try {
       const updated = await itemsApi.update(shortName(item.id), draft.name.trim() || null, draft.color);
       setItems((current) => current.map((i) => (i.id === updated.id ? updated : i)));
+      setNotice(`Guardado: ${updated.spanishName ?? updated.englishName}`);
       setDrafts((current) => {
         const copy = { ...current };
         delete copy[item.id];
@@ -65,6 +81,7 @@ export function ItemsPage() {
     setError(null);
     try {
       await itemsApi.add(newId.trim());
+      setNotice(`Item añadido: ${newId.trim()}`);
       setNewId("");
       load();
     } catch (err) {
@@ -93,7 +110,10 @@ export function ItemsPage() {
         </label>
       </div>
 
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
+      <p className="muted small" role="status" aria-live="polite">
+        {notice}
+      </p>
 
       <table className="farm-table">
         <thead>
@@ -108,8 +128,9 @@ export function ItemsPage() {
         <tbody>
           {visible.map((item) => {
             const draft = draftOf(item);
+            const dirty = isDirty(item);
             return (
-              <tr key={item.id}>
+              <tr key={item.id} className={dirty ? "row-dirty" : undefined}>
                 <td>{item.englishName}</td>
                 <td className="muted">{item.id}</td>
                 <td>
@@ -117,6 +138,9 @@ export function ItemsPage() {
                     aria-label={`Nombre en español de ${item.englishName}`}
                     value={draft.name}
                     onChange={(e) => setDraft(item, { name: e.target.value })}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && dirty) void save(item);
+                    }}
                   />
                 </td>
                 <td>
@@ -127,7 +151,7 @@ export function ItemsPage() {
                   />
                 </td>
                 <td>
-                  <button type="button" className="button" disabled={savingId === item.id} onClick={() => void save(item)}>
+                  <button type="button" className="button" disabled={savingId === item.id || !dirty} onClick={() => void save(item)}>
                     {savingId === item.id ? "Guardando…" : "Guardar"}
                   </button>
                 </td>
@@ -136,6 +160,8 @@ export function ItemsPage() {
           })}
         </tbody>
       </table>
+      {!loaded && !error && <p className="muted" role="status">Cargando items…</p>}
+      {loaded && visible.length === 0 && <p className="muted">No hay items que coincidan.</p>}
 
       <form className="inline-form" onSubmit={handleAdd} noValidate>
         <input

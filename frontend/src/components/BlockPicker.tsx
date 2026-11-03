@@ -23,6 +23,8 @@ export function BlockPicker({ catalog, value, onChange }: Props) {
   // Plegado por defecto: solo se despliega al pulsar el bloque actual para cambiarlo.
   const [open, setOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
     if (open) searchRef.current?.focus();
@@ -31,9 +33,29 @@ export function BlockPicker({ catalog, value, onChange }: Props) {
   const options = useMemo(() => visibleOptions(catalog, query, recent), [catalog, query, recent]);
   const selected = catalog.find((b) => b.id === value);
   const typedId = query.trim();
+  const truncated = options.length >= 200 || (!typedId && catalog.length > options.length);
   const showCustom = BLOCK_ID.test(typedId) && !catalog.some((b) => b.id === typedId);
 
   useEffect(() => setActive(0), [query]);
+
+  // Con las flechas, la fila activa se mantiene a la vista dentro de la lista con desplazamiento.
+  useEffect(() => {
+    if (!open) return;
+    listRef.current?.querySelector(".block-row.active")?.scrollIntoView({ block: "nearest" });
+  }, [active, open]);
+
+  // Clic o toque fuera del selector lo cierra.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (event: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        setQuery("");
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [open]);
 
   // Miniaturas de textura para las opciones visibles.
   useEffect(() => {
@@ -70,7 +92,7 @@ export function BlockPicker({ catalog, value, onChange }: Props) {
   }
 
   return (
-    <div className="block-picker">
+    <div className="block-picker" ref={rootRef}>
       <button
         type="button"
         className="block-current"
@@ -95,15 +117,21 @@ export function BlockPicker({ catalog, value, onChange }: Props) {
         value={query}
         placeholder="Buscar en español, inglés o id…"
         aria-label="Buscar bloque"
+        role="combobox"
+        aria-expanded="true"
+        aria-controls="block-listbox"
+        aria-autocomplete="list"
+        aria-activedescendant={options[active] ? `block-option-${options[active].id}` : undefined}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={handleKey}
       />
 
-      <ul className="block-list" role="listbox" aria-label="Bloques">
+      <ul className="block-list" id="block-listbox" role="listbox" aria-label="Bloques" ref={listRef}>
         {!query.trim() && recent.length > 0 && <li className="block-group">Recientes</li>}
         {options.map((block, index) => (
           <li
             key={block.id}
+            id={`block-option-${block.id}`}
             role="option"
             aria-selected={block.id === value}
             className={`block-row${index === active ? " active" : ""}${block.id === value ? " selected" : ""}`}
@@ -122,6 +150,11 @@ export function BlockPicker({ catalog, value, onChange }: Props) {
         )}
         {options.length === 0 && !showCustom && <li className="muted block-group">No hay bloques que coincidan.</li>}
       </ul>
+      {truncated && (
+        <p className="muted small" role="status">
+          Mostrando {options.length} bloques. Escribe para buscar entre los {catalog.length}.
+        </p>
+      )}
       </div>
       )}
     </div>

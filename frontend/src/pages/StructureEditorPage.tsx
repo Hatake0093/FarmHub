@@ -39,8 +39,11 @@ function writeClipText(text: string): boolean {
   }
 }
 import { LayerStepper } from "../components/LayerStepper";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
+import { useFeedback } from "../lib/feedback";
 import { BlockPicker } from "../components/BlockPicker";
 import {
+  cellKey,
   displayedBlock,
   withChange,
   worldCoordinates,
@@ -50,12 +53,24 @@ import {
 
 const BLOCK_ID = /^[a-z0-9_.-]+:[a-z0-9/_.-]+$/;
 
+const GRID_BACKGROUND = "#1b1e1a";
+
+const VIEW_MODES: { value: "layer" | "iso" | "slice" | "stack" | "3d"; label: string }[] = [
+  { value: "layer", label: "Capa 2D (editar)" },
+  { value: "iso", label: "Isométrica" },
+  { value: "slice", label: "Corte lateral" },
+  { value: "stack", label: "Capas apiladas" },
+  { value: "3d", label: "3D" },
+];
+
 export function StructureEditorPage() {
   const { id } = useParams();
   const structureId = Number(id);
+  const { confirm } = useFeedback();
 
   const [detail, setDetail] = useState<StructureDetail | null>(null);
   const [layer, setLayer] = useState<StructureLayer | null>(null);
+  useDocumentTitle(detail ? `Editar ${detail.name}` : "Esquemático");
   const [y, setY] = useState(0);
   const [block, setBlock] = useState("minecraft:stone");
   const [erase, setErase] = useState(false);
@@ -175,17 +190,40 @@ export function StructureEditorPage() {
     [sel],
   );
 
+  // Dibujo en dos capas para que pintar y mover el ratón sea fluido en estructuras grandes:
+  // 1) la capa base (bloques + capa fantasma) vive en un lienzo fuera de pantalla y solo se repinta entera
+  //    cuando cambia la capa, el zoom o la rejilla; al pintar se actualizan solo las celdas modificadas.
+  // 2) en cada movimiento se copia esa base y se dibujan encima los contornos (cursor, selección, previsualización).
+  const baseCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawnPendingRef = useRef<PendingChanges>(new Map());
+  const pendingRef = useRef(pending);
+  pendingRef.current = pending;
+
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !layer || !detail || mode !== "layer") return;
-    const ctx = canvas.getContext("2d");
+    if (!layer || !detail || mode !== "layer") return;
+    const base = (baseCanvasRef.current ??= document.createElement("canvas"));
+    const width = layer.width * cell;
+    const height = layer.depth * cell;
+    if (base.width !== width) base.width = width;
+    if (base.height !== height) base.height = height;
+    const ctx = base.getContext("2d");
     if (!ctx) return;
 
-    canvas.width = layer.width * cell;
-    canvas.height = layer.depth * cell;
-    ctx.fillStyle = "#1b1e1a";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
     const gap = gridOn ? 1 : 0;
+    const current = pendingRef.current;
+    // El color de cada tipo de bloque se calcula una sola vez, no una vez por celda.
+    const colors = new Map<string, string>();
+    const colorOf = (block: string) => {
+      let color = colors.get(block);
+      if (color === undefined) {
+        color = blockColor(block);
+        colors.set(block, color);
+      }
+      return color;
+    };
+
+    ctx.fillStyle = GRID_BACKGROUND;
+    ctx.fillRect(0, 0, width, height);
 
     // Capa fantasma: semitransparente, detrás de la capa actual.
     if (ghostLayer && ghostLayer.width === layer.width && ghostLayer.depth === layer.depth) {
@@ -194,7 +232,7 @@ export function StructureEditorPage() {
         for (let x = 0; x < ghostLayer.width; x++) {
           const block = ghostLayer.palette[ghostLayer.cells[z * ghostLayer.width + x]];
           if (isAir(block)) continue;
-          ctx.fillStyle = blockColor(block);
+          ctx.fillStyle = colorOf(block);
           ctx.fillRect(x * cell, z * cell, cell - gap, cell - gap);
         }
       }
@@ -204,12 +242,62 @@ export function StructureEditorPage() {
     for (let z = 0; z < layer.depth; z++) {
       for (let x = 0; x < layer.width; x++) {
         const serverBlock = layer.palette[layer.cells[z * layer.width + x]];
-        const shown = displayedBlock(pending, { x, y, z }, serverBlock);
+        const shown = current.size === 0 ? serverBlock : displayedBlock(current, { x, y, z }, serverBlock);
         if (isAir(shown)) continue;
+        ctx.fillStyle = colorOf(shown);
+        ctx.fillRect(x * cell, z * cell, cell - gap, cell - gap);
+      }
+    }
+    drawnPendingRef.current = current;
+  }, [layer, y, cell, detail, mode, ghostLayer, gridOn]);
+
+  // Al pintar o deshacer, solo se repintan las celdas que han cambiado respecto a lo ya dibujado.
+  useEffect(() => {
+    const base = baseCanvasRef.current;
+    const previous = drawnPendingRef.current;
+    if (!base || !layer || mode !== "layer" || previous === pending) return;
+    const ctx = base.getContext("2d");
+    if (!ctx) return;
+    const gap = gridOn ? 1 : 0;
+
+    const touched: { x: number; y: number; z: number }[] = [];
+    for (const [key, change] of pending) if (previous.get(key) !== change) touched.push(change);
+    for (const [key, change] of previous) if (!pending.has(key)) touched.push(change);
+
+    for (const { x, y: cy, z } of touched) {
+      if (cy !== y || x >= layer.width || z >= layer.depth) continue;
+      ctx.fillStyle = GRID_BACKGROUND;
+      ctx.fillRect(x * cell, z * cell, cell, cell);
+      if (ghostLayer && ghostLayer.width === layer.width && ghostLayer.depth === layer.depth) {
+        const ghostBlock = ghostLayer.palette[ghostLayer.cells[z * ghostLayer.width + x]];
+        if (!isAir(ghostBlock)) {
+          ctx.globalAlpha = 0.3;
+          ctx.fillStyle = blockColor(ghostBlock);
+          ctx.fillRect(x * cell, z * cell, cell - gap, cell - gap);
+          ctx.globalAlpha = 1;
+        }
+      }
+      const shown = displayedBlock(pending, { x, y, z }, layer.palette[layer.cells[z * layer.width + x]]);
+      if (!isAir(shown)) {
         ctx.fillStyle = blockColor(shown);
         ctx.fillRect(x * cell, z * cell, cell - gap, cell - gap);
       }
     }
+    drawnPendingRef.current = pending;
+  }, [pending, layer, y, cell, mode, ghostLayer, gridOn]);
+
+  // Lienzo visible: la base ya dibujada más los contornos que cambian con el ratón.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const base = baseCanvasRef.current;
+    if (!canvas || !base || !layer || !detail || mode !== "layer") return;
+    if (canvas.width !== base.width) canvas.width = base.width;
+    if (canvas.height !== base.height) canvas.height = base.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const gap = gridOn ? 1 : 0;
+
+    ctx.drawImage(base, 0, 0);
 
     // Selección: contorno de la caja original (blanco) y del destino (amarillo) en la capa actual.
     if (selBox) {
@@ -255,6 +343,9 @@ export function StructureEditorPage() {
       setError(`"${target}" no es un identificador de bloque válido (p. ej. minecraft:stone).`);
       return;
     }
+    // Mover el ratón dentro de la misma celda no cambia nada: evita copiar el mapa y repintar.
+    const existing = strokeRef.current.get(cellKey(local.x, local.y, local.z));
+    if (existing && existing.block === target) return;
     strokeRef.current = withChange(strokeRef.current, local, target);
     setPending(strokeRef.current);
   }
@@ -318,8 +409,10 @@ export function StructureEditorPage() {
 
   function handleMove(event: MouseEvent<HTMLCanvasElement>) {
     const local = localAt(event);
+    const previous = hoverRef.current;
     hoverRef.current = local;
-    setHover(local);
+    // Solo se actualiza el estado al cambiar de celda; varios píxeles dentro de la misma celda no repintan nada.
+    if (previous?.x !== local?.x || previous?.y !== local?.y || previous?.z !== local?.z) setHover(local);
     if (local && paintingRef.current === "shape" && shapeRef.current) {
       shapeRef.current = { ...shapeRef.current, b: { x: local.x, z: local.z } };
       setShapePrev(shapeRef.current);
@@ -821,7 +914,13 @@ export function StructureEditorPage() {
       } catch (err) {
         // 409: el cambio borraría bloques. Se pide confirmación antes de repetirlo.
         const message = errorMessage(err);
-        if (!window.confirm(`${message}\n\n¿Continuar?`)) return;
+        const accepted = await confirm({
+          title: "Cambiar tamaño",
+          message: `${message} ¿Continuar?`,
+          confirmLabel: "Cambiar tamaño",
+          danger: true,
+        });
+        if (!accepted) return;
         updated = await structuresApi.resize(structureId, w, h, d, true);
       }
       setDetail(updated);
@@ -855,8 +954,23 @@ export function StructureEditorPage() {
     }
   }
 
-  if (error && !detail) return <p className="error" role="alert">{error}</p>;
-  if (!detail || !layer) return <p className="muted">Cargando esquemático…</p>;
+  if (error && !detail)
+    return (
+      <div className="empty-state">
+        <p className="alert" role="alert">
+          {error}
+        </p>
+        <Link to="/structures" className="button">
+          Volver a esquemáticos
+        </Link>
+      </div>
+    );
+  if (!detail || !layer)
+    return (
+      <p className="muted" role="status">
+        Cargando esquemático…
+      </p>
+    );
 
   const baseCoords = { x: detail.baseX, y: detail.baseY, z: detail.baseZ };
   const world = hover ? worldCoordinates(baseCoords, hover) : null;
@@ -871,81 +985,117 @@ export function StructureEditorPage() {
         <span className="muted">{detail.blockCount} bloques · {detail.width} × {detail.height} × {detail.depth}</span>
       </div>
 
-      <div className="viewer-controls">
-        <label>
-          Vista
-          <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso" | "slice" | "stack" | "3d")}>
-            <option value="layer">Capa 2D (editable)</option>
-            <option value="iso">Isométrica (guardado)</option>
-            <option value="slice">Corte lateral (guardado)</option>
-            <option value="stack">Capas apiladas (guardado)</option>
-            <option value="3d">3D giratoria (guardado)</option>
-          </select>
-        </label>
-        {mode === "layer" && (
-        <label>
-          Capa fantasma
-          <select value={ghost} onChange={(e) => setGhost(e.target.value as "none" | "below" | "above")}>
-            <option value="none">Ninguna</option>
-            <option value="below">Capa inferior</option>
-            <option value="above">Capa superior</option>
-          </select>
-        </label>
-        )}
-        {mode === "layer" && (
-        <LayerStepper value={y} max={detail.height - 1} onChange={setY} />
-        )}
-        {mode === "layer" && (
-        <div className="shape-tools" aria-label="Herramientas de forma" key={lockedTick}>
-          <label className="checkbox">
-            <input type="checkbox" checked={measureOn} onChange={(e) => { setMeasureOn(e.target.checked); setMeasurePts({ a: null, b: null }); }} />
-            Medir (M)
-          </label>
-          <button type="button" className={`button${shape === "line" ? " button-primary" : ""}`} onClick={() => setShape(shape === "line" ? null : "line")}>Línea (L)</button>
-          <button type="button" className={`button${shape === "rect" ? " button-primary" : ""}`} onClick={() => setShape(shape === "rect" ? null : "rect")}>Rectángulo hueco (K)</button>
-          <button type="button" className={`button${shape === "box" ? " button-primary" : ""}`} onClick={() => setShape(shape === "box" ? null : "box")}>Rectángulo lleno (J)</button>
-          <label className="checkbox">
-            <input type="checkbox" checked={lockedRef.current.has(y)} onChange={toggleLock} />
-            {lockedRef.current.has(y) ? "Capa bloqueada (P)" : "Bloquear capa (P)"}
-          </label>
+      <div className="editor-toolbar">
+        <div className="tool-group">
+          <span className="tool-title" id="vista-titulo">Vista</span>
+          <div className="view-tabs" role="group" aria-labelledby="vista-titulo">
+            {VIEW_MODES.map((m) => (
+              <button
+                key={m.value}
+                type="button"
+                className={`button${mode === m.value ? " button-primary" : ""}`}
+                aria-pressed={mode === m.value}
+                onClick={() => setMode(m.value)}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+          {mode !== "layer" && <span className="muted small">Vista de solo lectura: muestra la última versión guardada. Para editar, vuelve a «Capa 2D».</span>}
         </div>
-        )}
-        {mode === "layer" && (
-        <BlockPicker catalog={catalog} value={block} onChange={(id) => { setBlock(id); setErase(false); }} />
-        )}
-        {mode === "layer" && (
-        <label className="checkbox">
-          <input type="checkbox" checked={erase} onChange={(e) => setErase(e.target.checked)} />
-          Borrar (aire)
-        </label>
-        )}
-        {mode === "layer" && (
-        <label className="checkbox">
-          <input type="checkbox" checked={gridOn} onChange={(e) => setGridOn(e.target.checked)} />
-          Rejilla
-        </label>
-        )}
-        {mode === "layer" && (
-        <label className="checkbox">
-          <input type="checkbox" checked={fillOn} onChange={(e) => setFillOn(e.target.checked)} />
-          Relleno (F)
-        </label>
-        )}
-        {mode === "layer" && (
-        <div className="clone-layer">
-          <label>
-            Clonar capa {y} a
-            <input type="number" min={0} max={detail.height - 1} value={copyTarget} placeholder="capa" onChange={(e) => setCopyTarget(e.target.value)} />
-          </label>
-          <label className="checkbox">
-            <input type="checkbox" checked={copyKeepAir} onChange={(e) => setCopyKeepAir(e.target.checked)} />
-            Solo bloques (no borrar aire)
-          </label>
-          <button type="button" className="button" onClick={() => void cloneLayer()}>Clonar capa</button>
-        </div>
-        )}
+
       </div>
 
+      {message && <p className="notice" role="status">{message}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
+
+      <div className={mode === "layer" ? "editor-layout" : undefined}>
+        {mode === "layer" && (
+          <aside className="editor-tools" aria-label="Herramientas de edición">
+            <div className="tool-group">
+              <span className="tool-title">Pincel</span>
+              <BlockPicker catalog={catalog} value={block} onChange={(id) => { setBlock(id); setErase(false); }} />
+              <div className="tool-row">
+                <label className="checkbox">
+                  <input type="checkbox" checked={erase} onChange={(e) => setErase(e.target.checked)} />
+                  Borrar (aire)
+                </label>
+                <label className="checkbox">
+                  <input type="checkbox" checked={fillOn} onChange={(e) => setFillOn(e.target.checked)} />
+                  Relleno (F)
+                </label>
+              </div>
+            </div>
+
+            <div className="tool-group" key={lockedTick}>
+              <span className="tool-title" id="formas-titulo">Formas y medición</span>
+              <div className="tool-row" role="group" aria-labelledby="formas-titulo">
+                <button type="button" className={`button${shape === "line" ? " button-primary" : ""}`} aria-pressed={shape === "line"} onClick={() => setShape(shape === "line" ? null : "line")}>Línea (L)</button>
+                <button type="button" className={`button${shape === "rect" ? " button-primary" : ""}`} aria-pressed={shape === "rect"} onClick={() => setShape(shape === "rect" ? null : "rect")}>Rectángulo hueco (K)</button>
+                <button type="button" className={`button${shape === "box" ? " button-primary" : ""}`} aria-pressed={shape === "box"} onClick={() => setShape(shape === "box" ? null : "box")}>Rectángulo lleno (J)</button>
+              </div>
+              <label className="checkbox">
+                <input type="checkbox" checked={measureOn} onChange={(e) => { setMeasureOn(e.target.checked); setMeasurePts({ a: null, b: null }); }} />
+                Medir (M)
+              </label>
+            </div>
+
+            <div className="tool-group" key={`capa-${lockedTick}`}>
+              <span className="tool-title">Capa</span>
+              <LayerStepper value={y} max={detail.height - 1} onChange={setY} />
+              <div className="tool-row">
+                <label>
+                  Capa fantasma
+                  <select value={ghost} onChange={(e) => setGhost(e.target.value as "none" | "below" | "above")}>
+                    <option value="none">Ninguna</option>
+                    <option value="below">Capa inferior</option>
+                    <option value="above">Capa superior</option>
+                  </select>
+                </label>
+              </div>
+              <div className="tool-row">
+                <label className="checkbox">
+                  <input type="checkbox" checked={lockedRef.current.has(y)} onChange={toggleLock} />
+                  {lockedRef.current.has(y) ? "Capa bloqueada (P)" : "Bloquear capa (P)"}
+                </label>
+                <label className="checkbox">
+                  <input type="checkbox" checked={gridOn} onChange={(e) => setGridOn(e.target.checked)} />
+                  Rejilla (G)
+                </label>
+              </div>
+              <details className="clone-details">
+                <summary>Clonar capa {y} a otra</summary>
+                <div className="clone-layer">
+                  <label>
+                    Capa destino
+                    <input type="number" min={0} max={detail.height - 1} value={copyTarget} placeholder="capa" onChange={(e) => setCopyTarget(e.target.value)} />
+                  </label>
+                  <label className="checkbox">
+                    <input type="checkbox" checked={copyKeepAir} onChange={(e) => setCopyKeepAir(e.target.checked)} />
+                    Solo bloques (no borrar aire)
+                  </label>
+                  <button type="button" className="button" onClick={() => void cloneLayer()}>Clonar capa</button>
+                </div>
+              </details>
+            </div>
+
+            <div className="tool-group">
+              <span className="tool-title">Edición</span>
+              <div className="tool-row">
+                <button type="button" className="button" onClick={() => void undo()} disabled={!historyRef.current.canUndo}>
+                  Deshacer (Ctrl+Z)
+                </button>
+                <button type="button" className="button" onClick={() => void redo()} disabled={!historyRef.current.canRedo}>
+                  Rehacer (Ctrl+Y)
+                </button>
+                <button type="button" className="button" onClick={() => void pasteClipboard()} disabled={!hasClip}>
+                  Pegar (Ctrl+V)
+                </button>
+              </div>
+            </div>
+          </aside>
+        )}
+        <div className="editor-main">
       {mode === "iso" && isoGrid && (
         <>
           <LayerRange
@@ -980,6 +1130,7 @@ export function StructureEditorPage() {
           <Voxel3DView grid={clipped3d!} useTextures={texOn3d} />
         </>
       )}
+      {mode === "3d" && !isoGrid && <p className="muted" role="status">{isoMessage}</p>}
       {mode === "stack" && (isoGrid ? <StackView grid={isoGrid} onPickLayer={(yy) => { setY(yy); setMode("layer"); }} /> : <p className="muted">{isoMessage}</p>)}
       {mode === "slice" && (isoGrid ? <SliceView grid={isoGrid} base={{ x: detail.baseX, y: detail.baseY, z: detail.baseZ }} /> : <p className="muted">{isoMessage}</p>)}
 
@@ -1034,35 +1185,26 @@ export function StructureEditorPage() {
           </div>
         </div>
       )}
-      <div className="coord-panel" aria-live="polite">
-        {hover && world && hoverBlock ? (
-          <>
-            <p>
-              Coordenada del mundo: <strong>X {world.x} · Y {world.y} · Z {world.z}</strong>
-              <span className="muted"> (local {hover.x}, {hover.y}, {hover.z})</span>
-            </p>
-            <p>
-              Bloque aquí: {isAir(hoverBlock) ? <em>vacío (aire)</em> : <strong>{blockLabel(hoverBlock)}</strong>}
-            </p>
-          </>
-        ) : (
-          <p className="muted">Pasa el ratón por la rejilla para ver la coordenada del mundo.</p>
-        )}
-      </div>
+      {mode === "layer" && (
+        <div className="coord-panel" aria-live="polite">
+          {hover && world && hoverBlock ? (
+            <>
+              <p>
+                Coordenada del mundo: <strong>X {world.x} · Y {world.y} · Z {world.z}</strong>
+                <span className="muted"> (local {hover.x}, {hover.y}, {hover.z})</span>
+              </p>
+              <p>
+                Bloque aquí: {isAir(hoverBlock) ? <em>vacío (aire)</em> : <strong>{blockLabel(hoverBlock)}</strong>}
+              </p>
+            </>
+          ) : (
+            <p className="muted">Pasa el ratón por la rejilla para ver la coordenada del mundo.</p>
+          )}
+        </div>
+      )}
 
-      <div className="actions">
-        <button type="button" className="button" onClick={() => void undo()} disabled={!historyRef.current.canUndo}>
-          Deshacer (Ctrl+Z)
-        </button>
-        <button type="button" className="button" onClick={() => void redo()} disabled={!historyRef.current.canRedo}>
-          Rehacer (Ctrl+Y)
-        </button>
-        <button type="button" className="button" onClick={() => void pasteClipboard()} disabled={!hasClip}>
-          Pegar (Ctrl+V)
-        </button>
+        </div>
       </div>
-      {message && <p className="muted" role="status">{message}</p>}
-      {error && <p className="error" role="alert">{error}</p>}
 
       <div className="panel-stack">
       <details className="editor-panel">
@@ -1127,11 +1269,13 @@ export function StructureEditorPage() {
           </table>
         )}
       </details>
-      </div>
-
+      <details className="editor-panel">
+        <summary>Atajos de teclado</summary>
       <p className="muted small">
         Atajos: B pintar · E borrar · F relleno · L línea · K rectángulo · J relleno · P bloquear capa · M medir · Ctrl+C / Ctrl+V copiar y pegar · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
       </p>
+      </details>
+      </div>
     </section>
   );
 }

@@ -105,8 +105,44 @@ export function IsometricView({ grid }: Props) {
       ctx.restore();
     };
 
+    // Para bloques sin textura (lo habitual) no se crean arrays ni cadenas por cara: el color de cada
+    // tipo de bloque se calcula una vez y las esquinas se calculan con números sueltos.
+    const flatColors = new Map<string, [string, string, string]>();
+    const colorsOf = (block: string) => {
+      let colors = flatColors.get(block);
+      if (!colors) {
+        colors = [shade(block, 68), shade(block, 52), shade(block, 40)];
+        flatColors.set(block, colors);
+      }
+      return colors;
+    };
+    const half = size / 2;
+    const px = (x: number, z: number) => originX + (x - z) * size;
+    const py = (x: number, y: number, z: number) => originY + (x + z) * half - y * size;
+    const quad = (ax: number, ay: number, bx: number, by: number, cx: number, cy: number, dx: number, dy: number) => {
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(bx, by);
+      ctx.lineTo(cx, cy);
+      ctx.lineTo(dx, dy);
+      ctx.closePath();
+      ctx.fill();
+    };
+
     for (const cube of cubes) {
       const { x, y, z, block } = cube;
+
+      if (!getTexture(block)) {
+        const [top, left, right] = colorsOf(block);
+        ctx.fillStyle = top;
+        quad(px(x, z), py(x, y + 1, z), px(x + 1, z), py(x + 1, y + 1, z), px(x + 1, z + 1), py(x + 1, y + 1, z + 1), px(x, z + 1), py(x, y + 1, z + 1));
+        ctx.fillStyle = left;
+        quad(px(x, z + 1), py(x, y, z + 1), px(x + 1, z + 1), py(x + 1, y, z + 1), px(x + 1, z + 1), py(x + 1, y + 1, z + 1), px(x, z + 1), py(x, y + 1, z + 1));
+        ctx.fillStyle = right;
+        quad(px(x + 1, z), py(x + 1, y, z), px(x + 1, z + 1), py(x + 1, y, z + 1), px(x + 1, z + 1), py(x + 1, y + 1, z + 1), px(x + 1, z), py(x + 1, y + 1, z));
+        continue;
+      }
+
       // Cara superior (+Y): sin oscurecer
       face(
         [put(x, y + 1, z), put(x + 1, y + 1, z), put(x + 1, y + 1, z + 1), put(x, y + 1, z + 1)],

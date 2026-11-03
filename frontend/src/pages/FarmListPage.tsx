@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { categoriesApi, farmsApi, versionsApi, type FarmListQuery } from "../api/farms";
 import { errorMessage } from "../api/client";
 import type { Category, Difficulty, FarmSummary, MinecraftVersion, Paged } from "../api/types";
 import { DIFFICULTIES, difficultyLabel } from "../lib/labels";
+import { plural } from "../lib/plural";
+import { useFeedback } from "../lib/feedback";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 const PAGE_SIZE = 20;
 const FILTER_KEYS = ["q", "categoryId", "difficulty", "tag", "version"] as const;
@@ -22,6 +25,8 @@ function readQuery(params: URLSearchParams): FarmListQuery {
 }
 
 export function FarmListPage() {
+  useDocumentTitle("Biblioteca");
+  const { confirm } = useFeedback();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchKey = searchParams.toString();
   const query = useMemo(() => readQuery(new URLSearchParams(searchKey)), [searchKey]);
@@ -62,7 +67,13 @@ export function FarmListPage() {
   }, [query, reloadKey]);
 
   async function handleDelete(farm: FarmSummary) {
-    if (!window.confirm(`¿Borrar "${farm.name}" con sus diseños y archivos? No se puede deshacer.`)) return;
+    const accepted = await confirm({
+      title: "Borrar granja",
+      message: `¿Borrar "${farm.name}" con sus diseños y archivos? No se puede deshacer.`,
+      confirmLabel: "Borrar granja",
+      danger: true,
+    });
+    if (!accepted) return;
     setActionError(null);
     try {
       await farmsApi.remove(farm.id);
@@ -89,6 +100,12 @@ export function FarmListPage() {
     setSearchParams(next);
   }
 
+  // Los desplegables filtran al elegir una opción; los campos de texto, al pulsar Intro o "Filtrar".
+  function applyOnSelectChange(event: ChangeEvent<HTMLFormElement>) {
+    if (event.target instanceof HTMLSelectElement) event.currentTarget.requestSubmit();
+  }
+
+  const hasFilters = FILTER_KEYS.some((key) => searchParams.has(key));
   const totalPages = result ? Math.max(1, Math.ceil(result.totalCount / result.pageSize)) : 1;
   const currentPage = query.page ?? 1;
 
@@ -98,7 +115,7 @@ export function FarmListPage() {
         <h1>Biblioteca de granjas</h1>
       </div>
 
-      <form key={searchKey} className="filters" onSubmit={applyFilters} role="search">
+      <form key={searchKey} className="filters" onSubmit={applyFilters} onChange={applyOnSelectChange} role="search">
         <label>
           Nombre
           <input name="q" type="search" defaultValue={query.q ?? ""} placeholder="Buscar…" />
@@ -150,16 +167,44 @@ export function FarmListPage() {
         </div>
       </form>
 
-      {loading && <p className="muted">Cargando granjas…</p>}
-      {error && <p className="error" role="alert">{error}</p>}
-      {actionError && <p className="error" role="alert">{actionError}</p>}
+      {loading && !result && (
+        <p className="muted" role="status">
+          Cargando granjas…
+        </p>
+      )}
+      {error && (
+        <p className="alert" role="alert">
+          {error}{" "}
+          <button type="button" className="button-link" onClick={() => setReloadKey((k) => k + 1)}>
+            Reintentar
+          </button>
+        </p>
+      )}
+      {actionError && <p className="alert" role="alert">{actionError}</p>}
 
-      {!loading && !error && result && result.items.length === 0 && (
-        <p className="muted">No hay granjas que coincidan con los filtros.</p>
+      {!error && result && result.items.length === 0 && !loading && (
+        hasFilters ? (
+          <div className="empty-state">
+            <h2>Sin resultados</h2>
+            <p className="muted">No hay granjas que coincidan con los filtros.</p>
+            <Link to="/farms" className="button">
+              Quitar filtros
+            </Link>
+          </div>
+        ) : (
+          <div className="empty-state">
+            <h2>Tu biblioteca está vacía</h2>
+            <p className="muted">Crea tu primera granja para guardar su ficha técnica, producciones y diseños.</p>
+            <Link to="/farms/new" className="button button-primary">
+              Crear la primera granja
+            </Link>
+          </div>
+        )
       )}
 
-      {!loading && !error && result && result.items.length > 0 && (
-        <>
+      {!error && result && result.items.length > 0 && (
+        <div aria-busy={loading} className={loading ? "is-refreshing" : undefined}>
+          <p className="results-meta muted">{plural(result.totalCount, "granja")}</p>
           <table className="farm-table">
             <thead>
               <tr>
@@ -188,7 +233,12 @@ export function FarmListPage() {
                     ))}
                   </td>
                   <td>
-                    <button type="button" className="button-link button-danger" onClick={() => void handleDelete(farm)}>
+                    <button
+                      type="button"
+                      className="button-link button-danger"
+                      aria-label={`Borrar ${farm.name}`}
+                      onClick={() => void handleDelete(farm)}
+                    >
                       Borrar
                     </button>
                   </td>
@@ -202,13 +252,13 @@ export function FarmListPage() {
               Anterior
             </button>
             <span>
-              Página {currentPage} de {totalPages} ({result.totalCount} granjas)
+              Página {currentPage} de {totalPages} ({plural(result.totalCount, "granja")})
             </span>
             <button type="button" onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages}>
               Siguiente
             </button>
           </nav>
-        </>
+        </div>
       )}
     </section>
   );

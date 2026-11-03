@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type DragEvent } from "react";
 import { designsApi } from "../api/designs";
 import { errorMessage } from "../api/client";
 import type { FarmDesignSummary } from "../api/types";
 import { DesignForm, type DesignFormValues } from "./DesignForm";
 import { FILE_INPUT_ACCEPT, STRUCTURE_KINDS, formatBytes, kindLabel, validateUpload } from "../lib/files";
 import { LitematicViewer } from "./LitematicViewer";
+import { useFeedback } from "../lib/feedback";
 import { savedFileSource } from "./viewerSource";
 
 interface Props {
@@ -32,11 +33,13 @@ export function DesignSection({ farmId, designs, onChanged }: Props) {
 type Feedback = { kind: "ok" | "error"; text: string } | null;
 
 function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChanged: () => void }) {
+  const { confirm } = useFeedback();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const [dragging, setDragging] = useState(false);
   const [viewing, setViewing] = useState<{ id: number; name: string } | null>(null);
   const viewerSource = useMemo(() => (viewing ? savedFileSource(viewing.id) : null), [viewing]);
 
@@ -59,9 +62,12 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
   }
 
   async function handleDelete() {
-    const confirmed = window.confirm(
-      `¿Borrar el diseño "${design.name}" y sus ${design.files.length} archivos? No se puede deshacer.`,
-    );
+    const confirmed = await confirm({
+      title: "Borrar diseño",
+      message: `¿Borrar el diseño "${design.name}" y sus ${design.files.length} archivos? No se puede deshacer.`,
+      confirmLabel: "Borrar diseño",
+      danger: true,
+    });
     if (!confirmed) return;
     try {
       await designsApi.remove(design.id);
@@ -72,7 +78,13 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
   }
 
   async function handleRemoveFile(fileId: number, fileName: string) {
-    if (!window.confirm(`¿Borrar el archivo "${fileName}"?`)) return;
+    const accepted = await confirm({
+      title: "Borrar archivo",
+      message: `¿Borrar el archivo "${fileName}"?`,
+      confirmLabel: "Borrar archivo",
+      danger: true,
+    });
+    if (!accepted) return;
     try {
       await designsApi.removeFile(fileId);
       onChanged();
@@ -81,26 +93,42 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
     }
   }
 
-  async function handleFile(file: File | undefined) {
-    if (!file) return;
-
-    const problem = validateUpload(file);
-    if (problem) {
-      setFeedback({ kind: "error", text: problem });
-      return;
-    }
+  async function handleFiles(files: File[]) {
+    if (files.length === 0) return;
 
     setUploading(true);
     setFeedback(null);
-    try {
-      await designsApi.uploadFile(design.id, file);
-      setFeedback({ kind: "ok", text: `"${file.name}" subido correctamente.` });
-      onChanged();
-    } catch (err) {
-      setFeedback({ kind: "error", text: errorMessage(err) });
-    } finally {
-      setUploading(false);
+    const problems: string[] = [];
+    let uploaded = 0;
+    for (const file of files) {
+      const problem = validateUpload(file);
+      if (problem) {
+        problems.push(files.length > 1 ? `${file.name}: ${problem}` : problem);
+        continue;
+      }
+      try {
+        await designsApi.uploadFile(design.id, file);
+        uploaded++;
+      } catch (err) {
+        problems.push(files.length > 1 ? `${file.name}: ${errorMessage(err)}` : errorMessage(err));
+      }
     }
+    setUploading(false);
+    if (uploaded > 0) onChanged();
+    if (problems.length > 0) {
+      setFeedback({ kind: "error", text: problems.join(" ") });
+    } else {
+      setFeedback({
+        kind: "ok",
+        text: uploaded === 1 ? `"${files[0].name}" subido correctamente.` : `${uploaded} archivos subidos correctamente.`,
+      });
+    }
+  }
+
+  function handleDrop(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    setDragging(false);
+    if (!uploading) void handleFiles(Array.from(event.dataTransfer.files));
   }
 
   if (editing) {
@@ -140,7 +168,7 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
       </header>
 
       {design.files.length > 0 ? (
-        <ul className="file-list">
+        <ul className="file-list file-rows">
           {design.files.map((file) => (
             <li key={file.id}>
               <a href={designsApi.downloadUrl(file.id)} download={file.originalFileName}>
@@ -150,13 +178,19 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
                 {kindLabel(file.kind)} · {formatBytes(file.sizeBytes)}
               </span>{" "}
               {STRUCTURE_KINDS.includes(file.kind) && (
-                <button type="button" className="button-link" onClick={() => setViewing({ id: file.id, name: file.originalFileName })}>
+                <button
+                  type="button"
+                  className="button-link"
+                  aria-label={`Ver ${file.originalFileName}`}
+                  onClick={() => setViewing({ id: file.id, name: file.originalFileName })}
+                >
                   Ver
                 </button>
               )}{" "}
               <button
                 type="button"
                 className="button-link button-danger"
+                aria-label={`Borrar el archivo ${file.originalFileName}`}
                 onClick={() => handleRemoveFile(file.id, file.originalFileName)}
               >
                 Borrar archivo
@@ -172,21 +206,38 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
         <LitematicViewer source={viewerSource} title={viewing.name} onClose={() => setViewing(null)} />
       )}
 
-      <label className="upload">
-        Subir archivo (.litematic, .schem, .nbt, imagen o PDF, máx. 25 MB)
+      <label
+        className={`upload dropzone${dragging ? " dragging" : ""}`}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={handleDrop}
+      >
+        <strong>Subir archivo</strong>
+        <span className="muted small">
+          Arrastra aquí uno o varios archivos o haz clic (.litematic, .schem, .nbt, imagen o PDF, máx. 25 MB)
+        </span>
         <input
           type="file"
+          multiple
+          className="visually-hidden"
           accept={FILE_INPUT_ACCEPT}
           disabled={uploading}
           onChange={(e) => {
-            void handleFile(e.target.files?.[0]);
+            void handleFiles(Array.from(e.target.files ?? []));
             e.target.value = "";
           }}
         />
       </label>
-      {uploading && <p className="muted">Subiendo…</p>}
+      {uploading && (
+        <p className="muted" role="status">
+          Subiendo…
+        </p>
+      )}
       {feedback && (
-        <p className={feedback.kind === "error" ? "error" : "muted"} role={feedback.kind === "error" ? "alert" : "status"}>
+        <p className={feedback.kind === "error" ? "alert" : "notice"} role={feedback.kind === "error" ? "alert" : "status"}>
           {feedback.text}
         </p>
       )}

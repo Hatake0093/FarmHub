@@ -151,27 +151,44 @@ function buildPart(grid: VoxelGrid, tiles: Map<string, TileRect> | null, part: "
   let i = 0;
   let face = 0;
 
+  // Los vértices se escriben directamente en el búfer, sin crear arrays temporales por vértice:
+  // con cientos de miles de caras, esa asignación es lo que más tarda.
   forEachFace(grid, part, (block, x, y, z, box, def) => {
     const [r, g, b] = colors[block];
     const tile = tileOf[block];
     const base = face * 4;
-    for (const sel of def.corners) {
-      const local: [number, number, number] = [
-        sel[0] ? box.hi[0] : box.lo[0],
-        sel[1] ? box.hi[1] : box.lo[1],
-        sel[2] ? box.hi[2] : box.lo[2],
-      ];
-      const fu = def.uInvert ? 1 - local[def.uAxis] : local[def.uAxis];
-      const fv = def.vInvert ? 1 - local[def.vAxis] : local[def.vAxis];
-      const u = tile ? tile.u0 + (tile.u1 - tile.u0) * fu : 0;
-      const w = tile ? tile.v0 + (tile.v1 - tile.v0) * fv : 0;
-      vertices.set(
-        [x + local[0], y + local[1], z + local[2], def.n[0], def.n[1], def.n[2], r, g, b, u, w, tile ? 1 : 0],
-        v,
-      );
+    const flag = tile ? 1 : 0;
+    const { lo, hi } = box;
+    const corners = def.corners;
+    for (let c = 0; c < 4; c++) {
+      const sel = corners[c];
+      const lx = sel[0] ? hi[0] : lo[0];
+      const ly = sel[1] ? hi[1] : lo[1];
+      const lz = sel[2] ? hi[2] : lo[2];
+      const uLocal = def.uAxis === 0 ? lx : def.uAxis === 1 ? ly : lz;
+      const vLocal = def.vAxis === 0 ? lx : def.vAxis === 1 ? ly : lz;
+      const fu = def.uInvert ? 1 - uLocal : uLocal;
+      const fv = def.vInvert ? 1 - vLocal : vLocal;
+      vertices[v] = x + lx;
+      vertices[v + 1] = y + ly;
+      vertices[v + 2] = z + lz;
+      vertices[v + 3] = def.n[0];
+      vertices[v + 4] = def.n[1];
+      vertices[v + 5] = def.n[2];
+      vertices[v + 6] = r;
+      vertices[v + 7] = g;
+      vertices[v + 8] = b;
+      vertices[v + 9] = tile ? tile.u0 + (tile.u1 - tile.u0) * fu : 0;
+      vertices[v + 10] = tile ? tile.v0 + (tile.v1 - tile.v0) * fv : 0;
+      vertices[v + 11] = flag;
       v += FLOATS_PER_VERTEX;
     }
-    indices.set([base, base + 1, base + 2, base, base + 2, base + 3], i);
+    indices[i] = base;
+    indices[i + 1] = base + 1;
+    indices[i + 2] = base + 2;
+    indices[i + 3] = base;
+    indices[i + 4] = base + 2;
+    indices[i + 5] = base + 3;
     i += 6;
     face++;
   });

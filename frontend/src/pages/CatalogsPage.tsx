@@ -2,8 +2,11 @@ import { useEffect, useState, type FormEvent } from "react";
 import { categoriesApi, versionsApi } from "../api/farms";
 import { errorMessage } from "../api/client";
 import type { Category, MinecraftVersion } from "../api/types";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
+import { useFeedback } from "../lib/feedback";
 
 export function CatalogsPage() {
+  useDocumentTitle("Catálogos");
   return (
     <section>
       <div className="page-heading">
@@ -29,6 +32,7 @@ function useList<T>(load: () => Promise<T[]>) {
 }
 
 function CategoriesSection() {
+  const { confirm } = useFeedback();
   const { items, reload } = useList<Category>(() => categoriesApi.list());
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -116,8 +120,9 @@ function CategoriesSection() {
                   <button
                     type="button"
                     className="button-link button-danger"
-                    onClick={() => {
-                      if (window.confirm(`¿Borrar la categoría "${c.name}"?`)) {
+                    aria-label={`Borrar la categoría ${c.name}`}
+                    onClick={async () => {
+                      if (await confirm({ title: "Borrar categoría", message: `¿Borrar la categoría "${c.name}"?`, confirmLabel: "Borrar", danger: true })) {
                         void run(() => categoriesApi.remove(c.id));
                       }
                     }}
@@ -136,12 +141,13 @@ function CategoriesSection() {
         <input aria-label="Descripción de la nueva categoría" placeholder="Descripción (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} />
         <button type="submit" className="button button-primary">Añadir categoría</button>
       </form>
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
     </section>
   );
 }
 
 function VersionsSection() {
+  const { confirm } = useFeedback();
   const { items, reload } = useList<MinecraftVersion>(() => versionsApi.list());
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -176,8 +182,9 @@ function VersionsSection() {
             <button
               type="button"
               className="button-link button-danger"
-              onClick={() => {
-                if (window.confirm(`¿Borrar la versión ${v.name}?`)) {
+              aria-label={`Borrar la versión ${v.name}`}
+              onClick={async () => {
+                if (await confirm({ title: "Borrar versión", message: `¿Borrar la versión ${v.name}?`, confirmLabel: "Borrar", danger: true })) {
                   void run(() => versionsApi.remove(v.id));
                 }
               }}
@@ -192,7 +199,7 @@ function VersionsSection() {
         <input aria-label="Nueva versión" placeholder="p. ej. 1.21.4" value={name} onChange={(e) => setName(e.target.value)} />
         <button type="submit" className="button button-primary">Añadir versión</button>
       </form>
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
     </section>
   );
 }

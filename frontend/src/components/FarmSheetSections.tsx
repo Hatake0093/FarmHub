@@ -14,6 +14,8 @@ import type {
   ProductionUnit,
 } from "../api/types";
 import { formatAmount } from "../lib/format";
+import { isHttpUrl } from "../lib/url";
+import { useDeferredRemoval } from "../lib/useDeferredRemoval";
 
 interface Props {
   farm: FarmDetail;
@@ -61,12 +63,14 @@ function StructuresSection({
   const [available, setAvailable] = useState<StructureListItem[]>([]);
   const [choice, setChoice] = useState("");
   const { error, run, setError } = useAction(onChanged);
+  const { hidden, remove } = useDeferredRemoval(onChanged, setError);
 
   useEffect(() => {
     structuresApi.list().then(setAvailable).catch(() => setAvailable([]));
   }, [linked]);
 
   const linkedIds = new Set(linked.map((s) => s.id));
+  const shown = linked.filter((s) => !hidden.has(s.id));
   const candidates = available.filter((s) => !linkedIds.has(s.id));
 
   async function handleLink(event: FormEvent<HTMLFormElement>) {
@@ -83,9 +87,9 @@ function StructuresSection({
     <section>
       <h2>Esquemáticos vinculados</h2>
       <p className="muted">Estructuras propias usadas en esta granja. Desvincular no borra el esquemático.</p>
-      {linked.length === 0 && <p className="muted">No hay esquemáticos vinculados.</p>}
+      {shown.length === 0 && <p className="muted">No hay esquemáticos vinculados.</p>}
       <ul className="file-list">
-        {linked.map((s) => (
+        {shown.map((s) => (
           <li key={s.id}>
             <Link to={`/structures/${s.id}`}>{s.name}</Link>{" "}
             <span className="muted">
@@ -94,11 +98,8 @@ function StructuresSection({
             <button
               type="button"
               className="button-link button-danger"
-              onClick={() => {
-                if (window.confirm(`¿Desvincular "${s.name}" de esta granja?`)) {
-                  void run(() => farmStructuresApi.unlink(farmId, s.id));
-                }
-              }}
+              aria-label={`Desvincular ${s.name}`}
+              onClick={() => void remove(s.id, `el vínculo con "${s.name}"`, () => farmStructuresApi.unlink(farmId, s.id))}
             >
               Desvincular
             </button>
@@ -118,7 +119,7 @@ function StructuresSection({
         <button type="submit" className="button">Vincular</button>
         <Link to="/structures">Crear esquemático nuevo</Link>
       </form>
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
     </section>
   );
 }
@@ -132,11 +133,17 @@ function LinksSection({ farmId, links, onChanged }: { farmId: number; links: Far
   const [url, setUrl] = useState("");
   const [kind, setKind] = useState<LinkKind>("Tutorial");
   const { error, run, setError } = useAction(onChanged);
+  const { hidden, remove } = useDeferredRemoval(onChanged, setError);
+  const shown = links.filter((l) => !hidden.has(l.id));
 
   async function handleAdd(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!title.trim() || !url.trim()) {
       setError("El título y la URL son obligatorios.");
+      return;
+    }
+    if (!isHttpUrl(url.trim())) {
+      setError("La URL debe empezar por http:// o https://.");
       return;
     }
     await run(() => linksApi.add(farmId, { title: title.trim(), url: url.trim(), kind }));
@@ -147,9 +154,9 @@ function LinksSection({ farmId, links, onChanged }: { farmId: number; links: Far
   return (
     <section>
       <h2>Tutoriales y referencias</h2>
-      {links.length === 0 && <p className="muted">No hay enlaces todavía.</p>}
+      {shown.length === 0 && <p className="muted">No hay enlaces todavía.</p>}
       <ul className="file-list">
-        {links.map((link) => (
+        {shown.map((link) => (
           <li key={link.id}>
             <a href={link.url} target="_blank" rel="noopener noreferrer">
               {link.title}
@@ -158,11 +165,8 @@ function LinksSection({ farmId, links, onChanged }: { farmId: number; links: Far
             <button
               type="button"
               className="button-link button-danger"
-              onClick={() => {
-                if (window.confirm(`¿Quitar el enlace "${link.title}"?`)) {
-                  void run(() => linksApi.remove(link.id));
-                }
-              }}
+              aria-label={`Quitar el enlace ${link.title}`}
+              onClick={() => void remove(link.id, `el enlace "${link.title}"`, () => linksApi.remove(link.id))}
             >
               Quitar
             </button>
@@ -172,14 +176,14 @@ function LinksSection({ farmId, links, onChanged }: { farmId: number; links: Far
 
       <form className="inline-form" onSubmit={handleAdd} noValidate>
         <input aria-label="Título del enlace" placeholder="Título" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <input aria-label="URL del enlace" placeholder="https://…" value={url} onChange={(e) => setUrl(e.target.value)} />
+        <input aria-label="URL del enlace" type="url" inputMode="url" placeholder="https://…" value={url} onChange={(e) => setUrl(e.target.value)} />
         <select aria-label="Tipo de enlace" value={kind} onChange={(e) => setKind(e.target.value as LinkKind)}>
           <option value="Tutorial">Tutorial</option>
           <option value="Reference">Referencia</option>
         </select>
         <button type="submit" className="button">Añadir enlace</button>
       </form>
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
     </section>
   );
 }
@@ -206,7 +210,9 @@ function ProductionsSection({
   const [source, setSource] = useState("");
   const [versionId, setVersionId] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
-  const { error, run } = useAction(onChanged);
+  const { error, run, setError } = useAction(onChanged);
+  const { hidden, remove } = useDeferredRemoval(onChanged, setError);
+  const shown = productions.filter((p) => !hidden.has(p.id));
 
   useEffect(() => {
     versionsApi.list().then(setVersions).catch(() => setVersions([]));
@@ -247,7 +253,7 @@ function ProductionsSection({
       <h2>Producción por hora</h2>
       <p className="muted">Son estimaciones válidas solo bajo las condiciones de medición indicadas.</p>
 
-      {productions.length === 0 ? (
+      {shown.length === 0 ? (
         <p className="muted">No hay producciones registradas.</p>
       ) : (
         <table className="farm-table">
@@ -258,19 +264,19 @@ function ProductionsSection({
               <th>AFK</th>
               <th>Medido en</th>
               <th>Condiciones y fuente</th>
-              <th />
+              <th aria-label="Acciones" />
             </tr>
           </thead>
           <tbody>
-            {productions.map((p) => (
+            {shown.map((p) => (
               <tr key={p.id}>
-                <td>{p.resourceName}</td>
-                <td>
+                <td data-label="Recurso">{p.resourceName}</td>
+                <td data-label="Por hora">
                   {formatAmount(p.amountPerHour)} {UNIT_LABELS[p.unit]}/h
                 </td>
-                <td>{p.requiresAfk ? "Sí" : "No"}</td>
-                <td>{p.measuredInVersion ?? "—"}</td>
-                <td>
+                <td data-label="AFK">{p.requiresAfk ? "Sí" : "No"}</td>
+                <td data-label="Medido en">{p.measuredInVersion ?? "—"}</td>
+                <td data-label="Condiciones y fuente">
                   {p.measurementConditions && <div>{p.measurementConditions}</div>}
                   {p.source && <div className="muted">Fuente: {p.source}</div>}
                   {!p.measurementConditions && !p.source && "—"}
@@ -279,11 +285,8 @@ function ProductionsSection({
                   <button
                     type="button"
                     className="button-link button-danger"
-                    onClick={() => {
-                      if (window.confirm(`¿Borrar la producción de "${p.resourceName}"?`)) {
-                        void run(() => productionsApi.remove(p.id));
-                      }
-                    }}
+                    aria-label={`Borrar la producción de ${p.resourceName}`}
+                    onClick={() => void remove(p.id, `la producción de "${p.resourceName}"`, () => productionsApi.remove(p.id))}
                   >
                     Borrar
                   </button>
@@ -298,11 +301,11 @@ function ProductionsSection({
         <h3>Añadir producción</h3>
         <label>
           Recurso *
-          <input value={resource} onChange={(e) => setResource(e.target.value)} />
+          <input value={resource} required placeholder="p. ej. Hierro" onChange={(e) => setResource(e.target.value)} />
         </label>
         <label>
           Cantidad por hora *
-          <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <input inputMode="decimal" required placeholder="p. ej. 1200" value={amount} onChange={(e) => setAmount(e.target.value)} />
         </label>
         <label>
           Unidad
@@ -341,7 +344,7 @@ function ProductionsSection({
         <div className="actions">
           <button type="submit" className="button button-primary">Añadir producción</button>
         </div>
-        {(localError || error) && <p className="error" role="alert">{localError ?? error}</p>}
+        {(localError || error) && <p className="alert" role="alert">{localError ?? error}</p>}
       </form>
     </section>
   );
@@ -354,7 +357,8 @@ function DependenciesSection({ farm, onChanged }: { farm: FarmDetail; onChanged:
   const [requiredId, setRequiredId] = useState("");
   const [note, setNote] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
-  const { error, run } = useAction(onChanged);
+  const { error, run, setError } = useAction(onChanged);
+  const { hidden, remove } = useDeferredRemoval(onChanged, setError);
 
   useEffect(() => {
     farmsApi
@@ -384,9 +388,9 @@ function DependenciesSection({ farm, onChanged }: { farm: FarmDetail; onChanged:
 
       <h3>Necesita</h3>
       <RelationList
-        relations={farm.requires}
+        relations={farm.requires.filter((r) => !hidden.has(r.dependencyId))}
         emptyText="Esta granja no depende de otras."
-        onRemove={(r) => run(() => dependenciesApi.remove(r.dependencyId))}
+        onRemove={(r) => void remove(r.dependencyId, `la dependencia de "${r.farmName}"`, () => dependenciesApi.remove(r.dependencyId))}
       />
 
       <h3>Es requerida por</h3>
@@ -404,7 +408,7 @@ function DependenciesSection({ farm, onChanged }: { farm: FarmDetail; onChanged:
         <input aria-label="Nota de la dependencia" placeholder="Nota (p. ej. hierro para los raíles)" value={note} onChange={(e) => setNote(e.target.value)} />
         <button type="submit" className="button">Añadir dependencia</button>
       </form>
-      {(localError || error) && <p className="error" role="alert">{localError ?? error}</p>}
+      {(localError || error) && <p className="alert" role="alert">{localError ?? error}</p>}
     </section>
   );
 }
@@ -424,10 +428,15 @@ function RelationList({
     <ul className="file-list">
       {relations.map((r) => (
         <li key={r.dependencyId}>
-          {r.farmName}
+          <Link to={`/farms/${r.farmId}`}>{r.farmName}</Link>
           {r.note && <span className="muted"> — {r.note}</span>}{" "}
           {onRemove && (
-            <button type="button" className="button-link button-danger" onClick={() => onRemove(r)}>
+            <button
+              type="button"
+              className="button-link button-danger"
+              aria-label={`Quitar la dependencia de ${r.farmName}`}
+              onClick={() => onRemove(r)}
+            >
               Quitar
             </button>
           )}

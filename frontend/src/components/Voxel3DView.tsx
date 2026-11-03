@@ -208,7 +208,7 @@ export function Voxel3DView({ grid, useTextures }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   if (unsupported) {
-    return <p className="error">Este navegador no admite WebGL 2, así que la vista 3D no está disponible.</p>;
+    return <p className="alert" role="alert">Este navegador no admite WebGL 2, así que la vista 3D no está disponible.</p>;
   }
 
   return (
@@ -216,7 +216,7 @@ export function Voxel3DView({ grid, useTextures }: Props) {
       <div className="rotate-bar">
         <button type="button" className="button" onClick={reset}>Reiniciar vista</button>
         <button type="button" className="button" onClick={toggleFullscreen}>{fullscreen ? "Salir de pantalla completa (Esc)" : "Pantalla completa"}</button>
-        {error && <span className="error small">{error}</span>}
+        {error && <span className="field-error" role="alert">{error}</span>}
         <span className="muted small">Arrastra para girar · botón derecho (o Mayús + arrastrar) para desplazar · rueda para acercar y alejar · {useTextures ? "con texturas" : "solo colores"}</span>
       </div>
       <canvas ref={canvasRef} className="voxel3d-canvas" width={WIDTH} height={HEIGHT} aria-label="Vista 3D" />

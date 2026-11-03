@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent, type WheelEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import type { LitematicLayer, LitematicSummary } from "../api/litematic";
 import { errorMessage } from "../api/client";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
@@ -21,6 +21,16 @@ interface Props {
 
 const MIN_CELL = 4;
 const MAX_CELL = 60;
+/** Píxeles que hay que mover el puntero para que un clic cuente como arrastre. */
+const DRAG_THRESHOLD = 4;
+const MATERIALS_SHOWN = 20;
+
+const VIEW_MODES: { value: "layer" | "iso" | "slice" | "3d"; label: string }[] = [
+  { value: "layer", label: "Capa 2D" },
+  { value: "iso", label: "Isométrica" },
+  { value: "slice", label: "Corte lateral" },
+  { value: "3d", label: "3D" },
+];
 
 export function LitematicViewer({ source, title, onClose }: Props) {
   const [summary, setSummary] = useState<LitematicSummary | null>(null);
@@ -40,7 +50,35 @@ export function LitematicViewer({ source, title, onClose }: Props) {
   const [cellSize, setCellSize] = useState(16);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const dragRef = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
+  const dragRef = useRef<{ x: number; y: number; ox: number; oy: number; moved: boolean } | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // Al abrirse dentro de una página larga (un diseño), lleva el visor a la vista; en la vista previa ya ocupa la página.
+  useEffect(() => {
+    if (onClose) sectionRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [onClose]);
+
+  // Escape cierra el visor.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !document.fullscreenElement) onClose?.();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  // La rueda hace zoom sin desplazar la página: necesita un listener no pasivo.
+  const showingLayer = mode === "layer" && !!summary;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !showingLayer) return;
+    const onWheel = (event: globalThis.WheelEvent) => {
+      event.preventDefault();
+      setCellSize((size) => Math.min(MAX_CELL, Math.max(MIN_CELL, size + (event.deltaY < 0 ? 2 : -2))));
+    };
+    canvas.addEventListener("wheel", onWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", onWheel);
+  }, [showingLayer]);
 
   useEffect(() => {
     let active = true;
@@ -135,7 +173,7 @@ export function LitematicViewer({ source, title, onClose }: Props) {
     }
   }, [layer, cellSize, offset, selected, mode, gridOn]);
 
-  function cellAt(event: MouseEvent<HTMLCanvasElement>): { x: number; z: number } | null {
+  function cellAt(event: PointerEvent<HTMLCanvasElement>): { x: number; z: number } | null {
     const canvas = canvasRef.current;
     if (!canvas || !layer) return null;
     const rect = canvas.getBoundingClientRect();
@@ -147,27 +185,32 @@ export function LitematicViewer({ source, title, onClose }: Props) {
     return { x, z };
   }
 
-  function handleClick(event: MouseEvent<HTMLCanvasElement>) {
-    const cell = cellAt(event);
-    setSelected(cell ? `${cell.x},${cell.z}` : null);
+  function handlePointerDown(event: PointerEvent<HTMLCanvasElement>) {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = { x: event.clientX, y: event.clientY, ox: offset.x, oy: offset.y, moved: false };
   }
 
-  function handleWheel(event: WheelEvent<HTMLCanvasElement>) {
-    setCellSize((size) => Math.min(MAX_CELL, Math.max(MIN_CELL, size + (event.deltaY < 0 ? 2 : -2))));
-  }
-
-  function handleMouseDown(event: MouseEvent<HTMLCanvasElement>) {
-    dragRef.current = { x: event.clientX, y: event.clientY, ox: offset.x, oy: offset.y };
-  }
-
-  function handleMouseMove(event: MouseEvent<HTMLCanvasElement>) {
+  function handlePointerMove(event: PointerEvent<HTMLCanvasElement>) {
     const drag = dragRef.current;
-    if (!drag) return;
-    setOffset({ x: drag.ox + (event.clientX - drag.x), y: drag.oy + (event.clientY - drag.y) });
+    const canvas = canvasRef.current;
+    if (!drag || !canvas) return;
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+    drag.moved = true;
+    // El lienzo se muestra escalado: convierte píxeles de pantalla a píxeles del lienzo para que siga al cursor.
+    const scale = canvas.width / canvas.getBoundingClientRect().width;
+    setOffset({ x: drag.ox + dx * scale, y: drag.oy + dy * scale });
   }
 
-  function endDrag() {
+  function handlePointerUp(event: PointerEvent<HTMLCanvasElement>) {
+    const drag = dragRef.current;
     dragRef.current = null;
+    // Un toque o clic sin arrastre selecciona el bloque; un arrastre no.
+    if (drag && !drag.moved) {
+      const cell = cellAt(event);
+      setSelected(cell ? `${cell.x},${cell.z}` : null);
+    }
   }
 
   const selectedBlock = selected && layer
@@ -175,14 +218,14 @@ export function LitematicViewer({ source, title, onClose }: Props) {
     : null;
 
   return (
-    <section className="viewer" aria-label={`Visor de ${title}`}>
+    <section className="viewer" aria-label={`Visor de ${title}`} ref={sectionRef}>
       <div className="page-heading">
         <h3>Visor de {title}</h3>
-        {onClose && <button type="button" className="button" onClick={onClose}>Cerrar visor</button>}
+        {onClose && <button type="button" className="button" onClick={onClose} title="Escape">Cerrar visor</button>}
       </div>
 
-      {error && <p className="error" role="alert">{error}</p>}
-      {!summary && !error && <p className="muted">Cargando archivo…</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
+      {!summary && !error && <p className="muted" role="status">Cargando archivo…</p>}
 
       {summary && region && (
         <>
@@ -195,15 +238,19 @@ export function LitematicViewer({ source, title, onClose }: Props) {
                 ))}
               </select>
             </label>
-            <label>
-              Vista
-              <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso" | "slice" | "3d")}>
-                <option value="layer">Capa 2D</option>
-                <option value="iso">Isométrica</option>
-                <option value="slice">Corte lateral</option>
-                <option value="3d">3D giratoria</option>
-              </select>
-            </label>
+            <div className="view-tabs" role="group" aria-label="Vista">
+              {VIEW_MODES.map((m) => (
+                <button
+                  key={m.value}
+                  type="button"
+                  className={`button${mode === m.value ? " button-primary" : ""}`}
+                  aria-pressed={mode === m.value}
+                  onClick={() => setMode(m.value)}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
             {mode === "layer" && (
               <>
                 <LayerStepper value={y} max={region.height - 1} onChange={setY} />
@@ -236,8 +283,9 @@ export function LitematicViewer({ source, title, onClose }: Props) {
               <IsometricView grid={rotateGrid(clipLayers(isoGrid, Math.min(rangeFrom, isoGrid.height - 1), Math.min(rangeTo ?? isoGrid.height - 1, isoGrid.height - 1)), turns)} />
             </>
           )}
-          {mode === "iso" && !isoGrid && <p className="muted">{isoMessage}</p>}
-          {mode === "slice" && (isoGrid ? <SliceView grid={isoGrid} /> : <p className="muted">{isoMessage}</p>)}
+          {mode === "iso" && !isoGrid && <p className="muted" role="status">{isoMessage}</p>}
+          {mode === "slice" && (isoGrid ? <SliceView grid={isoGrid} /> : <p className="muted" role="status">{isoMessage}</p>)}
+          {mode === "3d" && !isoGrid && <p className="muted" role="status">{isoMessage}</p>}
           {mode === "3d" && isoGrid && (
             <>
               <label className="checkbox">
@@ -259,12 +307,11 @@ export function LitematicViewer({ source, title, onClose }: Props) {
             className="viewer-canvas"
             width={900}
             height={520}
-            onClick={handleClick}
-            onWheel={handleWheel}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={endDrag}
-            onMouseLeave={endDrag}
+            aria-label="Capa del archivo"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={() => { dragRef.current = null; }}
           />}
 
           <p className="muted">
@@ -289,7 +336,7 @@ export function LitematicViewer({ source, title, onClose }: Props) {
               </tr>
             </thead>
             <tbody>
-              {summary.blockCounts.slice(0, 20).map((b) => (
+              {summary.blockCounts.slice(0, MATERIALS_SHOWN).map((b) => (
                 <tr key={b.block}>
                   <td>{blockLabel(b.block)}</td>
                   <td>{b.count}</td>
@@ -298,6 +345,11 @@ export function LitematicViewer({ source, title, onClose }: Props) {
               ))}
             </tbody>
           </table>
+          {summary.blockCounts.length > MATERIALS_SHOWN && (
+            <p className="muted small">
+              Se muestran los {MATERIALS_SHOWN} más abundantes de {summary.blockCounts.length} tipos de bloque.
+            </p>
+          )}
         </>
       )}
     </section>

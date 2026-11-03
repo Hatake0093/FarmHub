@@ -4,12 +4,14 @@ import { structurePreviewApi, type StructurePreview } from "../api/structurePrev
 import { errorMessage } from "../api/client";
 import { LitematicViewer } from "../components/LitematicViewer";
 import { previewSource } from "../components/viewerSource";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 /**
  * Explora archivos sueltos sin guardarlos: cada uno se lee en el servidor, se muestra y se descarta.
  * Nada se añade a los esquemáticos.
  */
 export function StructurePreviewPage() {
+  useDocumentTitle("Explorar archivos");
   const [files, setFiles] = useState<File[]>([]);
   const [index, setIndex] = useState(0);
   const [preview, setPreview] = useState<StructurePreview | null>(null);
@@ -72,7 +74,7 @@ export function StructurePreviewPage() {
         <div className="structures-actions">
           <label className="button button-primary">
             Elegir archivos
-            <input type="file" hidden multiple accept=".litematic,.schem,.nbt" onChange={handlePick} />
+            <input type="file" className="visually-hidden" multiple accept=".litematic,.schem,.nbt" onChange={handlePick} />
           </label>
           <Link to="/structures" className="button">Volver a esquemáticos</Link>
         </div>
@@ -105,7 +107,7 @@ export function StructurePreviewPage() {
       )}
 
       {loading && <p className="muted">Leyendo {current?.name}…</p>}
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
 
       {preview && (
         <div className="preview-summary muted small">

@@ -26,7 +26,12 @@
   }
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #161815;
   --surface: #1f221e;
   --text: #e8ebe5;
@@ -42,6 +47,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
+  line-height: 1.5;
 }
 
 a {
@@ -529,6 +535,8 @@ section > .design-form {
 }
 
 .layer-controls input[type="range"] {
+  flex: 1;
+  min-width: 6rem;
   width: 12rem;
 }
 
@@ -985,4 +993,525 @@ section > .design-form {
 
 .editor-panel .actions {
   margin-top: 0.5rem;
+}
+
+/* ==== Experiencia de uso: base compartida ==== */
+
+/* Foco visible para quien navega con teclado; no molesta al usar el ratón. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+main:focus {
+  outline: none;
+}
+
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -4rem;
+  z-index: 200;
+  padding: 0.5rem 0.9rem;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-text);
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.nav-link {
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  background: var(--tag-bg);
+}
+
+.nav-link.active {
+  background: var(--tag-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.button {
+  transition: background-color 0.12s, border-color 0.12s, filter 0.12s;
+}
+
+.button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.button-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.button:disabled,
+.button-link:disabled {
+  cursor: not-allowed;
+}
+
+/* Los botones sin clase (paginación, etc.) se ven como botones. */
+.pagination button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.pagination button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline-offset: 0;
+  border-color: var(--accent);
+}
+
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.farm-table tbody tr:hover {
+  background: color-mix(in srgb, var(--tag-bg) 55%, transparent);
+}
+
+.farm-table th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.farm-table a {
+  font-weight: 600;
+}
+
+.results-meta {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.is-refreshing {
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.empty-state h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.empty-state p {
+  margin: 0;
+  max-width: 32rem;
+}
+
+.alert {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  color: var(--danger);
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    position: static;
+  }
+
+  .container {
+    padding: 0.75rem;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.card-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.card-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.12s, transform 0.12s;
+}
+
+.card-link:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+label.button[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* Oculto a la vista pero accesible con teclado (p. ej. inputs de archivo dentro de un botón). */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+label.button {
+  position: relative;
+  align-self: flex-start;
+}
+
+label.button:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.farm-table tr.row-dirty td {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.farm-table tr.row-dirty td:first-child {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* Altura uniforme de campos para que filtros y formularios queden alineados. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]):not([type="file"]),
+select {
+  min-height: 2.25rem;
+}
+
+input[type="search"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.farm-form h2,
+.import-box h2 {
+  margin: 0;
+}
+
+.import-box p {
+  margin: 0;
+}
+
+/* ==== Editor de esquemáticos: barra de herramientas agrupada ==== */
+
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: stretch;
+  margin-bottom: 0.75rem;
+}
+
+.tool-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.tool-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.tool-row,
+.view-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+}
+
+.view-tabs {
+  gap: 0.4rem;
+}
+
+.tool-group .button[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.clone-details summary,
+.editor-settings summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+
+.clone-details .clone-layer {
+  margin-top: 0.5rem;
+}
+
+.editor-settings {
+  margin-top: 1rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.editor-settings[open] summary {
+  margin-bottom: 0.75rem;
+}
+
+.editor-settings .base-form {
+  margin: 0 0 0.75rem;
+}
+
+.notice {
+  margin: 0.5rem 0;
+  padding: 0.4rem 0.75rem;
+  border-left: 3px solid var(--accent);
+  background: var(--tag-bg);
+  border-radius: 4px;
+}
+
+/* Herramientas a la izquierda y lienzo a la derecha; en pantallas estrechas se apilan. */
+.editor-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.editor-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: sticky;
+  top: 4.25rem;
+}
+
+.editor-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.editor-toolbar {
+  margin-bottom: 0.75rem;
+}
+
+.editor-toolbar .tool-group {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.editor-tools .block-picker {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-tools {
+    position: static;
+  }
+}
+
+/* ==== Ficha técnica y diseños ==== */
+
+.design-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.file-rows {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-rows li {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.file-rows li:last-child {
+  border-bottom: none;
+}
+
+.dropzone {
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1rem;
+  text-align: center;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.12s, background-color 0.12s;
+}
+
+.dropzone:hover,
+.dropzone.dragging {
+  border-color: var(--accent);
+  background: var(--tag-bg);
+}
+
+.dropzone:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.button-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* En móvil las tablas se apilan; data-label devuelve el nombre de cada dato. */
+@media (max-width: 640px) {
+  .farm-table td[data-label]::before {
+    content: attr(data-label) ": ";
+    font-weight: 600;
+    color: var(--muted);
+  }
+}
+
+/* ==== Confirmaciones y avisos con "Deshacer" ==== */
+
+.confirm-dialog {
+  max-width: min(28rem, calc(100vw - 2rem));
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.confirm-dialog h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+}
+
+.confirm-dialog .actions {
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.button-danger-solid {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.toast-region {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.toast .toast-action {
+  color: inherit;
+  font-weight: 700;
+}
+
+.theme-toggle {
+  padding: 0.3rem 0.55rem;
+  line-height: 1;
 }
