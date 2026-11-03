@@ -9,6 +9,7 @@ export function Layout() {
         </Link>
         <nav className="app-nav">
           <Link to="/farms">Biblioteca</Link>
+          <Link to="/catalogs">Catálogos</Link>
           <Link to="/farms/new" className="button button-primary">
             Nueva granja
           </Link>

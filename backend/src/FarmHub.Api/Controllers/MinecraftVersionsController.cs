@@ -38,4 +38,54 @@ public sealed class MinecraftVersionsController(FarmHubDbContext db) : Controlle
 
         return CreatedAtAction(nameof(List), new MinecraftVersionResponse(version.Id, version.Name));
     }
+
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<MinecraftVersionResponse>> Update(int id, MinecraftVersionRequest request, CancellationToken ct)
+    {
+        var version = await db.MinecraftVersions.FirstOrDefaultAsync(v => v.Id == id, ct);
+        if (version is null)
+        {
+            return NotFound();
+        }
+
+        var name = request.Name?.Trim();
+        if (string.IsNullOrEmpty(name) || name.Length > 20)
+        {
+            return ValidationProblem("El nombre de la versión es obligatorio y no puede superar 20 caracteres.");
+        }
+
+        if (await db.MinecraftVersions.AnyAsync(v => v.Name == name && v.Id != id, ct))
+        {
+            return Conflict(new ProblemDetails { Title = "Esa versión ya está registrada." });
+        }
+
+        version.Name = name;
+        await db.SaveChangesAsync(ct);
+
+        return new MinecraftVersionResponse(version.Id, version.Name);
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
+    {
+        var version = await db.MinecraftVersions.FirstOrDefaultAsync(v => v.Id == id, ct);
+        if (version is null)
+        {
+            return NotFound();
+        }
+
+        var farmCount = await db.Farms.CountAsync(f => f.MinecraftVersions.Any(v => v.Id == id), ct);
+        var measurementCount = await db.FarmProductions.CountAsync(p => p.MeasuredInVersionId == id, ct);
+        if (farmCount > 0 || measurementCount > 0)
+        {
+            return Conflict(new ProblemDetails
+            {
+                Title = $"La versión está en uso por {farmCount} granjas y {measurementCount} producciones. Quítala de ellas antes de borrarla.",
+            });
+        }
+
+        db.MinecraftVersions.Remove(version);
+        await db.SaveChangesAsync(ct);
+        return NoContent();
+    }
 }

@@ -31,6 +31,8 @@ export function FarmListPage() {
   const [versions, setVersions] = useState<MinecraftVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     categoriesApi.list().then(setCategories).catch(() => setCategories([]));
@@ -57,7 +59,18 @@ export function FarmListPage() {
     return () => {
       active = false;
     };
-  }, [query]);
+  }, [query, reloadKey]);
+
+  async function handleDelete(farm: FarmSummary) {
+    if (!window.confirm(`¿Borrar "${farm.name}" con sus diseños y archivos? No se puede deshacer.`)) return;
+    setActionError(null);
+    try {
+      await farmsApi.remove(farm.id);
+      setReloadKey((k) => k + 1);
+    } catch (err) {
+      setActionError(errorMessage(err));
+    }
+  }
 
   function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -139,6 +152,7 @@ export function FarmListPage() {
 
       {loading && <p className="muted">Cargando granjas…</p>}
       {error && <p className="error" role="alert">{error}</p>}
+      {actionError && <p className="error" role="alert">{actionError}</p>}
 
       {!loading && !error && result && result.items.length === 0 && (
         <p className="muted">No hay granjas que coincidan con los filtros.</p>
@@ -154,6 +168,7 @@ export function FarmListPage() {
                 <th>Dificultad</th>
                 <th>Versiones</th>
                 <th>Etiquetas</th>
+                <th aria-label="Acciones" />
               </tr>
             </thead>
             <tbody>
@@ -171,6 +186,11 @@ export function FarmListPage() {
                         {tag}
                       </span>
                     ))}
+                  </td>
+                  <td>
+                    <button type="button" className="button-link button-danger" onClick={() => void handleDelete(farm)}>
+                      Borrar
+                    </button>
                   </td>
                 </tr>
               ))}

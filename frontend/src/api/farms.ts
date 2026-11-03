@@ -32,10 +32,25 @@ export const farmsApi = {
   remove: (id: number) => apiRequest<void>(`/farms/${id}`, { method: "DELETE" }),
 };
 
+export interface CategoryInput {
+  name: string;
+  description: string | null;
+}
+
 export const categoriesApi = {
   list: () => apiRequest<Category[]>("/categories"),
+  create: (input: CategoryInput) =>
+    apiRequest<Category>("/categories", { method: "POST", body: JSON.stringify(input) }),
+  update: (id: number, input: CategoryInput) =>
+    apiRequest<Category>(`/categories/${id}`, { method: "PUT", body: JSON.stringify(input) }),
+  remove: (id: number) => apiRequest<void>(`/categories/${id}`, { method: "DELETE" }),
 };
 
 export const versionsApi = {
   list: () => apiRequest<MinecraftVersion[]>("/minecraft-versions"),
+  create: (name: string) =>
+    apiRequest<MinecraftVersion>("/minecraft-versions", { method: "POST", body: JSON.stringify({ name }) }),
+  update: (id: number, name: string) =>
+    apiRequest<MinecraftVersion>(`/minecraft-versions/${id}`, { method: "PUT", body: JSON.stringify({ name }) }),
+  remove: (id: number) => apiRequest<void>(`/minecraft-versions/${id}`, { method: "DELETE" }),
 };
