@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { structuresApi, type StructureDetail, type StructureLayer } from "../api/structures";
 import { blocksApi, type BlockEntry } from "../api/blocks";
-import { blockDisplayName, searchBlocks } from "../lib/blockSearch";
 import { errorMessage } from "../api/client";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
 import { gridFromLayers, MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
 import { IsometricView } from "../components/IsometricView";
 import { LayerStepper } from "../components/LayerStepper";
+import { BlockPicker } from "../components/BlockPicker";
 import {
   displayedBlock,
   toPatchChanges,
@@ -35,7 +35,6 @@ export function StructureEditorPage() {
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<"layer" | "iso">("layer");
   const [catalog, setCatalog] = useState<BlockEntry[]>([]);
-  const [blockQuery, setBlockQuery] = useState("");
   const [isoGrid, setIsoGrid] = useState<VoxelGrid | null>(null);
   const [isoMessage, setIsoMessage] = useState<string | null>(null);
   const [base, setBase] = useState({ x: "0", y: "0", z: "0" });
@@ -153,12 +152,6 @@ export function StructureEditorPage() {
     setPending((current) => withChange(current, local, target));
   }
 
-  function chooseBlock(id: string) {
-    setBlock(id);
-    setErase(false);
-    setBlockQuery("");
-  }
-
   function handleDown(event: MouseEvent<HTMLCanvasElement>) {
     const local = localAt(event);
     if (!local) return;
@@ -245,34 +238,7 @@ export function StructureEditorPage() {
         <LayerStepper value={y} max={detail.height - 1} onChange={setY} />
         )}
         {mode === "layer" && (
-        <div className="block-picker">
-          <label>
-            Bloque: <strong>{currentBlockLabel(catalog, block)}</strong>
-            <input
-              type="search"
-              value={blockQuery}
-              placeholder="Buscar en español, inglés o id"
-              onChange={(e) => setBlockQuery(e.target.value)}
-            />
-          </label>
-          <div className="block-options">
-            {searchBlocks(catalog, blockQuery).map((b) => (
-              <button
-                key={b.id}
-                type="button"
-                className={`block-option${b.id === block ? " selected" : ""}`}
-                onClick={() => chooseBlock(b.id)}
-              >
-                {blockDisplayName(b)} <span className="muted">{b.id}</span>
-              </button>
-            ))}
-            {BLOCK_ID.test(blockQuery.trim()) && !catalog.some((b) => b.id === blockQuery.trim()) && (
-              <button type="button" className="block-option" onClick={() => chooseBlock(blockQuery.trim())}>
-                Usar {blockQuery.trim()}
-              </button>
-            )}
-          </div>
-        </div>
+        <BlockPicker catalog={catalog} value={block} onChange={(id) => { setBlock(id); setErase(false); }} />
         )}
         {mode === "layer" && (
         <label className="checkbox">
@@ -341,7 +307,3 @@ export function StructureEditorPage() {
   );
 }
 
-function currentBlockLabel(catalog: BlockEntry[], id: string): string {
-  const entry = catalog.find((b) => b.id === id);
-  return entry ? blockDisplayName(entry) : id;
-}
