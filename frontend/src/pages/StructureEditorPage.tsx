@@ -14,6 +14,7 @@ import { gridFromVolume } from "../lib/volume";
 import { EditHistory, type CellChange } from "../lib/history";
 import { floodFillLayer, mirrorBox, rotateBoxQuarter } from "../lib/design";
 import { decodeClip, encodeClip, extractBox, planPaste } from "../lib/clipboard";
+import { lineCells, rectCells, shapeChanges, type ShapeKind, type Cell } from "../lib/shapes";
 
 const CLIP_KEY = "farmhub.clipboard";
 
@@ -65,6 +66,12 @@ export function StructureEditorPage() {
   const strokeRef = useRef<PendingChanges>(new Map());
   // Última celda bajo el ratón, en una referencia: los atajos de teclado no ven los cambios de estado.
   const hoverRef = useRef<Coordinates | null>(null);
+  // Formas (línea, rectángulo) y capas bloqueadas.
+  const [shape, setShape] = useState<ShapeKind | null>(null);
+  const [shapePrev, setShapePrev] = useState<{ kind: ShapeKind; y: number; a: Cell; b: Cell } | null>(null);
+  const shapeRef = useRef<{ kind: ShapeKind; y: number; a: Cell; b: Cell } | null>(null);
+  const lockedRef = useRef<Set<number>>(new Set());
+  const [lockedTick, setLockedTick] = useState(0);
   const [hover, setHover] = useState<Coordinates | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +92,7 @@ export function StructureEditorPage() {
   const [base, setBase] = useState({ x: "0", y: "0", z: "0" });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // Qué hace el arrastre actual: pintar (botón izquierdo) o borrar (botón derecho).
-  const paintingRef = useRef<"paint" | "erase" | "select" | null>(null);
+  const paintingRef = useRef<"paint" | "erase" | "select" | "shape" | null>(null);
   // Capa fantasma: la capa inferior o superior se dibuja semitransparente detrás de la actual.
   const [ghost, setGhost] = useState<"none" | "below" | "above">("none");
   const [ghostLayer, setGhostLayer] = useState<StructureLayer | null>(null);
@@ -209,12 +216,18 @@ export function StructureEditorPage() {
       drawBox({ x0: selBox.x0 + offset.dx, x1: selBox.x1 + offset.dx, y0: selBox.y0 + offset.dy, y1: selBox.y1 + offset.dy, z0: selBox.z0 + offset.dz, z1: selBox.z1 + offset.dz }, "#e0c040");
     }
 
+    if (shapePrev && shapePrev.y === y) {
+      const cells = shapePrev.kind === "line" ? lineCells(shapePrev.a, shapePrev.b) : rectCells(shapePrev.a, shapePrev.b, shapePrev.kind === "box");
+      ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+      for (const c of cells) ctx.fillRect(c.x * cell, c.z * cell, cell - gap, cell - gap);
+    }
+
     if (hover && hover.y === y) {
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 2;
       ctx.strokeRect(hover.x * cell, hover.z * cell, cell - gap, cell - gap);
     }
-  }, [layer, pending, hover, y, cell, detail, mode, ghostLayer, gridOn, sel, offset, selBox]);
+  }, [layer, pending, hover, y, cell, detail, mode, ghostLayer, gridOn, sel, offset, selBox, shapePrev]);
 
   function localAt(event: MouseEvent<HTMLCanvasElement>): Coordinates | null {
     const canvas = canvasRef.current;
@@ -247,6 +260,14 @@ export function StructureEditorPage() {
       setSel({ ax: local.x, az: local.z, bx: local.x, bz: local.z, y0: local.y, y1: local.y });
       setOffset({ dx: 0, dy: 0, dz: 0 });
       paintingRef.current = "select";
+      return;
+    }
+    // Línea o rectángulo: arrastrar desde un punto hasta otro, en la capa actual.
+    if (event.button === 0 && shape && !event.shiftKey && layer) {
+      const next = { kind: shape, y: local.y, a: { x: local.x, z: local.z }, b: { x: local.x, z: local.z } };
+      shapeRef.current = next;
+      setShapePrev(next);
+      paintingRef.current = "shape";
       return;
     }
     // Relleno: un clic en la capa actual, sin arrastrar.
@@ -285,6 +306,11 @@ export function StructureEditorPage() {
     const local = localAt(event);
     hoverRef.current = local;
     setHover(local);
+    if (local && paintingRef.current === "shape" && shapeRef.current) {
+      shapeRef.current = { ...shapeRef.current, b: { x: local.x, z: local.z } };
+      setShapePrev(shapeRef.current);
+      return;
+    }
     if (local && paintingRef.current === "select") {
       setSel((current) => (current ? { ...current, bx: local.x, bz: local.z } : current));
       return;
@@ -295,6 +321,16 @@ export function StructureEditorPage() {
   function stopPainting() {
     const mode = paintingRef.current;
     paintingRef.current = null;
+    if (mode === "shape" && shapeRef.current) {
+      const done = shapeRef.current;
+      shapeRef.current = null;
+      setShapePrev(null);
+      const target = erase ? null : block.trim();
+      void ensureGrid()
+        .then((g) => applyChanges(shapeChanges(g, done.kind, done.y, done.a, done.b, target), true))
+        .catch((err: unknown) => setError(errorMessage(err)));
+      return;
+    }
     if ((mode === "paint" || mode === "erase") && strokeRef.current.size > 0) {
       const batch = [...strokeRef.current.values()];
       strokeRef.current = new Map();
@@ -314,6 +350,11 @@ export function StructureEditorPage() {
 
   /** Envía cambios al servidor, los aplica a la copia local y, si record es true, los guarda en el historial. */
   async function applyChanges(changes: { x: number; y: number; z: number; block: string | null }[], record: boolean): Promise<void> {
+    const blockedLayer = changes.find((c) => lockedRef.current.has(c.y));
+    if (blockedLayer) {
+      setError(`La capa ${blockedLayer.y} está bloqueada. Desbloquéala (P) para editarla.`);
+      return;
+    }
     const grid = await ensureGrid();
     const entries: CellChange[] = [];
     const sent: { x: number; y: number; z: number; block: string | null }[] = [];
@@ -337,6 +378,9 @@ export function StructureEditorPage() {
 
   /** Deshace (which = before) o rehace (which = after) una edición ya registrada. */
   async function sendEntries(entries: CellChange[], which: "before" | "after"): Promise<void> {
+    if (entries.some((e) => lockedRef.current.has(e.y))) {
+      throw new Error("Esa edición toca una capa bloqueada. Desbloquéala (P) para deshacerla o rehacerla.");
+    }
     const grid = await ensureGrid();
     const sent = entries.map((e) => {
       const name = which === "before" ? e.before : e.after;
@@ -522,6 +566,15 @@ export function StructureEditorPage() {
     }
   }
 
+  /** Bloquea o desbloquea la capa actual. Una capa bloqueada no admite ediciones. */
+  function toggleLock() {
+    const set = lockedRef.current;
+    if (set.has(y)) set.delete(y);
+    else set.add(y);
+    setLockedTick((t) => t + 1);
+    setMessage(set.has(y) ? `Capa ${y} bloqueada.` : `Capa ${y} desbloqueada.`);
+  }
+
   // Copia la capa actual sobre otra capa. Exige guardar antes, igual que mover.
   async function cloneLayer() {
     if (!detail) return;
@@ -629,6 +682,14 @@ export function StructureEditorPage() {
         setErase(true);
       } else if (key === "f") {
         setFillOn((f) => !f);
+      } else if (key === "l") {
+        setShape((k) => (k === "line" ? null : "line"));
+      } else if (key === "k") {
+        setShape((k) => (k === "rect" ? null : "rect"));
+      } else if (key === "j") {
+        setShape((k) => (k === "box" ? null : "box"));
+      } else if (key === "p") {
+        toggleLock();
       } else if (key === "g") {
         setGridOn((g) => !g);
       } else if (event.key === "Tab") {
@@ -782,6 +843,17 @@ export function StructureEditorPage() {
         )}
         {mode === "layer" && (
         <LayerStepper value={y} max={detail.height - 1} onChange={setY} />
+        )}
+        {mode === "layer" && (
+        <div className="shape-tools" aria-label="Herramientas de forma" key={lockedTick}>
+          <button type="button" className={`button${shape === "line" ? " button-primary" : ""}`} onClick={() => setShape(shape === "line" ? null : "line")}>Línea (L)</button>
+          <button type="button" className={`button${shape === "rect" ? " button-primary" : ""}`} onClick={() => setShape(shape === "rect" ? null : "rect")}>Rectángulo hueco (K)</button>
+          <button type="button" className={`button${shape === "box" ? " button-primary" : ""}`} onClick={() => setShape(shape === "box" ? null : "box")}>Rectángulo lleno (J)</button>
+          <label className="checkbox">
+            <input type="checkbox" checked={lockedRef.current.has(y)} onChange={toggleLock} />
+            {lockedRef.current.has(y) ? "Capa bloqueada (P)" : "Bloquear capa (P)"}
+          </label>
+        </div>
         )}
         {mode === "layer" && (
         <BlockPicker catalog={catalog} value={block} onChange={(id) => { setBlock(id); setErase(false); }} />
@@ -946,7 +1018,7 @@ export function StructureEditorPage() {
       </fieldset>
 
       <p className="muted small">
-        Atajos: B pintar · E borrar · F relleno · Ctrl+C / Ctrl+V copiar y pegar · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
+        Atajos: B pintar · E borrar · F relleno · L línea · K rectángulo · J relleno · P bloquear capa · Ctrl+C / Ctrl+V copiar y pegar · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
       </p>
     </section>
   );
