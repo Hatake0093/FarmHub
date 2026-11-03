@@ -794,3 +794,21 @@ section > .design-form {
   cursor: grab;
   touch-action: none;
 }
+
+.voxel3d-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #1b1e1a;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.voxel3d-fullscreen .voxel3d-canvas {
+  width: 100%;
+  height: calc(100vh - 48px);
+  aspect-ratio: auto;
+  border: none;
+  border-radius: 0;
+}

@@ -33,6 +33,8 @@ export function Voxel3DView({ grid, useTextures }: Props) {
   const fitKeyRef = useRef<string | null>(null);
   const [version, setVersion] = useState(0);
   const [unsupported, setUnsupported] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [fullscreen, setFullscreen] = useState(false);
 
   useTexRef.current = useTextures;
 
@@ -164,14 +166,54 @@ export function Voxel3DView({ grid, useTextures }: Props) {
     draw();
   }
 
+  // Pantalla completa: el lienzo ocupa la pantalla y se redibuja con su nuevo tamaño.
+  useEffect(() => {
+    const onChange = () => setFullscreen(document.fullscreenElement === wrapperRef.current);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const size = () => {
+      if (fullscreen) {
+        canvas.width = Math.max(320, window.innerWidth);
+        canvas.height = Math.max(240, window.innerHeight - 48);
+      } else {
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+      }
+      draw();
+    };
+    size();
+    if (!fullscreen) return;
+    window.addEventListener("resize", size);
+    return () => window.removeEventListener("resize", size);
+  }, [fullscreen, draw]);
+
+  function toggleFullscreen() {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    if (document.fullscreenElement === wrapper) {
+      void document.exitFullscreen();
+    } else {
+      void wrapper.requestFullscreen().catch(() => setError("El navegador no permitió la pantalla completa."));
+    }
+  }
+
+  const [error, setError] = useState<string | null>(null);
+
   if (unsupported) {
     return <p className="error">Este navegador no admite WebGL 2, así que la vista 3D no está disponible.</p>;
   }
 
   return (
-    <div className="voxel3d">
+    <div className={`voxel3d${fullscreen ? " voxel3d-fullscreen" : ""}`} ref={wrapperRef}>
       <div className="rotate-bar">
         <button type="button" className="button" onClick={reset}>Reiniciar vista</button>
+        <button type="button" className="button" onClick={toggleFullscreen}>{fullscreen ? "Salir de pantalla completa (Esc)" : "Pantalla completa"}</button>
+        {error && <span className="error small">{error}</span>}
         <span className="muted small">Arrastra para girar · botón derecho (o Mayús + arrastrar) para desplazar · rueda para acercar y alejar · {useTextures ? "con texturas" : "solo colores"}</span>
       </div>
       <canvas ref={canvasRef} className="voxel3d-canvas" width={WIDTH} height={HEIGHT} aria-label="Vista 3D" />
