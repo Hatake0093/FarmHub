@@ -13,6 +13,26 @@ import { SliceView } from "../components/SliceView";
 import { gridFromVolume } from "../lib/volume";
 import { EditHistory, type CellChange } from "../lib/history";
 import { floodFillLayer, mirrorBox, rotateBoxQuarter } from "../lib/design";
+import { decodeClip, encodeClip, extractBox, planPaste } from "../lib/clipboard";
+
+const CLIP_KEY = "farmhub.clipboard";
+
+function readClipText(): string | null {
+  try {
+    return localStorage.getItem(CLIP_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeClipText(text: string): boolean {
+  try {
+    localStorage.setItem(CLIP_KEY, text);
+    return true;
+  } catch {
+    return false;
+  }
+}
 import { LayerStepper } from "../components/LayerStepper";
 import { BlockPicker } from "../components/BlockPicker";
 import {
@@ -36,12 +56,15 @@ export function StructureEditorPage() {
   const [erase, setErase] = useState(false);
   // Herramienta de relleno: un clic rellena la región conectada de la capa actual.
   const [fillOn, setFillOn] = useState(false);
+  const [hasClip, setHasClip] = useState(() => decodeClip(readClipText()) !== null);
   const [pending, setPending] = useState<PendingChanges>(new Map());
   // Copia local de la rejilla (para no pedir el volumen en cada trazo) y historial de deshacer/rehacer.
   const gridRef = useRef<VoxelGrid | null>(null);
   const historyRef = useRef(new EditHistory());
   const [, setHistoryTick] = useState(0);
   const strokeRef = useRef<PendingChanges>(new Map());
+  // Última celda bajo el ratón, en una referencia: los atajos de teclado no ven los cambios de estado.
+  const hoverRef = useRef<Coordinates | null>(null);
   const [hover, setHover] = useState<Coordinates | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -217,6 +240,7 @@ export function StructureEditorPage() {
   function handleDown(event: MouseEvent<HTMLCanvasElement>) {
     const local = localAt(event);
     if (!local) return;
+    hoverRef.current = local;
     // Mayús + botón izquierdo: empieza a seleccionar un rectángulo en la capa actual.
     if (event.button === 0 && event.shiftKey) {
       selAnchorRef.current = { x: local.x, z: local.z };
@@ -259,6 +283,7 @@ export function StructureEditorPage() {
 
   function handleMove(event: MouseEvent<HTMLCanvasElement>) {
     const local = localAt(event);
+    hoverRef.current = local;
     setHover(local);
     if (local && paintingRef.current === "select") {
       setSel((current) => (current ? { ...current, bx: local.x, bz: local.z } : current));
@@ -407,6 +432,66 @@ export function StructureEditorPage() {
     }
   }
 
+  /** Copia la selección al portapapeles del navegador (sirve también para otros esquemáticos). */
+  async function copyToClipboard() {
+    if (!selBox) {
+      setError("Selecciona primero una zona (Mayús + arrastrar).");
+      return;
+    }
+    setError(null);
+    try {
+      const grid = await ensureGrid();
+      const clip = extractBox(grid, selBox);
+      if (!clip) {
+        setError("La selección es demasiado grande para el portapapeles.");
+        return;
+      }
+      if (!writeClipText(encodeClip(clip))) {
+        setError("No se pudo guardar el portapapeles en este navegador.");
+        return;
+      }
+      setHasClip(true);
+      setMessage(`Copiado al portapapeles (${clip.width} × ${clip.height} × ${clip.depth}).`);
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
+  /** Pega el portapapeles en la celda del ratón (o en el origen de la capa) y deja la zona pegada seleccionada. */
+  async function pasteClipboard() {
+    const clip = decodeClip(readClipText());
+    if (!clip) {
+      setError("El portapapeles está vacío.");
+      setHasClip(false);
+      return;
+    }
+    if (pending.size > 0) return;
+    const at = hoverRef.current;
+    const origin = { x: at?.x ?? 0, y, z: at?.z ?? 0 };
+    setError(null);
+    try {
+      const grid = await ensureGrid();
+      const changes = planPaste(grid, clip, origin, true);
+      if (changes === null) {
+        setError("El trozo no cabe aquí. Acerca el ratón a otra zona.");
+        return;
+      }
+      await applyChanges(changes, true);
+      setSel({
+        ax: origin.x,
+        az: origin.z,
+        bx: origin.x + clip.width - 1,
+        bz: origin.z + clip.depth - 1,
+        y0: origin.y,
+        y1: origin.y + clip.height - 1,
+      });
+      setOffset({ dx: 0, dy: 0, dz: 0 });
+      setMessage("Pegado. La zona pegada queda seleccionada: muévela con las flechas.");
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
   // Copia la selección al desplazamiento indicado; el original no cambia.
   async function copySelection() {
     if (!selBox || !detail) return;
@@ -518,6 +603,16 @@ export function StructureEditorPage() {
       if (mod && (key === "y" || (key === "z" && event.shiftKey))) {
         event.preventDefault();
         void redo();
+        return;
+      }
+      if (mod && key === "c") {
+        event.preventDefault();
+        void copyToClipboard();
+        return;
+      }
+      if (mod && key === "v") {
+        event.preventDefault();
+        void pasteClipboard();
         return;
       }
       if (mod || event.altKey || !detail) return;
@@ -753,7 +848,7 @@ export function StructureEditorPage() {
             onMouseUp={stopPainting}
             onAuxClick={(e) => e.preventDefault()}
             onContextMenu={(e) => e.preventDefault()}
-            onMouseLeave={() => { stopPainting(); setHover(null); }}
+            onMouseLeave={() => { stopPainting(); hoverRef.current = null; setHover(null); }}
           />
         </div>
       )}
@@ -774,6 +869,7 @@ export function StructureEditorPage() {
             <button type="button" className="button" onClick={() => void transformSelection("mirror-x")}>Espejo X (H)</button>
             <button type="button" className="button" onClick={() => void transformSelection("mirror-z")}>Espejo Z (V)</button>
             <button type="button" className="button" onClick={() => void transformSelection("rotate")}>Girar 90° (R)</button>
+            <button type="button" className="button" onClick={() => void copyToClipboard()}>Copiar al portapapeles (Ctrl+C)</button>
             <button type="button" className="button" onClick={clearSelection}>Cancelar</button>
           </div>
         </div>
@@ -800,6 +896,9 @@ export function StructureEditorPage() {
         </button>
         <button type="button" className="button" onClick={() => void redo()} disabled={!historyRef.current.canRedo}>
           Rehacer (Ctrl+Y)
+        </button>
+        <button type="button" className="button" onClick={() => void pasteClipboard()} disabled={!hasClip}>
+          Pegar (Ctrl+V)
         </button>
       </div>
       {message && <p className="muted" role="status">{message}</p>}
@@ -847,7 +946,7 @@ export function StructureEditorPage() {
       </fieldset>
 
       <p className="muted small">
-        Atajos: B pintar · E borrar · F relleno · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
+        Atajos: B pintar · E borrar · F relleno · Ctrl+C / Ctrl+V copiar y pegar · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
       </p>
     </section>
   );
