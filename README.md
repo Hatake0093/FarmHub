@@ -200,18 +200,18 @@ Principios:
 
 **Fase E — Planificación:** producciones por hora, dependencias, recomendaciones, gestión de mundos y seguimiento de progreso.
 
-## Decisiones pendientes
+## Decisiones
 
-Antes de implementar las funcionalidades afectadas hay que confirmar:
-
-1. Si una categoría puede contener diseños de varios creadores. *(Recomendado, aún no confirmado.)*
-2. Estrategia de almacenamiento de archivos.
-3. Diseño definitivo de la base de datos.
-4. Biblioteca de interpretación NBT.
-5. Técnica de renderizado 2D.
-6. Modelo de versiones compatibles de Minecraft.
-7. Sistema de clasificación de granjas.
-8. Estrategia de despliegue público.
+| # | Tema | Decisión |
+|---|---|---|
+| 1 | Categorías y creadores | Una categoría puede contener diseños de varios creadores. El creador va en la ficha de cada diseño. |
+| 2 | Almacenamiento de archivos | Disco local del servidor; la base de datos guarda la ruta y los metadatos. |
+| 3 | Base de datos | PostgreSQL con Entity Framework Core. |
+| 4 | Lectura NBT | Querz.NBT. Debe validarse con archivos `.litematic` reales antes de dar la Fase C por cerrada. |
+| 5 | Renderizado 2D | Canvas 2D. |
+| 6 | Versiones de Minecraft | Tabla de versiones oficiales con relación N:M con las granjas. No se asume compatibilidad entre versiones. |
+| 7 | Clasificación | Una categoría principal más etiquetas libres para filtrar. |
+| 8 | Despliegue | Solo local por ahora. El despliegue público se decidirá más adelante. |
 
 ## Principios de desarrollo
 
