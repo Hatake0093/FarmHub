@@ -11,11 +11,11 @@ import { normalizeBox, planCopy, planCopyLayer, planMove, type Box, type Delta }
 import { clipLayers, rotateGrid } from "../lib/isometric";
 import { SliceView } from "../components/SliceView";
 import { gridFromVolume } from "../lib/volume";
+import { EditHistory, type CellChange } from "../lib/history";
 import { LayerStepper } from "../components/LayerStepper";
 import { BlockPicker } from "../components/BlockPicker";
 import {
   displayedBlock,
-  toPatchChanges,
   withChange,
   worldCoordinates,
   type Coordinates,
@@ -34,10 +34,14 @@ export function StructureEditorPage() {
   const [block, setBlock] = useState("minecraft:stone");
   const [erase, setErase] = useState(false);
   const [pending, setPending] = useState<PendingChanges>(new Map());
+  // Copia local de la rejilla (para no pedir el volumen en cada trazo) y historial de deshacer/rehacer.
+  const gridRef = useRef<VoxelGrid | null>(null);
+  const historyRef = useRef(new EditHistory());
+  const [, setHistoryTick] = useState(0);
+  const strokeRef = useRef<PendingChanges>(new Map());
   const [hover, setHover] = useState<Coordinates | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<"layer" | "iso" | "slice">("layer");
   const [gridOn, setGridOn] = useState(true);
   // Selección rectangular en la capa actual (X/Z) con rango de Y, y desplazamiento pendiente.
@@ -124,6 +128,11 @@ export function StructureEditorPage() {
     };
   }, [mode, detail, structureId]);
 
+  const selBox: Box | null = useMemo(
+    () => (sel ? normalizeBox({ x: sel.ax, z: sel.az }, { x: sel.bx, z: sel.bz }, sel.y0, sel.y1) : null),
+    [sel],
+  );
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !layer || !detail || mode !== "layer") return;
@@ -179,7 +188,7 @@ export function StructureEditorPage() {
       ctx.lineWidth = 2;
       ctx.strokeRect(hover.x * cell, hover.z * cell, cell - gap, cell - gap);
     }
-  }, [layer, pending, hover, y, cell, detail, mode, ghostLayer, gridOn, sel, offset]);
+  }, [layer, pending, hover, y, cell, detail, mode, ghostLayer, gridOn, sel, offset, selBox]);
 
   function localAt(event: MouseEvent<HTMLCanvasElement>): Coordinates | null {
     const canvas = canvasRef.current;
@@ -198,7 +207,8 @@ export function StructureEditorPage() {
       setError(`"${target}" no es un identificador de bloque válido (p. ej. minecraft:stone).`);
       return;
     }
-    setPending((current) => withChange(current, local, target));
+    strokeRef.current = withChange(strokeRef.current, local, target);
+    setPending(strokeRef.current);
   }
 
   function handleDown(event: MouseEvent<HTMLCanvasElement>) {
@@ -243,12 +253,90 @@ export function StructureEditorPage() {
   }
 
   function stopPainting() {
+    const mode = paintingRef.current;
     paintingRef.current = null;
+    if ((mode === "paint" || mode === "erase") && strokeRef.current.size > 0) {
+      const batch = [...strokeRef.current.values()];
+      strokeRef.current = new Map();
+      void applyChanges(batch, true)
+        .catch((err: unknown) => setError(errorMessage(err)))
+        .finally(() => setPending(new Map()));
+    }
   }
 
-  const selBox: Box | null = sel
-    ? normalizeBox({ x: sel.ax, z: sel.az }, { x: sel.bx, z: sel.bz }, sel.y0, sel.y1)
-    : null;
+  /** Copia local de la rejilla: se pide una vez y se mantiene al día con cada edición. */
+  async function ensureGrid(): Promise<VoxelGrid> {
+    if (!gridRef.current) {
+      gridRef.current = gridFromVolume(await structuresApi.volume(structureId));
+    }
+    return gridRef.current;
+  }
+
+  /** Envía cambios al servidor, los aplica a la copia local y, si record es true, los guarda en el historial. */
+  async function applyChanges(changes: { x: number; y: number; z: number; block: string | null }[], record: boolean): Promise<void> {
+    const grid = await ensureGrid();
+    const entries: CellChange[] = [];
+    const sent: { x: number; y: number; z: number; block: string | null }[] = [];
+    for (const c of changes) {
+      const index = (c.y * grid.depth + c.z) * grid.width + c.x;
+      const before = grid.palette[grid.blocks[index]];
+      const after = c.block ?? "minecraft:air";
+      if (before === after) continue;
+      entries.push({ x: c.x, y: c.y, z: c.z, before, after });
+      sent.push({ x: c.x, y: c.y, z: c.z, block: c.block });
+    }
+    if (sent.length === 0) return;
+    const updated = await structuresApi.saveBlocks(structureId, sent);
+    applyToGrid(grid, entries, "after");
+    setDetail(updated);
+    if (record) {
+      historyRef.current.record(entries);
+      setHistoryTick((t) => t + 1);
+    }
+  }
+
+  /** Deshace (which = before) o rehace (which = after) una edición ya registrada. */
+  async function sendEntries(entries: CellChange[], which: "before" | "after"): Promise<void> {
+    const grid = await ensureGrid();
+    const sent = entries.map((e) => {
+      const name = which === "before" ? e.before : e.after;
+      return { x: e.x, y: e.y, z: e.z, block: name === "minecraft:air" ? null : name };
+    });
+    const updated = await structuresApi.saveBlocks(structureId, sent);
+    applyToGrid(grid, entries, which);
+    setDetail(updated);
+  }
+
+  async function undo() {
+    const entry = historyRef.current.peekUndo();
+    if (!entry) return;
+    clearSelection();
+    setError(null);
+    try {
+      await sendEntries(entry, "before");
+      historyRef.current.markUndone();
+      setHistoryTick((t) => t + 1);
+      setMessage("Deshecho.");
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
+  async function redo() {
+    const entry = historyRef.current.peekRedo();
+    if (!entry) return;
+    clearSelection();
+    setError(null);
+    try {
+      await sendEntries(entry, "after");
+      historyRef.current.markRedone();
+      setHistoryTick((t) => t + 1);
+      setMessage("Rehecho.");
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
 
   function clearSelection() {
     setSel(null);
@@ -268,7 +356,7 @@ export function StructureEditorPage() {
     }
     setError(null);
     try {
-      const grid = gridFromVolume(await structuresApi.volume(structureId));
+      const grid = await ensureGrid();
       const changes = planMove(grid, selBox, offset);
       if (changes === null) {
         setError("El destino queda fuera de la estructura.");
@@ -278,8 +366,7 @@ export function StructureEditorPage() {
         setError("La selección es demasiado grande para mover de una vez.");
         return;
       }
-      const updated = changes.length > 0 ? await structuresApi.saveBlocks(structureId, changes) : detail;
-      setDetail(updated);
+      await applyChanges(changes, true);
       setMessage(`Selección movida (${changes.length} celdas).`);
       clearSelection();
     } catch (err) {
@@ -300,7 +387,7 @@ export function StructureEditorPage() {
     }
     setError(null);
     try {
-      const grid = gridFromVolume(await structuresApi.volume(structureId));
+      const grid = await ensureGrid();
       const changes = planCopy(grid, selBox, offset, copyKeepAir);
       if (changes === null) {
         setError("La copia queda fuera de la estructura.");
@@ -310,8 +397,7 @@ export function StructureEditorPage() {
         setError("La selección es demasiado grande para copiar de una vez.");
         return;
       }
-      const updated = changes.length > 0 ? await structuresApi.saveBlocks(structureId, changes) : detail;
-      setDetail(updated);
+      await applyChanges(changes, true);
       setMessage(`Selección copiada (${changes.length} celdas cambiadas).`);
     } catch (err) {
       setError(errorMessage(err));
@@ -336,14 +422,13 @@ export function StructureEditorPage() {
     }
     setError(null);
     try {
-      const grid = gridFromVolume(await structuresApi.volume(structureId));
+      const grid = await ensureGrid();
       const changes = planCopyLayer(grid, y, target, copyKeepAir);
       if (changes === null) {
         setError("No se pudo copiar la capa.");
         return;
       }
-      const updated = changes.length > 0 ? await structuresApi.saveBlocks(structureId, changes) : detail;
-      setDetail(updated);
+      await applyChanges(changes, true);
       setMessage(`Capa ${y} copiada a la ${target} (${changes.length} celdas cambiadas).`);
     } catch (err) {
       setError(errorMessage(err));
@@ -376,6 +461,48 @@ export function StructureEditorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sel, offset, pending]);
 
+  // Atajos de edición. Mientras hay una selección, las flechas y RePág/AvPág son de la selección.
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement;
+      if (target.closest("input, textarea, select")) return;
+      const mod = event.ctrlKey || event.metaKey;
+      const key = event.key.toLowerCase();
+      if (mod && key === "z" && !event.shiftKey) {
+        event.preventDefault();
+        void undo();
+        return;
+      }
+      if (mod && (key === "y" || (key === "z" && event.shiftKey))) {
+        event.preventDefault();
+        void redo();
+        return;
+      }
+      if (mod || event.altKey || !detail) return;
+      if (sel) return;
+      if (event.key === "PageUp" || event.key === "]") {
+        event.preventDefault();
+        setY((v) => Math.min(detail.height - 1, v + 1));
+      } else if (event.key === "PageDown" || event.key === "[") {
+        event.preventDefault();
+        setY((v) => Math.max(0, v - 1));
+      } else if (key === "b") {
+        setErase(false);
+      } else if (key === "e") {
+        setErase(true);
+      } else if (key === "g") {
+        setGridOn((g) => !g);
+      } else if (event.key === "Tab") {
+        event.preventDefault();
+        setMode((m) => (m === "layer" ? "iso" : "layer"));
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // undo y redo leen refs y estado actual; se vuelve a registrar al cambiar la vista o la selección.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sel, detail, mode]);
+
   // Carga la capa fantasma (inferior o superior) cuando está activa.
   useEffect(() => {
     if (ghost === "none" || !detail) {
@@ -401,23 +528,6 @@ export function StructureEditorPage() {
     ? displayedBlock(pending, hover, layer.palette[layer.cells[hover.z * layer.width + hover.x]])
     : null;
 
-  async function handleSave() {
-    if (pending.size === 0) return;
-    const changes = toPatchChanges(pending);
-    setSaving(true);
-    setError(null);
-    try {
-      const updated = await structuresApi.saveBlocks(structureId, changes);
-      setDetail(updated);
-      setPending(new Map());
-      setMessage(`${changes.length} cambios guardados.`);
-      setLayer(await structuresApi.layer(structureId, y));
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setSaving(false);
-    }
-  }
 
   const [size, setSize] = useState({ w: "", h: "", d: "" });
   const [ext, setExt] = useState({ left: "0", right: "0", down: "0", up: "0", back: "0", front: "0" });
@@ -437,6 +547,9 @@ export function StructureEditorPage() {
     try {
       const updated = await structuresApi.extend(structureId, amounts);
       setDetail(updated);
+      gridRef.current = null;
+      historyRef.current.clear();
+      setHistoryTick((t) => t + 1);
       setExt({ left: "0", right: "0", down: "0", up: "0", back: "0", front: "0" });
       setMessage("Estructura extendida. Las coordenadas de los bloques no han cambiado.");
     } catch (err) {
@@ -463,6 +576,9 @@ export function StructureEditorPage() {
         updated = await structuresApi.resize(structureId, w, h, d, true);
       }
       setDetail(updated);
+      gridRef.current = null;
+      historyRef.current.clear();
+      setHistoryTick((t) => t + 1);
       setSize({ w: "", h: "", d: "" });
       setY((current) => Math.min(current, updated.height - 1));
       setPending(new Map());
@@ -626,12 +742,12 @@ export function StructureEditorPage() {
       </div>
 
       <div className="actions">
-        <button type="button" className="button button-primary" onClick={handleSave} disabled={saving || pending.size === 0}>
-          {saving ? "Guardando…" : `Guardar cambios (${pending.size})`}
+        <button type="button" className="button" onClick={() => void undo()} disabled={!historyRef.current.canUndo}>
+          Deshacer (Ctrl+Z)
         </button>
-        {pending.size > 0 && (
-          <button type="button" className="button" onClick={() => setPending(new Map())}>Descartar cambios</button>
-        )}
+        <button type="button" className="button" onClick={() => void redo()} disabled={!historyRef.current.canRedo}>
+          Rehacer (Ctrl+Y)
+        </button>
       </div>
       {message && <p className="muted" role="status">{message}</p>}
       {error && <p className="error" role="alert">{error}</p>}
@@ -677,8 +793,22 @@ export function StructureEditorPage() {
         <p className="muted small">Nunca borra bloques. Las coordenadas del mundo se mantienen: la base se ajusta si añades por la izquierda, abajo o atrás.</p>
       </fieldset>
 
-      <p className="muted">Cambios pendientes en {pending.size} celdas. Capa {y}: las celdas marcadas se guardan al pulsar "Guardar cambios".</p>
+      <p className="muted small">
+        Atajos: B pintar · E borrar · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
+      </p>
     </section>
   );
 }
 
+/** Escribe las celdas de una edición en la copia local (before o after). */
+function applyToGrid(grid: VoxelGrid, entries: CellChange[], which: "before" | "after"): void {
+  for (const e of entries) {
+    const name = e[which];
+    let paletteIndex = grid.palette.indexOf(name);
+    if (paletteIndex < 0) {
+      grid.palette = [...grid.palette, name];
+      paletteIndex = grid.palette.length - 1;
+    }
+    grid.blocks[(e.y * grid.depth + e.z) * grid.width + e.x] = paletteIndex;
+  }
+}
