@@ -32,6 +32,28 @@ const VIEW_MODES: { value: "layer" | "iso" | "slice" | "3d"; label: string }[] =
   { value: "3d", label: "3D" },
 ];
 
+type ViewMode = (typeof VIEW_MODES)[number]["value"];
+/** La última vista elegida se recuerda al pasar a otra estructura o reabrir el visor. */
+const MODE_KEY = "farmhub.viewerMode";
+
+function loadMode(): ViewMode {
+  try {
+    const value = localStorage.getItem(MODE_KEY);
+    if (VIEW_MODES.some((m) => m.value === value)) return value as ViewMode;
+  } catch {
+    // Sin almacenamiento disponible: se usa la vista por defecto.
+  }
+  return "layer";
+}
+
+function saveMode(mode: ViewMode) {
+  try {
+    localStorage.setItem(MODE_KEY, mode);
+  } catch {
+    // Ignorado: recordar la vista es solo una comodidad.
+  }
+}
+
 export function LitematicViewer({ source, title, onClose }: Props) {
   const [summary, setSummary] = useState<LitematicSummary | null>(null);
   const [regionName, setRegionName] = useState<string>("");
@@ -39,7 +61,11 @@ export function LitematicViewer({ source, title, onClose }: Props) {
   const [layer, setLayer] = useState<LitematicLayer | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [mode, setMode] = useState<"layer" | "iso" | "slice" | "3d">("layer");
+  const [mode, setModeState] = useState<ViewMode>(loadMode);
+  const setMode = (next: ViewMode) => {
+    setModeState(next);
+    saveMode(next);
+  };
   const [texOn3d, setTexOn3d] = useState(true);
   const [gridOn, setGridOn] = useState(true);
   const [rangeFrom, setRangeFrom] = useState(0);
