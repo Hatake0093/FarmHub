@@ -416,6 +416,21 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
                     b.ToTable("FarmMinecraftVersion");
                 });
 
+            modelBuilder.Entity("FarmSavedStructure", b =>
+                {
+                    b.Property<int>("FarmsId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StructuresId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("FarmsId", "StructuresId");
+
+                    b.HasIndex("StructuresId");
+
+                    b.ToTable("FarmSavedStructure");
+                });
+
             modelBuilder.Entity("FarmTag", b =>
                 {
                     b.Property<int>("FarmsId")
@@ -530,6 +545,21 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
                     b.HasOne("FarmHub.Domain.Entities.MinecraftVersion", null)
                         .WithMany()
                         .HasForeignKey("MinecraftVersionsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FarmSavedStructure", b =>
+                {
+                    b.HasOne("FarmHub.Domain.Entities.Farm", null)
+                        .WithMany()
+                        .HasForeignKey("FarmsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FarmHub.Domain.Entities.SavedStructure", null)
+                        .WithMany()
+                        .HasForeignKey("StructuresId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

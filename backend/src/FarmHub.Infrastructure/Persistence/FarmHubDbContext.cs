@@ -33,6 +33,7 @@ public sealed class FarmHubDbContext(DbContextOptions<FarmHubDbContext> options)
 
             entity.HasMany(f => f.MinecraftVersions).WithMany(v => v.Farms);
             entity.HasMany(f => f.Tags).WithMany(t => t.Farms);
+            entity.HasMany(f => f.Structures).WithMany(s => s.Farms);
 
             entity.Property(f => f.OperatingConditions).HasMaxLength(4000);
 
@@ -114,6 +115,7 @@ public sealed class FarmHubDbContext(DbContextOptions<FarmHubDbContext> options)
             entity.Property(s => s.PaletteText).IsRequired();
             entity.Property(s => s.Cells).IsRequired();
             entity.HasIndex(s => s.Name);
+            entity.HasMany(s => s.Farms).WithMany(f => f.Structures);
         });
 
         modelBuilder.Entity<Category>(entity =>

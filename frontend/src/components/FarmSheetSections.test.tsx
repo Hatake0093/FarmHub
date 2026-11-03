@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import { FarmSheetSections } from "./FarmSheetSections";
 import { mockApi } from "../test/fetchMock";
 import type { FarmDetail } from "../api/types";
@@ -19,6 +20,7 @@ const farm: FarmDetail = {
   operatingConditions: null,
   designs: [],
   links: [],
+  structures: [],
   productions: [],
   requires: [],
   requiredBy: [],
@@ -35,8 +37,8 @@ describe("FarmSheetSections", () => {
   });
 
   it("no envía una producción con cantidad 0 ni sin recurso", async () => {
-    const fetchMock = mockApi({ "/api/minecraft-versions": [], "/api/farms": { items: [], page: 1, pageSize: 100, totalCount: 0 } });
-    render(<FarmSheetSections farm={farm} onChanged={() => undefined} />);
+    const fetchMock = mockApi({ "/api/minecraft-versions": [], "/api/farms": { items: [], page: 1, pageSize: 100, totalCount: 0 }, "/api/structures": [] });
+    render(<MemoryRouter><FarmSheetSections farm={farm} onChanged={() => undefined} /></MemoryRouter>);
 
     await userEvent.type(screen.getByLabelText(/Recurso \*/), "Hierro");
     await userEvent.type(screen.getByLabelText(/Cantidad por hora/), "0");
@@ -47,8 +49,8 @@ describe("FarmSheetSections", () => {
   });
 
   it("no envía un enlace sin URL", async () => {
-    const fetchMock = mockApi({ "/api/minecraft-versions": [], "/api/farms": { items: [], page: 1, pageSize: 100, totalCount: 0 } });
-    render(<FarmSheetSections farm={farm} onChanged={() => undefined} />);
+    const fetchMock = mockApi({ "/api/minecraft-versions": [], "/api/farms": { items: [], page: 1, pageSize: 100, totalCount: 0 }, "/api/structures": [] });
+    render(<MemoryRouter><FarmSheetSections farm={farm} onChanged={() => undefined} /></MemoryRouter>);
 
     await userEvent.type(screen.getByLabelText("Título del enlace"), "Tutorial");
     await userEvent.click(screen.getByRole("button", { name: "Añadir enlace" }));

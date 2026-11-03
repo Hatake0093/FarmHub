@@ -1,5 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { dependenciesApi, linksApi, productionsApi } from "../api/sheet";
+import { dependenciesApi, farmStructuresApi, linksApi, productionsApi } from "../api/sheet";
+import { structuresApi, type StructureListItem } from "../api/structures";
+import { Link } from "react-router-dom";
 import { farmsApi, versionsApi } from "../api/farms";
 import { errorMessage } from "../api/client";
 import type {
@@ -37,10 +39,87 @@ function useAction(onChanged: () => void) {
 export function FarmSheetSections({ farm, onChanged }: Props) {
   return (
     <>
+      <StructuresSection farmId={farm.id} linked={farm.structures} onChanged={onChanged} />
       <LinksSection farmId={farm.id} links={farm.links} onChanged={onChanged} />
       <ProductionsSection farmId={farm.id} productions={farm.productions} onChanged={onChanged} />
       <DependenciesSection farm={farm} onChanged={onChanged} />
     </>
+  );
+}
+
+/* ---------- Esquemáticos vinculados ---------- */
+
+function StructuresSection({
+  farmId,
+  linked,
+  onChanged,
+}: {
+  farmId: number;
+  linked: FarmDetail["structures"];
+  onChanged: () => void;
+}) {
+  const [available, setAvailable] = useState<StructureListItem[]>([]);
+  const [choice, setChoice] = useState("");
+  const { error, run, setError } = useAction(onChanged);
+
+  useEffect(() => {
+    structuresApi.list().then(setAvailable).catch(() => setAvailable([]));
+  }, [linked]);
+
+  const linkedIds = new Set(linked.map((s) => s.id));
+  const candidates = available.filter((s) => !linkedIds.has(s.id));
+
+  async function handleLink(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!choice) {
+      setError("Selecciona un esquemático.");
+      return;
+    }
+    await run(() => farmStructuresApi.link(farmId, Number(choice)));
+    setChoice("");
+  }
+
+  return (
+    <section>
+      <h2>Esquemáticos vinculados</h2>
+      <p className="muted">Estructuras propias usadas en esta granja. Desvincular no borra el esquemático.</p>
+      {linked.length === 0 && <p className="muted">No hay esquemáticos vinculados.</p>}
+      <ul className="file-list">
+        {linked.map((s) => (
+          <li key={s.id}>
+            <Link to={`/structures/${s.id}`}>{s.name}</Link>{" "}
+            <span className="muted">
+              {s.width} × {s.height} × {s.depth} · {s.blockCount} bloques
+            </span>{" "}
+            <button
+              type="button"
+              className="button-link button-danger"
+              onClick={() => {
+                if (window.confirm(`¿Desvincular "${s.name}" de esta granja?`)) {
+                  void run(() => farmStructuresApi.unlink(farmId, s.id));
+                }
+              }}
+            >
+              Desvincular
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <form className="inline-form" onSubmit={handleLink} noValidate>
+        <select aria-label="Esquemático a vincular" value={choice} onChange={(e) => setChoice(e.target.value)}>
+          <option value="">Elegir esquemático…</option>
+          {candidates.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+        <button type="submit" className="button">Vincular</button>
+        <Link to="/structures">Crear esquemático nuevo</Link>
+      </form>
+      {error && <p className="error" role="alert">{error}</p>}
+    </section>
   );
 }
 

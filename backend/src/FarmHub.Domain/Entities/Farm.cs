@@ -25,6 +25,7 @@ public sealed class Farm
     public List<FarmProduction> Productions { get; } = [];
     public List<FarmDependency> Requires { get; } = [];
     public List<FarmDependency> RequiredBy { get; } = [];
+    public List<SavedStructure> Structures { get; } = [];
     public List<MinecraftVersion> MinecraftVersions { get; } = [];
     public List<Tag> Tags { get; } = [];
 }

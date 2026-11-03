@@ -37,6 +37,7 @@ public sealed record FarmDetailResponse(
     string? OperatingConditions,
     IReadOnlyList<FarmDesignSummary> Designs,
     IReadOnlyList<FarmLinkResponse> Links,
+    IReadOnlyList<FarmStructureLink> Structures,
     IReadOnlyList<FarmProductionResponse> Productions,
     IReadOnlyList<FarmRelationResponse> Requires,
     IReadOnlyList<FarmRelationResponse> RequiredBy);
@@ -90,3 +91,7 @@ public sealed record MinecraftVersionResponse(int Id, string Name);
 public sealed record AuthorRequest(string Name, string? Url);
 
 public sealed record AuthorResponse(int Id, string Name, string? Url);
+
+public sealed record FarmStructureLink(int Id, string Name, int Width, int Height, int Depth, long BlockCount);
+
+public sealed record LinkStructureRequest(int StructureId);

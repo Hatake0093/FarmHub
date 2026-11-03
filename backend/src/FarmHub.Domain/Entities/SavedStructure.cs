@@ -23,4 +23,6 @@ public sealed class SavedStructure
     public required string PaletteText { get; set; }
     public required byte[] Cells { get; set; }
     public DateTime UpdatedAtUtc { get; set; }
+
+    public List<Farm> Farms { get; } = [];
 }

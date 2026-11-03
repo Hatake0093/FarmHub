@@ -76,6 +76,15 @@ export interface FarmProduction {
   measuredInVersion: string | null;
 }
 
+export interface FarmStructureLink {
+  id: number;
+  name: string;
+  width: number;
+  height: number;
+  depth: number;
+  blockCount: number;
+}
+
 export interface FarmRelation {
   dependencyId: number;
   farmId: number;
@@ -97,6 +106,7 @@ export interface FarmDetail {
   operatingConditions: string | null;
   designs: FarmDesignSummary[];
   links: FarmLink[];
+  structures: FarmStructureLink[];
   productions: FarmProduction[];
   requires: FarmRelation[];
   requiredBy: FarmRelation[];

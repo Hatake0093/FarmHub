@@ -278,6 +278,7 @@ public sealed class FarmsController(FarmHubDbContext db, IFileStorage storage) :
         .Include(f => f.Designs).ThenInclude(d => d.Files)
         .Include(f => f.Designs).ThenInclude(d => d.Author)
         .Include(f => f.Links)
+        .Include(f => f.Structures)
         .Include(f => f.Productions).ThenInclude(p => p.MeasuredInVersion)
         .Include(f => f.Requires).ThenInclude(r => r.RequiredFarm)
         .Include(f => f.RequiredBy).ThenInclude(r => r.Farm)
@@ -319,6 +320,9 @@ public sealed class FarmsController(FarmHubDbContext db, IFileStorage storage) :
             d.Author?.Name,
             d.Files.OrderBy(f => f.OriginalFileName).Select(DesignFileMapping.From).ToList())).ToList(),
         farm.Links.OrderBy(l => l.Title).Select(FarmLinkMapping.From).ToList(),
+        farm.Structures.OrderBy(s => s.Name).Select(s => new FarmStructureLink(
+            s.Id, s.Name, s.Width, s.Height, s.Depth,
+            (long)s.Width * s.Height * s.Depth - s.Cells.LongCount(c => c == 0))).ToList(),
         farm.Productions.OrderBy(p => p.ResourceName).Select(FarmProductionMapping.From).ToList(),
         farm.Requires.OrderBy(r => r.RequiredFarm.Name)
             .Select(r => new FarmRelationResponse(r.Id, r.RequiredFarmId, r.RequiredFarm.Name, r.Note)).ToList(),

@@ -25,3 +25,10 @@ export const dependenciesApi = {
     }),
   remove: (dependencyId: number) => apiRequest<void>(`/farm-dependencies/${dependencyId}`, { method: "DELETE" }),
 };
+
+export const farmStructuresApi = {
+  link: (farmId: number, structureId: number) =>
+    apiRequest<void>(`/farms/${farmId}/structures`, { method: "POST", body: json({ structureId }) }),
+  unlink: (farmId: number, structureId: number) =>
+    apiRequest<void>(`/farms/${farmId}/structures/${structureId}`, { method: "DELETE" }),
+};
