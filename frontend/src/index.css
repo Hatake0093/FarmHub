@@ -467,3 +467,10 @@ section > .design-form {
   border-radius: 6px;
   padding: 0.75rem;
 }
+
+.iso-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow: auto;
+}

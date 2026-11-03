@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import { structuresApi, type StructureDetail, type StructureLayer } from "../api/structures";
 import { errorMessage } from "../api/client";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
+import { gridFromLayers, MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
+import { IsometricView } from "../components/IsometricView";
 import {
   displayedBlock,
   toPatchChanges,
@@ -36,6 +38,9 @@ export function StructureEditorPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [mode, setMode] = useState<"layer" | "iso">("layer");
+  const [isoGrid, setIsoGrid] = useState<VoxelGrid | null>(null);
+  const [isoMessage, setIsoMessage] = useState<string | null>(null);
   const [base, setBase] = useState({ x: "0", y: "0", z: "0" });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const paintingRef = useRef(false);
@@ -67,9 +72,32 @@ export function StructureEditorPage() {
     };
   }, [detail, structureId, y]);
 
+  // Vista isométrica: muestra lo guardado en el servidor, con todas las capas.
+  useEffect(() => {
+    if (mode !== "iso" || !detail) return;
+    const volume = detail.width * detail.height * detail.depth;
+    if (volume > MAX_ISOMETRIC_VOLUME) {
+      setIsoGrid(null);
+      setIsoMessage(`El esquemático tiene ${volume.toLocaleString("es-ES")} bloques; la vista isométrica admite hasta ${MAX_ISOMETRIC_VOLUME.toLocaleString("es-ES")}.`);
+      return;
+    }
+    let active = true;
+    setIsoMessage("Cargando capas…");
+    Promise.all(Array.from({ length: detail.height }, (_, yy) => structuresApi.layer(structureId, yy)))
+      .then((layers) => {
+        if (!active) return;
+        setIsoGrid(gridFromLayers(detail.width, detail.height, detail.depth, layers));
+        setIsoMessage(null);
+      })
+      .catch((err: unknown) => active && setIsoMessage(errorMessage(err)));
+    return () => {
+      active = false;
+    };
+  }, [mode, detail, structureId]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !layer || !detail) return;
+    if (!canvas || !layer || !detail || mode !== "layer") return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -93,7 +121,7 @@ export function StructureEditorPage() {
       ctx.lineWidth = 2;
       ctx.strokeRect(hover.x * cell, hover.z * cell, cell - 1, cell - 1);
     }
-  }, [layer, pending, hover, y, cell, detail]);
+  }, [layer, pending, hover, y, cell, detail, mode]);
 
   function localAt(event: MouseEvent<HTMLCanvasElement>): Coordinates | null {
     const canvas = canvasRef.current;
@@ -191,9 +219,19 @@ export function StructureEditorPage() {
 
       <div className="viewer-controls">
         <label>
+          Vista
+          <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso")}>
+            <option value="layer">Capa 2D (editable)</option>
+            <option value="iso">Isométrica (guardado)</option>
+          </select>
+        </label>
+        {mode === "layer" && (
+        <label>
           Capa Y local: {y} / {detail.height - 1}
           <input type="range" min={0} max={detail.height - 1} value={y} onChange={(e) => setY(Number(e.target.value))} />
         </label>
+        )}
+        {mode === "layer" && (
         <label>
           Bloque
           <input list="common-blocks" value={block} onChange={(e) => { setBlock(e.target.value); setErase(false); }} />
@@ -201,20 +239,25 @@ export function StructureEditorPage() {
             {COMMON_BLOCKS.map((b) => <option key={b} value={b} />)}
           </datalist>
         </label>
+        )}
+        {mode === "layer" && (
         <label className="checkbox">
           <input type="checkbox" checked={erase} onChange={(e) => setErase(e.target.checked)} />
           Borrar (aire)
         </label>
+        )}
       </div>
 
-      <canvas
+      {mode === "iso" && (isoGrid ? <IsometricView grid={isoGrid} /> : <p className="muted">{isoMessage}</p>)}
+
+      {mode === "layer" && <canvas
         ref={canvasRef}
         className="viewer-canvas structure-canvas"
         onMouseDown={handleDown}
         onMouseMove={handleMove}
         onMouseUp={stopPainting}
         onMouseLeave={() => { stopPainting(); setHover(null); }}
-      />
+      />}
 
       <div className="coord-panel" aria-live="polite">
         {hover && world && hoverBlock ? (

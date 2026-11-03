@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type MouseEvent, type WheelEvent } from "r
 import { litematicApi, type LitematicLayer, type LitematicSummary } from "../api/litematic";
 import { errorMessage } from "../api/client";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
+import { gridFromLayers, MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
+import { IsometricView } from "./IsometricView";
 
 interface Props {
   fileId: number;
@@ -19,6 +21,9 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
   const [layer, setLayer] = useState<LitematicLayer | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [mode, setMode] = useState<"layer" | "iso">("layer");
+  const [isoGrid, setIsoGrid] = useState<VoxelGrid | null>(null);
+  const [isoMessage, setIsoMessage] = useState<string | null>(null);
   const [cellSize, setCellSize] = useState(16);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -54,9 +59,32 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
     };
   }, [fileId, regionName, y]);
 
+  // Vista isométrica: carga todas las capas de la región (con límite de volumen).
+  useEffect(() => {
+    if (mode !== "iso" || !region) return;
+    const volume = region.width * region.height * region.depth;
+    if (volume > MAX_ISOMETRIC_VOLUME) {
+      setIsoGrid(null);
+      setIsoMessage(`La región tiene ${volume.toLocaleString("es-ES")} bloques; la vista isométrica admite hasta ${MAX_ISOMETRIC_VOLUME.toLocaleString("es-ES")}.`);
+      return;
+    }
+    let active = true;
+    setIsoMessage("Cargando capas…");
+    Promise.all(Array.from({ length: region.height }, (_, yy) => litematicApi.layer(fileId, regionName, yy)))
+      .then((layers) => {
+        if (!active) return;
+        setIsoGrid(gridFromLayers(region.width, region.height, region.depth, layers));
+        setIsoMessage(null);
+      })
+      .catch((err: unknown) => active && setIsoMessage(errorMessage(err)));
+    return () => {
+      active = false;
+    };
+  }, [mode, fileId, regionName, region]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !layer) return;
+    if (!canvas || !layer || mode !== "layer") return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -82,7 +110,7 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
       const [sx, sz] = selected.split(",").map(Number);
       ctx.strokeRect(offset.x + sx * cellSize, offset.y + sz * cellSize, cellSize - 1, cellSize - 1);
     }
-  }, [layer, cellSize, offset, selected]);
+  }, [layer, cellSize, offset, selected, mode]);
 
   function cellAt(event: MouseEvent<HTMLCanvasElement>): { x: number; z: number } | null {
     const canvas = canvasRef.current;
@@ -145,17 +173,30 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
               </select>
             </label>
             <label>
-              Capa Y: {y} / {region.height - 1}
-              <input type="range" min={0} max={region.height - 1} value={y} onChange={(e) => setY(Number(e.target.value))} />
+              Vista
+              <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso")}>
+                <option value="layer">Capa 2D</option>
+                <option value="iso">Isométrica</option>
+              </select>
             </label>
-            <label>
-              Zoom
-              <input type="range" min={MIN_CELL} max={MAX_CELL} value={cellSize} onChange={(e) => setCellSize(Number(e.target.value))} />
-            </label>
-            <button type="button" className="button" onClick={() => setOffset({ x: 0, y: 0 })}>Centrar</button>
+            {mode === "layer" && (
+              <>
+                <label>
+                  Capa Y: {y} / {region.height - 1}
+                  <input type="range" min={0} max={region.height - 1} value={y} onChange={(e) => setY(Number(e.target.value))} />
+                </label>
+                <label>
+                  Zoom
+                  <input type="range" min={MIN_CELL} max={MAX_CELL} value={cellSize} onChange={(e) => setCellSize(Number(e.target.value))} />
+                </label>
+                <button type="button" className="button" onClick={() => setOffset({ x: 0, y: 0 })}>Centrar</button>
+              </>
+            )}
           </div>
 
-          <canvas
+          {mode === "iso" && (isoGrid ? <IsometricView grid={isoGrid} /> : <p className="muted">{isoMessage}</p>)}
+
+          {mode === "layer" && <canvas
             ref={canvasRef}
             className="viewer-canvas"
             width={900}
@@ -166,7 +207,7 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
             onMouseMove={handleMouseMove}
             onMouseUp={endDrag}
             onMouseLeave={endDrag}
-          />
+          />}
 
           <p className="muted">
             Arrastra para desplazar, rueda para hacer zoom, clic para ver un bloque.
