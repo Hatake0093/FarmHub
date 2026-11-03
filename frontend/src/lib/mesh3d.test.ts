@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMesh } from "./mesh3d";
+import { buildMesh, buildMeshes } from "./mesh3d";
 import type { VoxelGrid } from "./isometric";
 
 const palette = ["minecraft:air", "minecraft:stone", "minecraft:stone_slab[type=bottom]", "minecraft:stone_slab[type=top]"];
@@ -70,5 +70,39 @@ describe("buildMesh", () => {
     g.blocks[0] = 1;
     g.blocks[1] = 3;
     expect(buildMesh(g, null).faces).toBe(12);
+  });
+
+  it("el vidrio va en su propia malla y no entra en la sólida", () => {
+    const g = grid(1, 1, 1, []);
+    const glassPalette = ["minecraft:air", "minecraft:glass"];
+    const glass: VoxelGrid = { ...g, palette: glassPalette, blocks: new Uint16Array([1]) };
+    const meshes = buildMeshes(glass, null);
+    expect(meshes.solid.faces).toBe(0);
+    expect(meshes.glass.faces).toBe(6);
+  });
+
+  it("el vidrio no tapa las caras de piedra que tiene detrás", () => {
+    // Piedra en x=0 y vidrio en x=1: la cara +X de la piedra se sigue dibujando.
+    const g: VoxelGrid = {
+      width: 2,
+      height: 1,
+      depth: 1,
+      palette: ["minecraft:air", "minecraft:stone", "minecraft:glass"],
+      blocks: new Uint16Array([1, 2]),
+    };
+    const meshes = buildMeshes(g, null);
+    expect(meshes.solid.faces).toBe(6);
+    expect(meshes.glass.faces).toBe(5);
+  });
+
+  it("dos bloques de vidrio pegados no dibujan la cara en común", () => {
+    const g: VoxelGrid = {
+      width: 2,
+      height: 1,
+      depth: 1,
+      palette: ["minecraft:air", "minecraft:white_stained_glass"],
+      blocks: new Uint16Array([1, 1]),
+    };
+    expect(buildMeshes(g, null).glass.faces).toBe(10);
   });
 });

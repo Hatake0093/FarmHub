@@ -1,6 +1,6 @@
 import { isAir } from "./litematicView";
 import { overrideColor } from "./blockColors";
-import { baseBlock, shapeBoxes, type Box } from "./blockShapes";
+import { baseBlock, isTransparent, shapeBoxes, type Box } from "./blockShapes";
 import type { VoxelGrid } from "./isometric";
 
 /** Rectángulo de un bloque dentro del atlas, en coordenadas 0..1 (v crece hacia abajo). */
@@ -89,20 +89,28 @@ function covers(neighbour: Box[], box: Box, def: FaceDef): boolean {
 }
 
 /**
- * Recorre las caras visibles de la rejilla. Cada bloque aporta sus cajas; una cara del borde de la
- * celda se omite cuando el vecino la cubre por completo. Las caras interiores siempre se dibujan.
+ * Recorre las caras de una parte de la rejilla: la sólida (`solid`) o la de vidrio (`glass`).
+ * Una cara del borde de la celda se omite cuando el vecino la cubre por completo. El vidrio no
+ * cubre nada, así que no tapa lo que hay detrás; dos bloques de vidrio iguales no dibujan la cara
+ * que tienen en común.
  */
-function forEachFace(grid: VoxelGrid, onFace: (block: number, x: number, y: number, z: number, box: Box, def: FaceDef) => void): void {
+function forEachFace(
+  grid: VoxelGrid,
+  part: "solid" | "glass",
+  onFace: (block: number, x: number, y: number, z: number, box: Box, def: FaceDef) => void,
+): void {
   const { width, height, depth, blocks, palette } = grid;
+  const transparent = palette.map((block) => isTransparent(block));
   const boxesOf = palette.map((block) => (isAir(block) ? [] : shapeBoxes(block)));
+  const coverOf = boxesOf.map((boxes, i) => (transparent[i] ? [] : boxes));
   const indexAt = (x: number, y: number, z: number) => blocks[(y * depth + z) * width + x];
 
   for (let y = 0; y < height; y++) {
     for (let z = 0; z < depth; z++) {
       for (let x = 0; x < width; x++) {
         const block = indexAt(x, y, z);
-        const boxes = boxesOf[block];
-        for (const box of boxes) {
+        if (transparent[block] !== (part === "glass")) continue;
+        for (const box of boxesOf[block]) {
           for (const def of FACES) {
             const a = def.axis;
             const onBoundary = def.sign > 0 ? box.hi[a] === 1 : box.lo[a] === 0;
@@ -112,7 +120,9 @@ function forEachFace(grid: VoxelGrid, onFace: (block: number, x: number, y: numb
               const ny = y + d[1];
               const nz = z + d[2];
               if (nx >= 0 && ny >= 0 && nz >= 0 && nx < width && ny < height && nz < depth) {
-                if (covers(boxesOf[indexAt(nx, ny, nz)], box, def)) continue;
+                const neighbour = indexAt(nx, ny, nz);
+                if (transparent[block] && neighbour === block) continue;
+                if (covers(coverOf[neighbour], box, def)) continue;
               }
             }
             onFace(block, x, y, z, box, def);
@@ -123,15 +133,12 @@ function forEachFace(grid: VoxelGrid, onFace: (block: number, x: number, y: numb
   }
 }
 
-/**
- * Malla de las caras visibles de la rejilla. Si `tiles` tiene el bloque (sin estado), la cara lleva
- * su posición en el atlas.
- */
-export function buildMesh(grid: VoxelGrid, tiles: Map<string, TileRect> | null): MeshData {
+/** Malla de una parte de la rejilla. Si `tiles` tiene el bloque (sin estado), la cara lleva su posición en el atlas. */
+function buildPart(grid: VoxelGrid, tiles: Map<string, TileRect> | null, part: "solid" | "glass"): MeshData {
   const { width, height, depth, palette } = grid;
 
   let faces = 0;
-  forEachFace(grid, () => {
+  forEachFace(grid, part, () => {
     faces++;
   });
 
@@ -144,7 +151,7 @@ export function buildMesh(grid: VoxelGrid, tiles: Map<string, TileRect> | null):
   let i = 0;
   let face = 0;
 
-  forEachFace(grid, (block, x, y, z, box, def) => {
+  forEachFace(grid, part, (block, x, y, z, box, def) => {
     const [r, g, b] = colors[block];
     const tile = tileOf[block];
     const base = face * 4;
@@ -172,4 +179,14 @@ export function buildMesh(grid: VoxelGrid, tiles: Map<string, TileRect> | null):
   const center: [number, number, number] = [width / 2, height / 2, depth / 2];
   const radius = Math.max(1, Math.hypot(width, height, depth) / 2);
   return { vertices, indices, faces, radius, center };
+}
+
+/** Malla de los bloques sólidos (sin vidrio). */
+export function buildMesh(grid: VoxelGrid, tiles: Map<string, TileRect> | null): MeshData {
+  return buildPart(grid, tiles, "solid");
+}
+
+/** Mallas separadas: los bloques sólidos y el vidrio, que se dibuja después con transparencia. */
+export function buildMeshes(grid: VoxelGrid, tiles: Map<string, TileRect> | null): { solid: MeshData; glass: MeshData } {
+  return { solid: buildPart(grid, tiles, "solid"), glass: buildPart(grid, tiles, "glass") };
 }

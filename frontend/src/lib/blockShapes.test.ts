@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { baseBlock, blockProperties, isFullCell, shapeBoxes } from "./blockShapes";
+import { baseBlock, blockProperties, isFullCell, isTransparent, shapeBoxes } from "./blockShapes";
 
 describe("blockShapes", () => {
   it("separa el nombre base de las propiedades", () => {
@@ -28,5 +28,13 @@ describe("blockShapes", () => {
 
   it("los bloques sin forma especial ocupan la celda", () => {
     expect(isFullCell("minecraft:stone")).toBe(true);
+  });
+
+  it("reconoce el vidrio y los cristales de colores, pero no otros bloques", () => {
+    expect(isTransparent("minecraft:glass")).toBe(true);
+    expect(isTransparent("minecraft:light_blue_stained_glass")).toBe(true);
+    expect(isTransparent("minecraft:glass_pane")).toBe(true);
+    expect(isTransparent("minecraft:tinted_glass")).toBe(false);
+    expect(isTransparent("minecraft:stone")).toBe(false);
   });
 });

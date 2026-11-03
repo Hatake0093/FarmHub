@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { VoxelGrid } from "../lib/isometric";
-import { buildMesh, type MeshData } from "../lib/mesh3d";
+import { buildMeshes, type MeshData } from "../lib/mesh3d";
 import { buildAtlas } from "../lib/atlas";
 import { baseBlock } from "../lib/blockShapes";
 import { createRenderer, type Renderer } from "../lib/gl";
@@ -54,7 +54,8 @@ export function Voxel3DView({ grid, useTextures }: Props) {
     return buildAtlas([...new Set(grid.palette.map(baseBlock))].filter((id) => hasTextureId(id) && getTexture(id) !== undefined));
   }, [grid, useTextures, version]);
 
-  const mesh = useMemo(() => buildMesh(grid, atlas?.tiles ?? null), [grid, atlas]);
+  const meshes = useMemo(() => buildMeshes(grid, atlas?.tiles ?? null), [grid, atlas]);
+  const mesh = meshes.solid;
 
   const draw = useCallback(() => {
     const renderer = rendererRef.current;
@@ -102,9 +103,10 @@ export function Voxel3DView({ grid, useTextures }: Props) {
     }
     if (!renderer) return;
     renderer.setMesh(mesh);
+    renderer.setGlassMesh(meshes.glass);
     renderer.setAtlas(atlas?.canvas ?? null);
     draw();
-  }, [mesh, atlas, grid, draw]);
+  }, [mesh, meshes, atlas, grid, draw]);
 
   // Arrastrar para girar y rueda para acercar. La rueda necesita un listener no pasivo para poder cancelarse.
   useEffect(() => {

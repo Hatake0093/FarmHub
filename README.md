@@ -77,7 +77,7 @@ Un detalle de uso: el selector de bloques se muestra plegado y, al desplegarlo, 
 - **Sin cuentas ni autenticación:** cualquiera con acceso a la aplicación puede modificarla. Está pensada para uso local.
 - **No exporta** a `.litematic` ni a `.schem`. Solo importa.
 - **Orden de índices del visor sin confirmar** frente a Litematica. Los conteos y las paletas son coherentes con los archivos de muestra; el orden espacial se confirma visualmente.
-- **Propiedades de bloque:** los lectores conservan el estado de cada bloque (por ejemplo, `type=top` en una losa). En la vista 3D, las losas se dibujan a media altura. Otras formas (escaleras, vallas, antorchas, cables de redstone) todavía se dibujan como cubos completos.
+- **Propiedades de bloque:** los lectores conservan el estado de cada bloque (por ejemplo, `type=top` en una losa). En la vista 3D, las losas se dibujan a media altura y el vidrio (incluido el de colores) se dibuja transparente. Los paneles de vidrio se dibujan como un poste fino, sin conexiones entre ellos. Otras formas (escaleras, vallas, antorchas, cables de redstone) todavía se dibujan como cubos completos.
 - **Catálogo curado:** los 330 bloques y 140 items no son el catálogo completo del juego. Se amplía añadiendo líneas o desde la propia página.
 - **Nombres en español:** los escribe el usuario a mano. No hay traducción automática.
 - **Deshacer:** no cubre cambiar tamaño ni extender, porque cambian las posiciones de las celdas.

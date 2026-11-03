@@ -39,7 +39,16 @@ export function shapeBoxes(block: string): Box[] {
     if (type === "double") return FULL;
     return [{ lo: [0, 0, 0], hi: [1, 0.5, 1] }];
   }
+  if (base === "minecraft:glass_pane" || base.endsWith("_stained_glass_pane")) {
+    return [{ lo: [0.4375, 0, 0.4375], hi: [0.5625, 1, 0.5625] }];
+  }
   return FULL;
+}
+
+/** Vidrio y cristal de colores: se dibuja con transparencia. */
+export function isTransparent(block: string): boolean {
+  const base = baseBlock(block);
+  return base === "minecraft:glass" || base.endsWith("_stained_glass") || base === "minecraft:glass_pane" || base.endsWith("_stained_glass_pane");
 }
 
 /** Indica si las cajas de un bloque cubren toda la celda. */
