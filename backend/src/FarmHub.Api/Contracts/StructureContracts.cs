@@ -46,3 +46,5 @@ public sealed record SpanishNameRequest(string? SpanishName, string? Color);
 public sealed record ItemNameResponse(string Id, string EnglishName, string? SpanishName, string? Color);
 
 public sealed record NewItemRequest(string Name);
+
+public sealed record StructureResizeRequest(int Width, int Height, int Depth, bool Confirm);

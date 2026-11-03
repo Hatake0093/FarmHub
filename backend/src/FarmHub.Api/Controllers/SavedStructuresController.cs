@@ -138,6 +138,76 @@ public sealed class SavedStructuresController(FarmHubDbContext db) : ControllerB
         return new StructureLayer(y, grid.Width, grid.Depth, grid.Palette, cells);
     }
 
+    /// <summary>
+    /// Cambia el tamaño. Los bloques que siguen dentro se conservan; los que quedan fuera se borran.
+    /// Si se borrarían bloques y Confirm es false, responde 409 con el número de bloques afectados.
+    /// </summary>
+    [HttpPut("{id:int}/size")]
+    public async Task<ActionResult<StructureDetail>> Resize(int id, StructureResizeRequest request, CancellationToken ct)
+    {
+        var entity = await db.SavedStructures.FirstOrDefaultAsync(s => s.Id == id, ct);
+        if (entity is null)
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            StructureGrid.ValidateDimensions(request.Width, request.Height, request.Depth);
+        }
+        catch (ArgumentException ex)
+        {
+            return ValidationProblem(ex.Message);
+        }
+
+        var oldCells = entity.Cells;
+        int ow = entity.Width, oh = entity.Height, od = entity.Depth;
+        int nw = request.Width, nh = request.Height, nd = request.Depth;
+
+        // Bloques que dejan de caber (las celdas con palette index distinto de aire).
+        long removed = 0;
+        for (int y = 0; y < oh; y++)
+        {
+            for (int z = 0; z < od; z++)
+            {
+                for (int x = 0; x < ow; x++)
+                {
+                    if (oldCells[(y * od + z) * ow + x] == 0) continue;
+                    if (x >= nw || y >= nh || z >= nd) removed++;
+                }
+            }
+        }
+
+        if (removed > 0 && !request.Confirm)
+        {
+            return Conflict(new ProblemDetails
+            {
+                Title = $"El nuevo tamaño dejaría fuera {removed} bloques. Confirma para borrarlos.",
+            });
+        }
+
+        var newCells = new byte[nw * nh * nd];
+        for (int y = 0; y < Math.Min(oh, nh); y++)
+        {
+            for (int z = 0; z < Math.Min(od, nd); z++)
+            {
+                for (int x = 0; x < Math.Min(ow, nw); x++)
+                {
+                    newCells[(y * nd + z) * nw + x] = oldCells[(y * od + z) * ow + x];
+                }
+            }
+        }
+
+        entity.Width = nw;
+        entity.Height = nh;
+        entity.Depth = nd;
+        entity.Cells = newCells;
+        entity.UpdatedAtUtc = DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
+
+        return ToDetail(entity);
+    }
+
     [HttpPatch("{id:int}/blocks")]
     public async Task<ActionResult<StructureDetail>> ChangeBlocks(int id, StructureBlocksRequest request, CancellationToken ct)
     {

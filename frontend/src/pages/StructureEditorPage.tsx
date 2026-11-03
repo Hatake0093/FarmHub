@@ -233,6 +233,36 @@ export function StructureEditorPage() {
     }
   }
 
+  const [size, setSize] = useState({ w: "", h: "", d: "" });
+
+  async function handleResize() {
+    if (!detail) return;
+    const w = Number(size.w || detail.width);
+    const h = Number(size.h || detail.height);
+    const d = Number(size.d || detail.depth);
+    if (w === detail.width && h === detail.height && d === detail.depth) return;
+    setError(null);
+    setMessage(null);
+    try {
+      let updated: StructureDetail;
+      try {
+        updated = await structuresApi.resize(structureId, w, h, d, false);
+      } catch (err) {
+        // 409: el cambio borraría bloques. Se pide confirmación antes de repetirlo.
+        const message = errorMessage(err);
+        if (!window.confirm(`${message}\n\n¿Continuar?`)) return;
+        updated = await structuresApi.resize(structureId, w, h, d, true);
+      }
+      setDetail(updated);
+      setSize({ w: "", h: "", d: "" });
+      setY((current) => Math.min(current, updated.height - 1));
+      setPending(new Map());
+      setMessage("Tamaño cambiado.");
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
   async function handleSaveBase() {
     if (!detail) return;
     setError(null);
@@ -352,6 +382,19 @@ export function StructureEditorPage() {
         <div className="actions">
           <button type="button" className="button" onClick={handleSaveBase}>Guardar base</button>
         </div>
+      </fieldset>
+
+      <fieldset className="base-form">
+        <legend>Tamaño (bloques). Actual: {detail.width} × {detail.height} × {detail.depth}</legend>
+        <div className="dimension-grid">
+          <label>Ancho (X)<input inputMode="numeric" placeholder={String(detail.width)} value={size.w} onChange={(e) => setSize({ ...size, w: e.target.value })} /></label>
+          <label>Alto (Y)<input inputMode="numeric" placeholder={String(detail.height)} value={size.h} onChange={(e) => setSize({ ...size, h: e.target.value })} /></label>
+          <label>Profundidad (Z)<input inputMode="numeric" placeholder={String(detail.depth)} value={size.d} onChange={(e) => setSize({ ...size, d: e.target.value })} /></label>
+        </div>
+        <div className="actions">
+          <button type="button" className="button" onClick={handleResize}>Cambiar tamaño</button>
+        </div>
+        <p className="muted small">Los bloques que queden fuera del nuevo tamaño se borran, y se te pedirá confirmación antes.</p>
       </fieldset>
 
       <p className="muted">Cambios pendientes en {pending.size} celdas. Capa {y}: las celdas marcadas se guardan al pulsar "Guardar cambios".</p>

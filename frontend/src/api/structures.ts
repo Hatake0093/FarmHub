@@ -59,6 +59,11 @@ export const structuresApi = {
   updateMeta: (id: number, input: StructureMetaInput) =>
     apiRequest<StructureDetail>(`/structures/${id}`, { method: "PUT", body: JSON.stringify(input) }),
   remove: (id: number) => apiRequest<void>(`/structures/${id}`, { method: "DELETE" }),
+  resize: (id: number, width: number, height: number, depth: number, confirm: boolean) =>
+    apiRequest<StructureDetail>(`/structures/${id}/size`, {
+      method: "PUT",
+      body: JSON.stringify({ width, height, depth, confirm }),
+    }),
   layer: (id: number, y: number) => apiRequest<StructureLayer>(`/structures/${id}/layer?y=${y}`),
   saveBlocks: (id: number, changes: { x: number; y: number; z: number; block: string | null }[]) =>
     apiRequest<StructureDetail>(`/structures/${id}/blocks`, {
