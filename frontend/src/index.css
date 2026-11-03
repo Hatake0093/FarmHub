@@ -443,3 +443,27 @@ section > .design-form {
   cursor: grab;
   touch-action: none;
 }
+
+.structure-canvas {
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: auto;
+  cursor: crosshair;
+}
+
+.coord-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.coord-panel p {
+  margin: 0.25rem 0;
+}
+
+.base-form {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem;
+}

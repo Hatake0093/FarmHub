@@ -4,6 +4,8 @@ import { FarmDetailPage } from "./pages/FarmDetailPage";
 import { FarmFormPage } from "./pages/FarmFormPage";
 import { FarmListPage } from "./pages/FarmListPage";
 import { CatalogsPage } from "./pages/CatalogsPage";
+import { StructuresPage } from "./pages/StructuresPage";
+import { StructureEditorPage } from "./pages/StructureEditorPage";
 
 export default function App() {
   return (
@@ -16,6 +18,8 @@ export default function App() {
           <Route path="farms/:id" element={<FarmDetailPage />} />
           <Route path="farms/:id/edit" element={<FarmFormPage />} />
           <Route path="catalogs" element={<CatalogsPage />} />
+          <Route path="structures" element={<StructuresPage />} />
+          <Route path="structures/:id" element={<StructureEditorPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
