@@ -39,7 +39,7 @@ public sealed record StructureLayer(int Y, int Width, int Depth, IReadOnlyList<s
 
 public sealed record StructureBlocksRequest(IReadOnlyList<StructureBlockChange> Changes);
 
-public sealed record BlockNameResponse(string Id, string EnglishName, string? SpanishName, string? Color);
+public sealed record BlockNameResponse(string Id, string EnglishName, string? SpanishName, string? Color, bool HasTexture);
 
 public sealed record SpanishNameRequest(string? SpanishName, string? Color);
 

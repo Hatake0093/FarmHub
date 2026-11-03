@@ -1,12 +1,20 @@
 /** Colores elegidos por el usuario, indexados por identificador de bloque. */
 const overrides = new Map<string, string>();
+/** Bloques que tienen textura subida por el usuario. */
+const withTexture = new Set<string>();
 
-/** Sustituye los colores elegidos (se llama al cargar el catálogo y tras guardar). */
-export function setColorOverrides(entries: { id: string; color: string | null }[]): void {
+/** Sustituye los colores y las texturas conocidas (al cargar el catálogo y tras guardar). */
+export function setColorOverrides(entries: { id: string; color: string | null; hasTexture?: boolean }[]): void {
   overrides.clear();
+  withTexture.clear();
   for (const entry of entries) {
     if (entry.color) overrides.set(entry.id, entry.color);
+    if (entry.hasTexture) withTexture.add(entry.id);
   }
+}
+
+export function hasTextureId(id: string): boolean {
+  return withTexture.has(id);
 }
 
 export function overrideColor(id: string): string | undefined {

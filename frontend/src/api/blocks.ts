@@ -5,9 +5,16 @@ export interface BlockEntry {
   englishName: string;
   spanishName: string | null;
   color: string | null;
+  hasTexture: boolean;
 }
 
 export const blocksApi = {
+  uploadTexture: (shortName: string, file: File) => {
+    const body = new FormData();
+    body.append("file", file);
+    return apiRequest<BlockEntry>(`/blocks/${shortName}/texture`, { method: "PUT", body });
+  },
+  removeTexture: (shortName: string) => apiRequest<void>(`/blocks/${shortName}/texture`, { method: "DELETE" }),
   list: (q = "", missingSpanish = false) => {
     const params = new URLSearchParams();
     if (q) params.set("q", q);

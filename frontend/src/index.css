@@ -568,3 +568,18 @@ section > .design-form {
   border: 1px solid var(--border);
   background: none;
 }
+
+.texture-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.texture-thumb {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+}

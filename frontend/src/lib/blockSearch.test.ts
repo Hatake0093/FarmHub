@@ -3,9 +3,9 @@ import { blockDisplayName, searchBlocks, shortName } from "./blockSearch";
 import type { BlockEntry } from "../api/blocks";
 
 const blocks: BlockEntry[] = [
-  { id: "minecraft:stone", englishName: "Stone", spanishName: "Piedra", color: null },
-  { id: "minecraft:hopper", englishName: "Hopper", spanishName: null, color: null },
-  { id: "minecraft:polished_andesite", englishName: "Polished Andesite", spanishName: null, color: null },
+  { id: "minecraft:stone", englishName: "Stone", spanishName: "Piedra", color: null, hasTexture: false },
+  { id: "minecraft:hopper", englishName: "Hopper", spanishName: null, color: null, hasTexture: false },
+  { id: "minecraft:polished_andesite", englishName: "Polished Andesite", spanishName: null, color: null, hasTexture: false },
 ];
 
 describe("blockSearch", () => {

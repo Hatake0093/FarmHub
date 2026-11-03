@@ -3,6 +3,7 @@ import { blocksApi, type BlockEntry } from "../api/blocks";
 import { errorMessage } from "../api/client";
 import { shortName } from "../lib/blockSearch";
 import { setColorOverrides } from "../lib/blockColors";
+import { forgetTexture } from "../lib/textures";
 
 export function BlocksPage() {
   const [blocks, setBlocks] = useState<BlockEntry[]>([]);
@@ -10,6 +11,8 @@ export function BlocksPage() {
   const [onlyMissing, setOnlyMissing] = useState(true);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [colorDrafts, setColorDrafts] = useState<Record<string, string | null>>({});
+  // Versión de cada textura para que la miniatura se recargue tras subir una nueva.
+  const [textureVersion, setTextureVersion] = useState<Record<string, number>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,6 +42,37 @@ export function BlocksPage() {
   }, [blocks, search, onlyMissing]);
 
   const missingCount = blocks.filter((b) => !b.spanishName).length;
+
+  async function uploadTexture(block: BlockEntry, file: File | undefined) {
+    if (!file) return;
+    setSavingId(block.id);
+    setError(null);
+    try {
+      const updated = await blocksApi.uploadTexture(shortName(block.id), file);
+      forgetTexture(block.id);
+      setTextureVersion((current) => ({ ...current, [block.id]: Date.now() }));
+      const next = blocks.map((b) => (b.id === updated.id ? updated : b));
+      setBlocks(next);
+      setColorOverrides(next);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  async function removeTexture(block: BlockEntry) {
+    setError(null);
+    try {
+      await blocksApi.removeTexture(shortName(block.id));
+      forgetTexture(block.id);
+      const next = blocks.map((b) => (b.id === block.id ? { ...b, hasTexture: false } : b));
+      setBlocks(next);
+      setColorOverrides(next);
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
 
   async function save(block: BlockEntry) {
     const value = (drafts[block.id] ?? block.spanishName ?? "").trim();
@@ -99,6 +133,7 @@ export function BlocksPage() {
             <th>Identificador</th>
             <th>Nombre en español</th>
             <th>Color</th>
+            <th>Textura</th>
             <th aria-label="Acciones" />
           </tr>
         </thead>
@@ -125,6 +160,35 @@ export function BlocksPage() {
                     value={b.id in colorDrafts ? colorDrafts[b.id] : b.color}
                     onChange={(color) => setColorDrafts((current) => ({ ...current, [b.id]: color }))}
                   />
+                </td>
+                <td>
+                  <div className="texture-field">
+                    {b.hasTexture && (
+                      <img
+                        className="texture-thumb"
+                        alt={`Textura de ${b.englishName}`}
+                        src={`/api/blocks/${shortName(b.id)}/texture?v=${textureVersion[b.id] ?? 0}`}
+                      />
+                    )}
+                    <label className="button-link">
+                      {b.hasTexture ? "Cambiar" : "Subir imagen"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        aria-label={`Subir textura de ${b.englishName}`}
+                        hidden
+                        onChange={(e) => {
+                          void uploadTexture(b, e.target.files?.[0]);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    {b.hasTexture && (
+                      <button type="button" className="button-link button-danger" onClick={() => void removeTexture(b)}>
+                        Quitar
+                      </button>
+                    )}
+                  </div>
                 </td>
                 <td>
                   <button

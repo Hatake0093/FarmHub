@@ -9,4 +9,7 @@ public sealed class BlockName
 
     /// <summary>Color elegido para el bloque en los visores, en formato #rrggbb. Null = color automático.</summary>
     public string? Color { get; set; }
+
+    /// <summary>Clave en el almacén de la textura subida por el usuario (imagen pequeña del bloque). Null = sin textura.</summary>
+    public string? TextureKey { get; set; }
 }
