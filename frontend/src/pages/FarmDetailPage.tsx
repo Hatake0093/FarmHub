@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { farmsApi } from "../api/farms";
 import { errorMessage } from "../api/client";
 import type { FarmDetail } from "../api/types";
 import { difficultyLabel } from "../lib/labels";
+import { DesignSection } from "../components/DesignSection";
 
 export function FarmDetailPage() {
   const { id } = useParams();
@@ -14,9 +15,8 @@ export function FarmDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadFarm = useCallback(() => {
     let active = true;
-    setLoading(true);
     setError(null);
 
     farmsApi
@@ -36,6 +36,8 @@ export function FarmDetailPage() {
     };
   }, [farmId]);
 
+  useEffect(() => loadFarm(), [loadFarm]);
+
   async function handleDelete() {
     if (!farm) return;
     const confirmed = window.confirm(
@@ -53,7 +55,8 @@ export function FarmDetailPage() {
 
   if (loading) return <p className="muted">Cargando granja…</p>;
   if (error) return <p className="error" role="alert">{error}</p>;
-  if (!farm) return null;
+  // Evita mostrar una granja anterior mientras se carga la nueva.
+  if (!farm || farm.id !== farmId) return <p className="muted">Cargando granja…</p>;
 
   return (
     <article className="farm-detail">
@@ -108,20 +111,7 @@ export function FarmDetailPage() {
         </section>
       )}
 
-      <section>
-        <h2>Diseños</h2>
-        {farm.designs.length === 0 ? (
-          <p className="muted">Esta granja todavía no tiene diseños.</p>
-        ) : (
-          <ul className="design-list">
-            {farm.designs.map((design) => (
-              <li key={design.id}>
-                {design.name} <span className="muted">({design.fileCount} archivos)</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <DesignSection farmId={farm.id} designs={farm.designs} onChanged={loadFarm} />
     </article>
   );
 }

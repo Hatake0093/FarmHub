@@ -1,3 +1,5 @@
+using FarmHub.Domain.Entities;
+
 namespace FarmHub.Api.Contracts;
 
 public sealed record CreateDesignRequest(int FarmId, string Name, string? Description, int? AuthorId);
@@ -17,3 +19,9 @@ public sealed record DesignFileResponse(
     string ContentType,
     long SizeBytes,
     string Sha256);
+
+public static class DesignFileMapping
+{
+    public static DesignFileResponse From(DesignFile file) => new(
+        file.Id, file.Kind.ToString(), file.OriginalFileName, file.ContentType, file.SizeBytes, file.Sha256);
+}

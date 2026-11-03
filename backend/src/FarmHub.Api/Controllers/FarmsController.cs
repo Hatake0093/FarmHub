@@ -285,5 +285,9 @@ public sealed class FarmsController(FarmHubDbContext db, IFileStorage storage) :
         new CategoryResponse(farm.Category.Id, farm.Category.Name, farm.Category.Description),
         farm.MinecraftVersions.OrderBy(v => v.Name).Select(v => new MinecraftVersionResponse(v.Id, v.Name)).ToList(),
         farm.Tags.Select(t => t.Name).OrderBy(t => t).ToList(),
-        farm.Designs.OrderBy(d => d.Name).Select(d => new FarmDesignSummary(d.Id, d.Name, d.Files.Count)).ToList());
+        farm.Designs.OrderBy(d => d.Name).Select(d => new FarmDesignSummary(
+            d.Id,
+            d.Name,
+            d.Description,
+            d.Files.OrderBy(f => f.OriginalFileName).Select(DesignFileMapping.From).ToList())).ToList());
 }

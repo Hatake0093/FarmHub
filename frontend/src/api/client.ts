@@ -18,8 +18,9 @@ interface ProblemBody {
 
 /** Llama a la API del backend. En desarrollo, /api se reenvía con el proxy de Vite. */
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
+  // Solo los cuerpos JSON llevan Content-Type; FormData lo define el navegador con su límite.
   const headers: Record<string, string> = {};
-  if (init.body !== undefined) {
+  if (typeof init.body === "string") {
     headers["Content-Type"] = "application/json";
   }
 

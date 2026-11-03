@@ -21,10 +21,35 @@ export interface FarmSummary {
   tags: string[];
 }
 
+export type DesignFileKind = "Litematic" | "Image" | "Pdf";
+
+export interface DesignFile {
+  id: number;
+  kind: DesignFileKind;
+  originalFileName: string;
+  contentType: string;
+  sizeBytes: number;
+  sha256: string;
+}
+
 export interface FarmDesignSummary {
   id: number;
   name: string;
-  fileCount: number;
+  description: string | null;
+  files: DesignFile[];
+}
+
+export interface Author {
+  id: number;
+  name: string;
+  url: string | null;
+}
+
+export interface DesignInput {
+  farmId: number;
+  name: string;
+  description: string | null;
+  authorId: number | null;
 }
 
 export interface FarmDetail {

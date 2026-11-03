@@ -29,7 +29,11 @@ public sealed record FarmDetailResponse(
     IReadOnlyList<string> Tags,
     IReadOnlyList<FarmDesignSummary> Designs);
 
-public sealed record FarmDesignSummary(int Id, string Name, int FileCount);
+public sealed record FarmDesignSummary(
+    int Id,
+    string Name,
+    string? Description,
+    IReadOnlyList<DesignFileResponse> Files);
 
 public sealed record PagedResponse<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
 
@@ -40,3 +44,7 @@ public sealed record CategoryResponse(int Id, string Name, string? Description);
 public sealed record MinecraftVersionRequest(string Name);
 
 public sealed record MinecraftVersionResponse(int Id, string Name);
+
+public sealed record AuthorRequest(string Name, string? Url);
+
+public sealed record AuthorResponse(int Id, string Name, string? Url);

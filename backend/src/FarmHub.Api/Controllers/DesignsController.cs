@@ -101,13 +101,7 @@ public sealed class DesignsController(FarmHubDbContext db, IFileStorage storage)
         db.DesignFiles.Add(designFile);
         await db.SaveChangesAsync(ct);
 
-        var response = new DesignFileResponse(
-            designFile.Id,
-            designFile.Kind.ToString(),
-            designFile.OriginalFileName,
-            designFile.ContentType,
-            designFile.SizeBytes,
-            designFile.Sha256);
+        var response = DesignFileMapping.From(designFile);
 
         return CreatedAtAction(nameof(DesignFilesController.Download),
             "DesignFiles", new { id = designFile.Id }, response);
@@ -119,6 +113,5 @@ public sealed class DesignsController(FarmHubDbContext db, IFileStorage storage)
         design.Name,
         design.Description,
         design.AuthorId,
-        design.Files.Select(f => new DesignFileResponse(
-            f.Id, f.Kind.ToString(), f.OriginalFileName, f.ContentType, f.SizeBytes, f.Sha256)).ToList());
+        design.Files.Select(DesignFileMapping.From).ToList());
 }
