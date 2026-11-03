@@ -420,6 +420,29 @@ export function StructureEditorPage() {
   }
 
   const [size, setSize] = useState({ w: "", h: "", d: "" });
+  const [ext, setExt] = useState({ left: "0", right: "0", down: "0", up: "0", back: "0", front: "0" });
+
+  async function handleExtend() {
+    if (!detail) return;
+    const amounts = {
+      left: Number(ext.left) || 0,
+      right: Number(ext.right) || 0,
+      down: Number(ext.down) || 0,
+      up: Number(ext.up) || 0,
+      back: Number(ext.back) || 0,
+      front: Number(ext.front) || 0,
+    };
+    setError(null);
+    setMessage(null);
+    try {
+      const updated = await structuresApi.extend(structureId, amounts);
+      setDetail(updated);
+      setExt({ left: "0", right: "0", down: "0", up: "0", back: "0", front: "0" });
+      setMessage("Estructura extendida. Las coordenadas de los bloques no han cambiado.");
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
 
   async function handleResize() {
     if (!detail) return;
@@ -636,6 +659,22 @@ export function StructureEditorPage() {
           <button type="button" className="button" onClick={handleResize}>Cambiar tamaño</button>
         </div>
         <p className="muted small">Los bloques que queden fuera del nuevo tamaño se borran, y se te pedirá confirmación antes.</p>
+      </fieldset>
+
+      <fieldset className="base-form">
+        <legend>Extender (añadir celdas vacías)</legend>
+        <div className="dimension-grid">
+          <label>Izquierda (−X)<input inputMode="numeric" value={ext.left} onChange={(e) => setExt({ ...ext, left: e.target.value })} /></label>
+          <label>Derecha (+X)<input inputMode="numeric" value={ext.right} onChange={(e) => setExt({ ...ext, right: e.target.value })} /></label>
+          <label>Abajo (−Y)<input inputMode="numeric" value={ext.down} onChange={(e) => setExt({ ...ext, down: e.target.value })} /></label>
+          <label>Arriba (+Y, capa nueva)<input inputMode="numeric" value={ext.up} onChange={(e) => setExt({ ...ext, up: e.target.value })} /></label>
+          <label>Atrás (−Z)<input inputMode="numeric" value={ext.back} onChange={(e) => setExt({ ...ext, back: e.target.value })} /></label>
+          <label>Delante (+Z)<input inputMode="numeric" value={ext.front} onChange={(e) => setExt({ ...ext, front: e.target.value })} /></label>
+        </div>
+        <div className="actions">
+          <button type="button" className="button" onClick={handleExtend}>Extender</button>
+        </div>
+        <p className="muted small">Nunca borra bloques. Las coordenadas del mundo se mantienen: la base se ajusta si añades por la izquierda, abajo o atrás.</p>
       </fieldset>
 
       <p className="muted">Cambios pendientes en {pending.size} celdas. Capa {y}: las celdas marcadas se guardan al pulsar "Guardar cambios".</p>

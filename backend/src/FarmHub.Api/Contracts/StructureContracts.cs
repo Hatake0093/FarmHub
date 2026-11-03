@@ -48,3 +48,5 @@ public sealed record ItemNameResponse(string Id, string EnglishName, string? Spa
 public sealed record NewItemRequest(string Name);
 
 public sealed record StructureResizeRequest(int Width, int Height, int Depth, bool Confirm);
+
+public sealed record StructureExtendRequest(int Left, int Right, int Down, int Up, int Back, int Front);

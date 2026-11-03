@@ -252,6 +252,73 @@ public sealed class SavedStructuresController(FarmHubDbContext db) : ControllerB
             VolumeEncoder.EncodeUInt16(entity.Cells.Select(c => (int)c), count));
     }
 
+    /// <summary>
+    /// Añade celdas vacías en cualquiera de los seis lados (izquierda, derecha, abajo, arriba, atrás, delante).
+    /// Los bloques existentes se desplazan y la coordenada base se ajusta, así que sus coordenadas del mundo
+    /// no cambian. Nunca borra bloques.
+    /// </summary>
+    [HttpPost("{id:int}/extend")]
+    public async Task<ActionResult<StructureDetail>> Extend(int id, StructureExtendRequest request, CancellationToken ct)
+    {
+        var entity = await db.SavedStructures.FirstOrDefaultAsync(s => s.Id == id, ct);
+        if (entity is null)
+        {
+            return NotFound();
+        }
+
+        var amounts = new[] { request.Left, request.Right, request.Down, request.Up, request.Back, request.Front };
+        if (amounts.Any(a => a < 0))
+        {
+            return ValidationProblem("Las cantidades para extender no pueden ser negativas. Para reducir usa Cambiar tamaño.");
+        }
+        if (amounts.All(a => a == 0))
+        {
+            return ValidationProblem("Indica al menos una cantidad para extender.");
+        }
+
+        int ow = entity.Width, oh = entity.Height, od = entity.Depth;
+        int nw = ow + request.Left + request.Right;
+        int nh = oh + request.Down + request.Up;
+        int nd = od + request.Back + request.Front;
+        try
+        {
+            StructureGrid.ValidateDimensions(nw, nh, nd);
+        }
+        catch (ArgumentException ex)
+        {
+            return ValidationProblem(ex.Message);
+        }
+
+        var oldCells = entity.Cells;
+        var newCells = new byte[nw * nh * nd];
+        for (int y = 0; y < oh; y++)
+        {
+            for (int z = 0; z < od; z++)
+            {
+                for (int x = 0; x < ow; x++)
+                {
+                    var nx = x + request.Left;
+                    var ny = y + request.Down;
+                    var nz = z + request.Back;
+                    newCells[(ny * nd + nz) * nw + nx] = oldCells[(y * od + z) * ow + x];
+                }
+            }
+        }
+
+        // Los bloques siguen en el mismo sitio del mundo: la base se mueve hacia el lado añadido.
+        entity.BaseX -= request.Left;
+        entity.BaseY -= request.Down;
+        entity.BaseZ -= request.Back;
+        entity.Width = nw;
+        entity.Height = nh;
+        entity.Depth = nd;
+        entity.Cells = newCells;
+        entity.UpdatedAtUtc = DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
+
+        return ToDetail(entity);
+    }
+
     [HttpPut("{id:int}/size")]
     public async Task<ActionResult<StructureDetail>> Resize(int id, StructureResizeRequest request, CancellationToken ct)
     {

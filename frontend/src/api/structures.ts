@@ -65,6 +65,8 @@ export const structuresApi = {
     body.append("file", file);
     return apiRequest<StructureDetail>("/structures/import", { method: "POST", body });
   },
+  extend: (id: number, amounts: { left: number; right: number; down: number; up: number; back: number; front: number }) =>
+    apiRequest<StructureDetail>(`/structures/${id}/extend`, { method: "POST", body: JSON.stringify(amounts) }),
   resize: (id: number, width: number, height: number, depth: number, confirm: boolean) =>
     apiRequest<StructureDetail>(`/structures/${id}/size`, {
       method: "PUT",
