@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FarmHub.Api/FarmHub.Api.csproj" />
+    <Project Path="src/FarmHub.Domain/FarmHub.Domain.csproj" />
+    <Project Path="src/FarmHub.Infrastructure/FarmHub.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FarmHub.Tests/FarmHub.Tests.csproj" />
+  </Folder>
+</Solution>
