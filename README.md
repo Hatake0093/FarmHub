@@ -87,6 +87,10 @@ Un detalle de uso: el selector de bloques se muestra plegado y, al desplegarlo, 
 
 ---
 
+## Documentación técnica
+
+Las librerías que usa el proyecto (para qué sirven, cómo se usan y qué conviene saber) están explicadas en [`docs/`](docs/README.md).
+
 ## Requisitos
 
 - **.NET 10 SDK**
