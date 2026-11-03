@@ -1063,3 +1063,23 @@ label.button:focus-within {
 .farm-table tr.row-dirty td:first-child {
   box-shadow: inset 3px 0 0 var(--accent);
 }
+
+/* Altura uniforme de campos para que filtros y formularios queden alineados. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]):not([type="file"]),
+select {
+  min-height: 2.25rem;
+}
+
+input[type="search"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.farm-form h2,
+.import-box h2 {
+  margin: 0;
+}
+
+.import-box p {
+  margin: 0;
+}
