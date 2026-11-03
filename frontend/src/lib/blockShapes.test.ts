@@ -92,4 +92,12 @@ describe("blockShapes", () => {
     expect(step.lo[2]).toBeCloseTo(0);
     expect(step.hi[2]).toBeCloseTo(0.5);
   });
+
+  it("una escalera de mano tiene dos largueros y peldaños, no una hoja plana", () => {
+    const boxes = shapeBoxes("minecraft:ladder[facing=north]");
+    expect(boxes).toHaveLength(6);
+    // Los largueros llegan a los dos lados de la celda.
+    expect(boxes[0].lo[0]).toBeCloseTo(0);
+    expect(boxes[1].hi[0]).toBeCloseTo(1);
+  });
 });

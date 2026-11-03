@@ -130,14 +130,31 @@ function otherBoxes(block: string): Box[] | null {
     return boxes;
   }
   if (base === "minecraft:ladder") {
+    // Dos largueros a los lados y cuatro peldaños, pegados a la pared. Así se reconoce la escalera
+    // desde cualquier ángulo, aunque la vista la aplaste.
     const side = wallSide(props.facing);
     const t = 2 / 16;
-    if (side.axis === 2) {
-      const z: [number, number] = side.low ? [0, t] : [1 - t, 1];
-      return [box([0, 0, z[0]], [1, 1, z[1]], true)];
+    const depth: [number, number] = side.low ? [0, t] : [1 - t, 1];
+    // Eje de la pared (z o x) y el eje ancho, que es el otro.
+    const wallAxis: 0 | 2 = side.axis;
+    const widthAxis: 0 | 2 = wallAxis === 0 ? 2 : 0;
+    const make = (width: [number, number], y: [number, number]): Box => {
+      const lo: [number, number, number] = [0, y[0], 0];
+      const hi: [number, number, number] = [1, y[1], 1];
+      lo[widthAxis] = width[0];
+      hi[widthAxis] = width[1];
+      lo[wallAxis] = depth[0];
+      hi[wallAxis] = depth[1];
+      return box(lo, hi, true);
+    };
+    const boxes: Box[] = [
+      make([0, t], [0, 1]),
+      make([1 - t, 1], [0, 1]),
+    ];
+    for (const y0 of [2 / 16, 6 / 16, 10 / 16, 14 / 16]) {
+      boxes.push(make([t, 1 - t], [y0, y0 + t]));
     }
-    const x: [number, number] = side.low ? [0, t] : [1 - t, 1];
-    return [box([x[0], 0, 0], [x[1], 1, 1], true)];
+    return boxes;
   }
   if (base.endsWith("_trapdoor")) {
     const open = props.open === "true";
