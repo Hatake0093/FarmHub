@@ -53,6 +53,8 @@ Aplicación web personal para planificar y documentar granjas automáticas de Mi
 - **Corte lateral:** plano en X o en Z, con coordenadas al pasar el ratón.
 - **Capas apiladas:** en el editor de esquemáticos.
 
+- **Explorar archivos** (`/structures/preview`): eliges varios `.litematic`, `.schem` o `.nbt` y los vas viendo uno a uno con el mismo visor. Se leen en el servidor sin guardarlos en la base de datos.
+
 ### Editor de esquemáticos
 
 Estructuras propias en un formato interno (paleta y celdas), independientes de cualquier granja.

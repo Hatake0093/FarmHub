@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type WheelEvent } from "react";
-import { litematicApi, type LitematicLayer, type LitematicSummary } from "../api/litematic";
+import type { LitematicLayer, LitematicSummary } from "../api/litematic";
 import { errorMessage } from "../api/client";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
 import { MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
@@ -10,17 +10,19 @@ import { Voxel3DView } from "./Voxel3DView";
 import { SliceView } from "./SliceView";
 import { gridFromVolume } from "../lib/volume";
 import { LayerStepper } from "./LayerStepper";
+import type { ViewerSource } from "./viewerSource";
 
 interface Props {
-  fileId: number;
-  fileName: string;
-  onClose: () => void;
+  source: ViewerSource;
+  title: string;
+  /** Si no se pasa, el visor no muestra el botón de cerrar (por ejemplo, en la página de vista previa). */
+  onClose?: () => void;
 }
 
 const MIN_CELL = 4;
 const MAX_CELL = 60;
 
-export function LitematicViewer({ fileId, fileName, onClose }: Props) {
+export function LitematicViewer({ source, title, onClose }: Props) {
   const [summary, setSummary] = useState<LitematicSummary | null>(null);
   const [regionName, setRegionName] = useState<string>("");
   const [y, setY] = useState(0);
@@ -42,8 +44,8 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
 
   useEffect(() => {
     let active = true;
-    litematicApi
-      .summary(fileId)
+    source
+      .summary()
       .then((data) => {
         if (!active) return;
         setSummary(data);
@@ -53,7 +55,7 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
     return () => {
       active = false;
     };
-  }, [fileId]);
+  }, [source]);
 
   const region = summary?.regions.find((r) => r.name === regionName);
 
@@ -61,14 +63,14 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
     if (!regionName) return;
     let active = true;
     setError(null);
-    litematicApi
-      .layer(fileId, regionName, y)
+    source
+      .layer(regionName, y)
       .then((data) => active && setLayer(data))
       .catch((err: unknown) => active && setError(errorMessage(err)));
     return () => {
       active = false;
     };
-  }, [fileId, regionName, y]);
+  }, [source, regionName, y]);
 
   // Recorte por rango para la vista 3D: se calcula solo cuando cambian el volumen o el rango.
   const clipped3d = useMemo(() => {
@@ -89,8 +91,8 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
     }
     let active = true;
     setIsoMessage("Cargando volumen…");
-    litematicApi
-      .volume(fileId, regionName)
+    source
+      .volume(regionName)
       .then((dto) => {
         if (!active) return;
         setIsoGrid(gridFromVolume(dto));
@@ -100,7 +102,7 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
     return () => {
       active = false;
     };
-  }, [mode, fileId, regionName, region]);
+  }, [mode, source, regionName, region]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -173,10 +175,10 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
     : null;
 
   return (
-    <section className="viewer" aria-label={`Visor de ${fileName}`}>
+    <section className="viewer" aria-label={`Visor de ${title}`}>
       <div className="page-heading">
-        <h3>Visor de {fileName}</h3>
-        <button type="button" className="button" onClick={onClose}>Cerrar visor</button>
+        <h3>Visor de {title}</h3>
+        {onClose && <button type="button" className="button" onClick={onClose}>Cerrar visor</button>}
       </div>
 
       {error && <p className="error" role="alert">{error}</p>}

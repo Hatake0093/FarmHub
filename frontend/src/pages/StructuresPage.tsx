@@ -88,6 +88,7 @@ export function StructuresPage() {
           </p>
         </div>
         <div className="structures-actions">
+          <Link to="/structures/preview" className="button">Explorar archivos</Link>
           <label className={`button${importing ? " disabled" : ""}`}>
             {importing ? "Importando…" : "Importar archivo"}
             <input

@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { designsApi } from "../api/designs";
 import { errorMessage } from "../api/client";
 import type { FarmDesignSummary } from "../api/types";
 import { DesignForm, type DesignFormValues } from "./DesignForm";
 import { FILE_INPUT_ACCEPT, STRUCTURE_KINDS, formatBytes, kindLabel, validateUpload } from "../lib/files";
 import { LitematicViewer } from "./LitematicViewer";
+import { savedFileSource } from "./viewerSource";
 
 interface Props {
   farmId: number;
@@ -37,6 +38,7 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
   const [uploading, setUploading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [viewing, setViewing] = useState<{ id: number; name: string } | null>(null);
+  const viewerSource = useMemo(() => (viewing ? savedFileSource(viewing.id) : null), [viewing]);
 
   async function handleSave(values: DesignFormValues) {
     setSaving(true);
@@ -166,8 +168,8 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
         <p className="muted">Sin archivos todavía.</p>
       )}
 
-      {viewing && (
-        <LitematicViewer fileId={viewing.id} fileName={viewing.name} onClose={() => setViewing(null)} />
+      {viewing && viewerSource && (
+        <LitematicViewer source={viewerSource} title={viewing.name} onClose={() => setViewing(null)} />
       )}
 
       <label className="upload">
