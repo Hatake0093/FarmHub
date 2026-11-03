@@ -1,6 +1,7 @@
 using FarmHub.Domain.Storage;
 using FarmHub.Infrastructure.Persistence;
 using FarmHub.Infrastructure.Storage;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,7 +14,8 @@ var storageRoot = Path.Combine(builder.Environment.ContentRootPath,
     builder.Configuration["FileStorage:RootPath"] ?? "storage");
 builder.Services.AddSingleton<IFileStorage>(new LocalFileStorage(storageRoot));
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOpenApi();
 
 var app = builder.Build();

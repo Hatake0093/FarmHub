@@ -44,4 +44,16 @@ public sealed class LocalFileStorageTests : IDisposable
 
         Assert.Throws<ArgumentException>(() => storage.OpenRead(key));
     }
+
+    [Fact]
+    public async Task Delete_removes_the_file_and_is_idempotent()
+    {
+        var storage = new LocalFileStorage(_root);
+        var stored = await storage.SaveAsync(new MemoryStream("x"u8.ToArray()));
+
+        storage.Delete(stored.StorageKey);
+        storage.Delete(stored.StorageKey);
+
+        Assert.False(File.Exists(Path.Combine(_root, stored.StorageKey)));
+    }
 }

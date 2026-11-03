@@ -6,6 +6,9 @@ public interface IFileStorage
     Task<StoredFile> SaveAsync(Stream content, CancellationToken cancellationToken = default);
 
     Stream OpenRead(string storageKey);
+
+    /// <summary>Borra el archivo si existe. No falla si ya no está.</summary>
+    void Delete(string storageKey);
 }
 
 public sealed record StoredFile(string StorageKey, long SizeBytes, string Sha256);

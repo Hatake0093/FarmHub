@@ -49,6 +49,20 @@ public sealed class LocalFileStorage(string rootPath) : IFileStorage
         return new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
     }
 
+    public void Delete(string storageKey)
+    {
+        if (!IsValidKey(storageKey))
+        {
+            throw new ArgumentException("Clave de almacenamiento no válida.", nameof(storageKey));
+        }
+
+        var path = Path.Combine(_rootPath, storageKey);
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
+    }
+
     private static bool IsValidKey(string storageKey) =>
         storageKey.Length == 32 && storageKey.All(char.IsAsciiHexDigitLower);
 }
