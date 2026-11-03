@@ -17,3 +17,6 @@ npm-debug.log*
 !.vscode/extensions.json
 .idea/
 .DS_Store
+
+# Archivos subidos por la aplicación (copia local)
+backend/src/FarmHub.Api/storage/

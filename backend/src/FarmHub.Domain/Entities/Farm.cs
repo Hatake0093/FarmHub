@@ -13,9 +13,7 @@ public sealed class Farm
     public int CategoryId { get; set; }
     public Category Category { get; set; } = null!;
 
-    public int? AuthorId { get; set; }
-    public Author? Author { get; set; }
-
+    public List<Design> Designs { get; } = [];
     public List<MinecraftVersion> MinecraftVersions { get; } = [];
     public List<Tag> Tags { get; } = [];
 }

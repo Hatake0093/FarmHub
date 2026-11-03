@@ -30,15 +30,24 @@ public sealed class FarmLibrarySchemaTests
     }
 
     [Fact]
-    public void Farm_requires_category_and_author_is_optional()
+    public void Farm_requires_category()
     {
         using var context = CreateContext();
         var farm = context.Model.FindEntityType(typeof(Farm))!;
 
         var categoryFk = farm.FindNavigation(nameof(Farm.Category))!.ForeignKey;
-        var authorFk = farm.FindNavigation(nameof(Farm.Author))!.ForeignKey;
 
         Assert.True(categoryFk.IsRequired);
+    }
+
+    [Fact]
+    public void Design_author_is_optional()
+    {
+        using var context = CreateContext();
+        var design = context.Model.FindEntityType(typeof(Design))!;
+
+        var authorFk = design.FindNavigation(nameof(Design.Author))!.ForeignKey;
+
         Assert.False(authorFk.IsRequired);
     }
 }

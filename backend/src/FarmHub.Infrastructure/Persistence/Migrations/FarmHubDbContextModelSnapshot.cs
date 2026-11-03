@@ -68,7 +68,7 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("FarmHub.Domain.Entities.Farm", b =>
+            modelBuilder.Entity("FarmHub.Domain.Entities.Design", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -78,6 +78,84 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
 
                     b.Property<int?>("AuthorId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("FarmId");
+
+                    b.ToTable("Designs");
+                });
+
+            modelBuilder.Entity("FarmHub.Domain.Entities.DesignFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("DesignId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DesignId");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique();
+
+                    b.ToTable("DesignFiles");
+                });
+
+            modelBuilder.Entity("FarmHub.Domain.Entities.Farm", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("CategoryId")
                         .HasColumnType("integer");
@@ -97,8 +175,6 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AuthorId");
 
                     b.HasIndex("CategoryId");
 
@@ -179,20 +255,42 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
                     b.ToTable("FarmTag");
                 });
 
-            modelBuilder.Entity("FarmHub.Domain.Entities.Farm", b =>
+            modelBuilder.Entity("FarmHub.Domain.Entities.Design", b =>
                 {
                     b.HasOne("FarmHub.Domain.Entities.Author", "Author")
-                        .WithMany("Farms")
+                        .WithMany("Designs")
                         .HasForeignKey("AuthorId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("FarmHub.Domain.Entities.Farm", "Farm")
+                        .WithMany("Designs")
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("Farm");
+                });
+
+            modelBuilder.Entity("FarmHub.Domain.Entities.DesignFile", b =>
+                {
+                    b.HasOne("FarmHub.Domain.Entities.Design", "Design")
+                        .WithMany("Files")
+                        .HasForeignKey("DesignId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Design");
+                });
+
+            modelBuilder.Entity("FarmHub.Domain.Entities.Farm", b =>
+                {
                     b.HasOne("FarmHub.Domain.Entities.Category", "Category")
                         .WithMany("Farms")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Author");
 
                     b.Navigation("Category");
                 });
@@ -229,12 +327,22 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("FarmHub.Domain.Entities.Author", b =>
                 {
-                    b.Navigation("Farms");
+                    b.Navigation("Designs");
                 });
 
             modelBuilder.Entity("FarmHub.Domain.Entities.Category", b =>
                 {
                     b.Navigation("Farms");
+                });
+
+            modelBuilder.Entity("FarmHub.Domain.Entities.Design", b =>
+                {
+                    b.Navigation("Files");
+                });
+
+            modelBuilder.Entity("FarmHub.Domain.Entities.Farm", b =>
+                {
+                    b.Navigation("Designs");
                 });
 #pragma warning restore 612, 618
         }
