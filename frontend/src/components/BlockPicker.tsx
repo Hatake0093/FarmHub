@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { BlockEntry } from "../api/blocks";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
 import { blockDisplayName } from "../lib/blockSearch";
@@ -20,6 +20,13 @@ export function BlockPicker({ catalog, value, onChange }: Props) {
   const [active, setActive] = useState(0);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const [, setTick] = useState(0);
+  // Plegado por defecto: solo se despliega al pulsar el bloque actual para cambiarlo.
+  const [open, setOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) searchRef.current?.focus();
+  }, [open]);
 
   const options = useMemo(() => visibleOptions(catalog, query, recent), [catalog, query, recent]);
   const selected = catalog.find((b) => b.id === value);
@@ -41,6 +48,7 @@ export function BlockPicker({ catalog, value, onChange }: Props) {
     setRecent(next);
     writeRecent(next);
     setQuery("");
+    setOpen(false);
   }
 
   function handleKey(event: KeyboardEvent<HTMLInputElement>) {
@@ -54,20 +62,34 @@ export function BlockPicker({ catalog, value, onChange }: Props) {
       event.preventDefault();
       if (options[active]) choose(options[active].id);
       else if (showCustom) choose(typedId);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      setQuery("");
+      setOpen(false);
     }
   }
 
   return (
     <div className="block-picker">
-      <div className="block-current">
+      <button
+        type="button"
+        className="block-current"
+        aria-expanded={open}
+        aria-label="Cambiar bloque"
+        onClick={() => setOpen((o) => !o)}
+      >
         <Swatch id={value} />
-        <div>
+        <span>
           <strong>{selected ? blockDisplayName(selected) : blockLabel(value)}</strong>
-          <div className="muted small">{value}</div>
-        </div>
-      </div>
+          <span className="muted small block-current-id">{value}</span>
+        </span>
+        <span className="block-current-action">{open ? "Cerrar" : "Cambiar"}</span>
+      </button>
 
+      {open && (
+      <>
       <input
+        ref={searchRef}
         type="search"
         className="block-search"
         value={query}
@@ -100,6 +122,8 @@ export function BlockPicker({ catalog, value, onChange }: Props) {
         )}
         {options.length === 0 && !showCustom && <li className="muted block-group">No hay bloques que coincidan.</li>}
       </ul>
+      </>
+      )}
     </div>
   );
 }
