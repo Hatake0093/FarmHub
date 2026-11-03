@@ -187,11 +187,11 @@ export function StructuresPage() {
                   </div>
                   <div>
                     <dt>Bloques</dt>
-                    <dd>{s.blockCount.toLocaleString("es-ES")}</dd>
+                    <dd>{(s.blockCount ?? 0).toLocaleString("es-ES")}</dd>
                   </div>
                   <div>
                     <dt>Base</dt>
-                    <dd>{s.baseX}, {s.baseY}, {s.baseZ}</dd>
+                    <dd>{s.baseX ?? 0}, {s.baseY ?? 0}, {s.baseZ ?? 0}</dd>
                   </div>
                 </dl>
                 <span className="muted small">Actualizado {formatDate(s.updatedAtUtc)}</span>
