@@ -839,7 +839,7 @@ export function StructureEditorPage() {
     }
   }
 
-  if (error && !detail) return <p className="error" role="alert">{error}</p>;
+  if (error && !detail) return <p className="alert" role="alert">{error}</p>;
   if (!detail || !layer) return <p className="muted">Cargando esquemático…</p>;
 
   const baseCoords = { x: detail.baseX, y: detail.baseY, z: detail.baseZ };
@@ -1046,7 +1046,7 @@ export function StructureEditorPage() {
         </button>
       </div>
       {message && <p className="muted" role="status">{message}</p>}
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
 
       <fieldset className="base-form">
         <legend>Coordenada base del mundo (esquina mínima)</legend>

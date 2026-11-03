@@ -2,8 +2,10 @@ import { useEffect, useState, type FormEvent } from "react";
 import { categoriesApi, versionsApi } from "../api/farms";
 import { errorMessage } from "../api/client";
 import type { Category, MinecraftVersion } from "../api/types";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 export function CatalogsPage() {
+  useDocumentTitle("Catálogos");
   return (
     <section>
       <div className="page-heading">
@@ -136,7 +138,7 @@ function CategoriesSection() {
         <input aria-label="Descripción de la nueva categoría" placeholder="Descripción (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} />
         <button type="submit" className="button button-primary">Añadir categoría</button>
       </form>
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
     </section>
   );
 }
@@ -192,7 +194,7 @@ function VersionsSection() {
         <input aria-label="Nueva versión" placeholder="p. ej. 1.21.4" value={name} onChange={(e) => setName(e.target.value)} />
         <button type="submit" className="button button-primary">Añadir versión</button>
       </form>
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
     </section>
   );
 }

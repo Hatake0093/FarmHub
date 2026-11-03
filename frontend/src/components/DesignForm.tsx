@@ -118,7 +118,7 @@ export function DesignForm({ title, initial, submitLabel, saving, error, onSubmi
         </button>
       )}
 
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
       <div className="actions">
         <button type="submit" className="button button-primary" disabled={saving}>
           {saving ? "Guardando…" : submitLabel}

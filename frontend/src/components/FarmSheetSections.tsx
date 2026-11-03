@@ -118,7 +118,7 @@ function StructuresSection({
         <button type="submit" className="button">Vincular</button>
         <Link to="/structures">Crear esquemático nuevo</Link>
       </form>
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
     </section>
   );
 }
@@ -179,7 +179,7 @@ function LinksSection({ farmId, links, onChanged }: { farmId: number; links: Far
         </select>
         <button type="submit" className="button">Añadir enlace</button>
       </form>
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
     </section>
   );
 }
@@ -341,7 +341,7 @@ function ProductionsSection({
         <div className="actions">
           <button type="submit" className="button button-primary">Añadir producción</button>
         </div>
-        {(localError || error) && <p className="error" role="alert">{localError ?? error}</p>}
+        {(localError || error) && <p className="alert" role="alert">{localError ?? error}</p>}
       </form>
     </section>
   );
@@ -404,7 +404,7 @@ function DependenciesSection({ farm, onChanged }: { farm: FarmDetail; onChanged:
         <input aria-label="Nota de la dependencia" placeholder="Nota (p. ej. hierro para los raíles)" value={note} onChange={(e) => setNote(e.target.value)} />
         <button type="submit" className="button">Añadir dependencia</button>
       </form>
-      {(localError || error) && <p className="error" role="alert">{localError ?? error}</p>}
+      {(localError || error) && <p className="alert" role="alert">{localError ?? error}</p>}
     </section>
   );
 }

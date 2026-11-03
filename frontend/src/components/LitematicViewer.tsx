@@ -179,7 +179,7 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
         <button type="button" className="button" onClick={onClose}>Cerrar visor</button>
       </div>
 
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
       {!summary && !error && <p className="muted">Cargando archivo…</p>}
 
       {summary && region && (

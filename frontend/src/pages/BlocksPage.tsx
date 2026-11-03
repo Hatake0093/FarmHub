@@ -5,9 +5,13 @@ import { shortName } from "../lib/blockSearch";
 import { setColorOverrides } from "../lib/blockColors";
 import { forgetTexture } from "../lib/textures";
 import { matchTextureFiles } from "../lib/textureImport";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 export function BlocksPage() {
+  useDocumentTitle("Bloques");
   const [blocks, setBlocks] = useState<BlockEntry[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [onlyMissing, setOnlyMissing] = useState(true);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -26,6 +30,7 @@ export function BlocksPage() {
       .then((list) => {
         setBlocks(list);
         setColorOverrides(list);
+        setLoaded(true);
       })
       .catch((err: unknown) => setError(errorMessage(err)));
   }
@@ -46,6 +51,13 @@ export function BlocksPage() {
   }, [blocks, search, onlyMissing]);
 
   const missingCount = blocks.filter((b) => !b.spanishName).length;
+
+  /** Una fila tiene cambios sin guardar si su nombre o su color difieren de lo guardado. */
+  function isDirty(b: BlockEntry): boolean {
+    const nameChanged = b.id in drafts && drafts[b.id].trim() !== (b.spanishName ?? "");
+    const colorChanged = b.id in colorDrafts && colorDrafts[b.id] !== b.color;
+    return nameChanged || colorChanged;
+  }
 
   async function uploadTexture(block: BlockEntry, file: File | undefined) {
     if (!file) return;
@@ -118,6 +130,7 @@ export function BlocksPage() {
       const next = blocks.map((b) => (b.id === updated.id ? updated : b));
       setBlocks(next);
       setColorOverrides(next);
+      setNotice(`Guardado: ${updated.spanishName ?? updated.englishName}`);
       setDrafts((current) => {
         const copy = { ...current };
         delete copy[block.id];
@@ -158,7 +171,10 @@ export function BlocksPage() {
         </label>
       </div>
 
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
+      <p className="muted small" role="status" aria-live="polite">
+        {notice}
+      </p>
 
       <section className="import-box">
         <h2>Carga masiva de texturas</h2>
@@ -170,7 +186,7 @@ export function BlocksPage() {
             Elegir carpeta
             <input
               type="file"
-              hidden
+              className="visually-hidden"
               multiple
               accept="image/png,image/jpeg,image/webp"
               {...{ webkitdirectory: "" }}
@@ -181,7 +197,7 @@ export function BlocksPage() {
             Elegir imágenes
             <input
               type="file"
-              hidden
+              className="visually-hidden"
               multiple
               accept="image/png,image/jpeg,image/webp"
               onChange={(e) => previewImport(Array.from(e.target.files ?? []))}
@@ -226,6 +242,7 @@ export function BlocksPage() {
           setError(null);
           try {
             await blocksApi.add(newBlock.trim());
+            setNotice(`Bloque añadido: ${newBlock.trim()}`);
             setNewBlock("");
             load();
           } catch (err) {
@@ -256,8 +273,9 @@ export function BlocksPage() {
         <tbody>
           {visible.map((b) => {
             const draft = drafts[b.id] ?? b.spanishName ?? "";
+            const dirty = isDirty(b);
             return (
-              <tr key={b.id}>
+              <tr key={b.id} className={dirty ? "row-dirty" : undefined}>
                 <td>{b.englishName}</td>
                 <td className="muted">{b.id}</td>
                 <td>
@@ -292,7 +310,7 @@ export function BlocksPage() {
                         type="file"
                         accept="image/png,image/jpeg,image/webp"
                         aria-label={`Subir textura de ${b.englishName}`}
-                        hidden
+                        className="visually-hidden"
                         onChange={(e) => {
                           void uploadTexture(b, e.target.files?.[0]);
                           e.target.value = "";
@@ -310,7 +328,7 @@ export function BlocksPage() {
                   <button
                     type="button"
                     className="button"
-                    disabled={savingId === b.id}
+                    disabled={savingId === b.id || !dirty}
                     onClick={() => void save(b)}
                   >
                     {savingId === b.id ? "Guardando…" : "Guardar"}
@@ -321,7 +339,14 @@ export function BlocksPage() {
           })}
         </tbody>
       </table>
-      {visible.length === 0 && <p className="muted">No hay bloques que coincidan.</p>}
+      {!loaded && !error && <p className="muted" role="status">Cargando bloques…</p>}
+      {loaded && visible.length === 0 && (
+        <p className="muted">
+          {onlyMissing && !search.trim() && missingCount === 0
+            ? "¡Todos los bloques tienen nombre en español! Desmarca «Solo los que faltan» para verlos."
+            : "No hay bloques que coincidan."}
+        </p>
+      )}
     </section>
   );
 }
