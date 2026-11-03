@@ -13,7 +13,11 @@ interface Props {
   useTextures: boolean;
 }
 
-const DEFAULT_VIEW = { yaw: 0.7, pitch: 0.5, dist: 2.6 };
+/** Distancia que encuadra la esfera del modelo (radio 1) con un margen, para un campo de visión de 45°. */
+const FIT_DIST = 1.25 / Math.sin(Math.PI / 8);
+const DEFAULT_VIEW = { yaw: 0.7, pitch: 0.5, dist: FIT_DIST };
+/** Centro de la vista en unidades normalizadas. Mover el centro es desplazar la vista. */
+type Target = [number, number, number];
 const WIDTH = 880;
 const HEIGHT = 520;
 
@@ -24,8 +28,9 @@ export function Voxel3DView({ grid, useTextures }: Props) {
   const meshRef = useRef<MeshData | null>(null);
   const hasAtlasRef = useRef(false);
   const useTexRef = useRef(useTextures);
-  const orbit = useRef({ ...DEFAULT_VIEW });
-  const dragRef = useRef<{ x: number; y: number } | null>(null);
+  const orbit = useRef<{ yaw: number; pitch: number; dist: number; target: Target }>({ ...DEFAULT_VIEW, target: [0, 0, 0] });
+  const dragRef = useRef<{ x: number; y: number; pan: boolean } | null>(null);
+  const fitKeyRef = useRef<string | null>(null);
   const [version, setVersion] = useState(0);
   const [unsupported, setUnsupported] = useState(false);
 
@@ -54,12 +59,13 @@ export function Voxel3DView({ grid, useTextures }: Props) {
     const m = meshRef.current;
     if (!renderer || !canvas || !m) return;
     const o = orbit.current;
+    const t = o.target;
     const eye: Vec3 = [
-      o.dist * Math.cos(o.pitch) * Math.sin(o.yaw),
-      o.dist * Math.sin(o.pitch),
-      o.dist * Math.cos(o.pitch) * Math.cos(o.yaw),
+      t[0] + o.dist * Math.cos(o.pitch) * Math.sin(o.yaw),
+      t[1] + o.dist * Math.sin(o.pitch),
+      t[2] + o.dist * Math.cos(o.pitch) * Math.cos(o.yaw),
     ];
-    const view = lookAt(eye, [0, 0, 0], [0, 1, 0]);
+    const view = lookAt(eye, t, [0, 1, 0]);
     const model: Mat4 = multiply(scale(1 / m.radius), translate(-m.center[0], -m.center[1], -m.center[2]));
     const proj = perspective(Math.PI / 4, canvas.width / canvas.height, 0.01, 100);
     renderer.draw(multiply(proj, multiply(view, model)), [0.4, 1, 0.6], useTexRef.current && hasAtlasRef.current);
@@ -81,34 +87,53 @@ export function Voxel3DView({ grid, useTextures }: Props) {
     };
   }, []);
 
-  // Sube la malla y el atlas cuando cambian, y dibuja.
+  // Sube la malla y el atlas cuando cambian, y dibuja. Al cambiar las dimensiones, se encuadra la estructura.
   useEffect(() => {
     const renderer = rendererRef.current;
     meshRef.current = mesh;
     hasAtlasRef.current = atlas !== null;
+    const fitKey = `${grid.width}x${grid.height}x${grid.depth}`;
+    if (fitKeyRef.current !== fitKey) {
+      fitKeyRef.current = fitKey;
+      orbit.current = { ...DEFAULT_VIEW, target: [0, 0, 0] };
+    }
     if (!renderer) return;
     renderer.setMesh(mesh);
     renderer.setAtlas(atlas?.canvas ?? null);
     draw();
-  }, [mesh, atlas, draw]);
+  }, [mesh, atlas, grid, draw]);
 
   // Arrastrar para girar y rueda para acercar. La rueda necesita un listener no pasivo para poder cancelarse.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    // Botón derecho, o Mayús + botón izquierdo: desplazar el centro. Botón izquierdo: girar.
     const onDown = (e: PointerEvent) => {
-      dragRef.current = { x: e.clientX, y: e.clientY };
+      dragRef.current = { x: e.clientX, y: e.clientY, pan: e.button === 2 || e.shiftKey };
       canvas.setPointerCapture(e.pointerId);
     };
     const onMove = (e: PointerEvent) => {
       const drag = dragRef.current;
       if (!drag) return;
       const o = orbit.current;
-      o.yaw -= (e.clientX - drag.x) * 0.01;
-      o.pitch = Math.max(-1.5, Math.min(1.5, o.pitch + (e.clientY - drag.y) * 0.01));
-      dragRef.current = { x: e.clientX, y: e.clientY };
+      const dx = e.clientX - drag.x;
+      const dy = e.clientY - drag.y;
+      if (drag.pan) {
+        // Ejes de la pantalla en el plano horizontal (derecha) y vertical (arriba).
+        const k = o.dist * 0.0015;
+        const right: Target = [Math.cos(o.yaw), 0, -Math.sin(o.yaw)];
+        for (let i = 0; i < 3; i++) {
+          o.target[i] += -right[i] * dx * k;
+        }
+        o.target[1] += dy * k;
+      } else {
+        o.yaw -= dx * 0.01;
+        o.pitch = Math.max(-1.5, Math.min(1.5, o.pitch + dy * 0.01));
+      }
+      dragRef.current = { x: e.clientX, y: e.clientY, pan: drag.pan };
       draw();
     };
+    const onContext = (e: Event) => e.preventDefault();
     const onUp = () => {
       dragRef.current = null;
     };
@@ -122,18 +147,20 @@ export function Voxel3DView({ grid, useTextures }: Props) {
     canvas.addEventListener("pointermove", onMove);
     canvas.addEventListener("pointerup", onUp);
     canvas.addEventListener("pointercancel", onUp);
+    canvas.addEventListener("contextmenu", onContext);
     canvas.addEventListener("wheel", onWheel, { passive: false });
     return () => {
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointermove", onMove);
       canvas.removeEventListener("pointerup", onUp);
       canvas.removeEventListener("pointercancel", onUp);
+      canvas.removeEventListener("contextmenu", onContext);
       canvas.removeEventListener("wheel", onWheel);
     };
   }, [draw]);
 
   function reset() {
-    orbit.current = { ...DEFAULT_VIEW };
+    orbit.current = { ...DEFAULT_VIEW, target: [0, 0, 0] };
     draw();
   }
 
@@ -145,7 +172,7 @@ export function Voxel3DView({ grid, useTextures }: Props) {
     <div className="voxel3d">
       <div className="rotate-bar">
         <button type="button" className="button" onClick={reset}>Reiniciar vista</button>
-        <span className="muted small">Arrastra para girar · rueda para acercar y alejar · {useTextures ? "con texturas" : "solo colores"}</span>
+        <span className="muted small">Arrastra para girar · botón derecho (o Mayús + arrastrar) para desplazar · rueda para acercar y alejar · {useTextures ? "con texturas" : "solo colores"}</span>
       </div>
       <canvas ref={canvasRef} className="voxel3d-canvas" width={WIDTH} height={HEIGHT} aria-label="Vista 3D" />
     </div>
