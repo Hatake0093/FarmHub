@@ -14,6 +14,7 @@ import type {
   ProductionUnit,
 } from "../api/types";
 import { formatAmount } from "../lib/format";
+import { isHttpUrl } from "../lib/url";
 
 interface Props {
   farm: FarmDetail;
@@ -94,6 +95,7 @@ function StructuresSection({
             <button
               type="button"
               className="button-link button-danger"
+              aria-label={`Desvincular ${s.name}`}
               onClick={() => {
                 if (window.confirm(`¿Desvincular "${s.name}" de esta granja?`)) {
                   void run(() => farmStructuresApi.unlink(farmId, s.id));
@@ -139,6 +141,10 @@ function LinksSection({ farmId, links, onChanged }: { farmId: number; links: Far
       setError("El título y la URL son obligatorios.");
       return;
     }
+    if (!isHttpUrl(url.trim())) {
+      setError("La URL debe empezar por http:// o https://.");
+      return;
+    }
     await run(() => linksApi.add(farmId, { title: title.trim(), url: url.trim(), kind }));
     setTitle("");
     setUrl("");
@@ -158,6 +164,7 @@ function LinksSection({ farmId, links, onChanged }: { farmId: number; links: Far
             <button
               type="button"
               className="button-link button-danger"
+              aria-label={`Quitar el enlace ${link.title}`}
               onClick={() => {
                 if (window.confirm(`¿Quitar el enlace "${link.title}"?`)) {
                   void run(() => linksApi.remove(link.id));
@@ -172,7 +179,7 @@ function LinksSection({ farmId, links, onChanged }: { farmId: number; links: Far
 
       <form className="inline-form" onSubmit={handleAdd} noValidate>
         <input aria-label="Título del enlace" placeholder="Título" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <input aria-label="URL del enlace" placeholder="https://…" value={url} onChange={(e) => setUrl(e.target.value)} />
+        <input aria-label="URL del enlace" type="url" inputMode="url" placeholder="https://…" value={url} onChange={(e) => setUrl(e.target.value)} />
         <select aria-label="Tipo de enlace" value={kind} onChange={(e) => setKind(e.target.value as LinkKind)}>
           <option value="Tutorial">Tutorial</option>
           <option value="Reference">Referencia</option>
@@ -258,19 +265,19 @@ function ProductionsSection({
               <th>AFK</th>
               <th>Medido en</th>
               <th>Condiciones y fuente</th>
-              <th />
+              <th aria-label="Acciones" />
             </tr>
           </thead>
           <tbody>
             {productions.map((p) => (
               <tr key={p.id}>
-                <td>{p.resourceName}</td>
-                <td>
+                <td data-label="Recurso">{p.resourceName}</td>
+                <td data-label="Por hora">
                   {formatAmount(p.amountPerHour)} {UNIT_LABELS[p.unit]}/h
                 </td>
-                <td>{p.requiresAfk ? "Sí" : "No"}</td>
-                <td>{p.measuredInVersion ?? "—"}</td>
-                <td>
+                <td data-label="AFK">{p.requiresAfk ? "Sí" : "No"}</td>
+                <td data-label="Medido en">{p.measuredInVersion ?? "—"}</td>
+                <td data-label="Condiciones y fuente">
                   {p.measurementConditions && <div>{p.measurementConditions}</div>}
                   {p.source && <div className="muted">Fuente: {p.source}</div>}
                   {!p.measurementConditions && !p.source && "—"}
@@ -279,6 +286,7 @@ function ProductionsSection({
                   <button
                     type="button"
                     className="button-link button-danger"
+                    aria-label={`Borrar la producción de ${p.resourceName}`}
                     onClick={() => {
                       if (window.confirm(`¿Borrar la producción de "${p.resourceName}"?`)) {
                         void run(() => productionsApi.remove(p.id));
@@ -298,11 +306,11 @@ function ProductionsSection({
         <h3>Añadir producción</h3>
         <label>
           Recurso *
-          <input value={resource} onChange={(e) => setResource(e.target.value)} />
+          <input value={resource} required placeholder="p. ej. Hierro" onChange={(e) => setResource(e.target.value)} />
         </label>
         <label>
           Cantidad por hora *
-          <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <input inputMode="decimal" required placeholder="p. ej. 1200" value={amount} onChange={(e) => setAmount(e.target.value)} />
         </label>
         <label>
           Unidad
@@ -424,10 +432,15 @@ function RelationList({
     <ul className="file-list">
       {relations.map((r) => (
         <li key={r.dependencyId}>
-          {r.farmName}
+          <Link to={`/farms/${r.farmId}`}>{r.farmName}</Link>
           {r.note && <span className="muted"> — {r.note}</span>}{" "}
           {onRemove && (
-            <button type="button" className="button-link button-danger" onClick={() => onRemove(r)}>
+            <button
+              type="button"
+              className="button-link button-danger"
+              aria-label={`Quitar la dependencia de ${r.farmName}`}
+              onClick={() => onRemove(r)}
+            >
               Quitar
             </button>
           )}

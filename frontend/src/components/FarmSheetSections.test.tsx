@@ -36,6 +36,18 @@ describe("FarmSheetSections", () => {
     vi.unstubAllGlobals();
   });
 
+  it("rechaza una URL de enlace que no sea http(s)", async () => {
+    const fetchMock = mockApi({ "/api/minecraft-versions": [], "/api/farms": { items: [], page: 1, pageSize: 100, totalCount: 0 }, "/api/structures": [] });
+    render(<MemoryRouter><FarmSheetSections farm={farm} onChanged={() => undefined} /></MemoryRouter>);
+
+    await userEvent.type(screen.getByLabelText("Título del enlace"), "Vídeo");
+    await userEvent.type(screen.getByLabelText("URL del enlace"), "youtube.com/abc");
+    await userEvent.click(screen.getByRole("button", { name: "Añadir enlace" }));
+
+    expect(await screen.findByRole("alert")).toHaveProperty("textContent", expect.stringContaining("http"));
+    expect(postCalls(fetchMock).filter((c) => String(c[0]).includes("links"))).toHaveLength(0);
+  });
+
   it("no envía una producción con cantidad 0 ni sin recurso", async () => {
     const fetchMock = mockApi({ "/api/minecraft-versions": [], "/api/farms": { items: [], page: 1, pageSize: 100, totalCount: 0 }, "/api/structures": [] });
     render(<MemoryRouter><FarmSheetSections farm={farm} onChanged={() => undefined} /></MemoryRouter>);

@@ -43,6 +43,7 @@ export function DesignForm({ title, initial, submitLabel, saving, error, onSubmi
     event.preventDefault();
     if (!values.name.trim()) {
       setValidation("El nombre del diseño es obligatorio.");
+      document.getElementById("design-name")?.focus();
       return;
     }
     setValidation(null);
@@ -72,8 +73,21 @@ export function DesignForm({ title, initial, submitLabel, saving, error, onSubmi
       <h3>{title}</h3>
       <label htmlFor="design-name">
         Nombre *
-        <input id="design-name" value={values.name} onChange={(e) => set("name", e.target.value)} />
-        {validation && <span className="field-error">{validation}</span>}
+        <input
+          id="design-name"
+          autoFocus
+          required
+          maxLength={200}
+          aria-invalid={validation ? true : undefined}
+          aria-describedby={validation ? "design-name-error" : undefined}
+          value={values.name}
+          onChange={(e) => set("name", e.target.value)}
+        />
+        {validation && (
+          <span id="design-name-error" className="field-error">
+            {validation}
+          </span>
+        )}
       </label>
       <label htmlFor="design-description">
         Descripción
@@ -102,7 +116,15 @@ export function DesignForm({ title, initial, submitLabel, saving, error, onSubmi
             aria-label="Nombre del nuevo creador"
             placeholder="Nombre del creador"
             value={newAuthor}
+            autoFocus
             onChange={(e) => setNewAuthor(e.target.value)}
+            onKeyDown={(e) => {
+              // Intro añade el creador; sin esto enviaría todo el formulario del diseño.
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void handleAddAuthor();
+              }
+            }}
           />
           <button type="button" className="button" onClick={handleAddAuthor}>
             Añadir creador
@@ -113,7 +135,7 @@ export function DesignForm({ title, initial, submitLabel, saving, error, onSubmi
           {authorError && <span className="field-error">{authorError}</span>}
         </div>
       ) : (
-        <button type="button" className="button button-link" onClick={() => setAddingAuthor(true)}>
+        <button type="button" className="button-link" onClick={() => setAddingAuthor(true)}>
           + Nuevo creador
         </button>
       )}
