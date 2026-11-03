@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { structuresApi, type StructureListItem } from "../api/structures";
 import { errorMessage } from "../api/client";
 import { plural } from "../lib/plural";
-import { validateStructureForm } from "../lib/structureForm";
+import { MAX_DIMENSION, MAX_VOLUME, validateStructureForm } from "../lib/structureForm";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 const dateFormat = new Intl.DateTimeFormat("es-ES", { dateStyle: "medium" });
@@ -26,6 +26,8 @@ export function StructuresPage() {
   function set<K extends keyof typeof EMPTY>(key: K, value: string) {
     setForm((current) => ({ ...current, [key]: value }));
   }
+
+  const volume = (Number(form.width) || 0) * (Number(form.height) || 0) * (Number(form.depth) || 0);
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -132,13 +134,16 @@ export function StructuresPage() {
           <input value={form.description} maxLength={4000} onChange={(e) => set("description", e.target.value)} />
         </label>
         <fieldset>
-          <legend>Tamaño (bloques, máximo 200 por lado)</legend>
+          <legend>Tamaño (bloques)</legend>
           <div className="dimension-grid">
             <label>Ancho (X)<input inputMode="numeric" value={form.width} onChange={(e) => set("width", e.target.value)} /></label>
             <label>Alto (Y)<input inputMode="numeric" value={form.height} onChange={(e) => set("height", e.target.value)} /></label>
             <label>Profundidad (Z)<input inputMode="numeric" value={form.depth} onChange={(e) => set("depth", e.target.value)} /></label>
           </div>
         </fieldset>
+        <p className={volume > MAX_VOLUME ? "field-error" : "muted small"} aria-live="polite">
+          Volumen: {volume.toLocaleString("es-ES")} de {MAX_VOLUME.toLocaleString("es-ES")} bloques como máximo (hasta {MAX_DIMENSION} por lado).
+        </p>
         <fieldset>
           <legend>Coordenada base del mundo (esquina mínima)</legend>
           <div className="dimension-grid">

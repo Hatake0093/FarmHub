@@ -42,6 +42,7 @@ import { useDocumentTitle } from "../lib/useDocumentTitle";
 import { useFeedback } from "../lib/feedback";
 import { BlockPicker } from "../components/BlockPicker";
 import {
+  cellKey,
   displayedBlock,
   withChange,
   worldCoordinates,
@@ -50,6 +51,8 @@ import {
 } from "../lib/structureEdit";
 
 const BLOCK_ID = /^[a-z0-9_.-]+:[a-z0-9/_.-]+$/;
+
+const GRID_BACKGROUND = "#1b1e1a";
 
 const VIEW_MODES: { value: "layer" | "iso" | "slice" | "stack" | "3d"; label: string }[] = [
   { value: "layer", label: "Capa 2D (editar)" },
@@ -185,17 +188,40 @@ export function StructureEditorPage() {
     [sel],
   );
 
+  // Dibujo en dos capas para que pintar y mover el ratón sea fluido en estructuras grandes:
+  // 1) la capa base (bloques + capa fantasma) vive en un lienzo fuera de pantalla y solo se repinta entera
+  //    cuando cambia la capa, el zoom o la rejilla; al pintar se actualizan solo las celdas modificadas.
+  // 2) en cada movimiento se copia esa base y se dibujan encima los contornos (cursor, selección, previsualización).
+  const baseCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawnPendingRef = useRef<PendingChanges>(new Map());
+  const pendingRef = useRef(pending);
+  pendingRef.current = pending;
+
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !layer || !detail || mode !== "layer") return;
-    const ctx = canvas.getContext("2d");
+    if (!layer || !detail || mode !== "layer") return;
+    const base = (baseCanvasRef.current ??= document.createElement("canvas"));
+    const width = layer.width * cell;
+    const height = layer.depth * cell;
+    if (base.width !== width) base.width = width;
+    if (base.height !== height) base.height = height;
+    const ctx = base.getContext("2d");
     if (!ctx) return;
 
-    canvas.width = layer.width * cell;
-    canvas.height = layer.depth * cell;
-    ctx.fillStyle = "#1b1e1a";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
     const gap = gridOn ? 1 : 0;
+    const current = pendingRef.current;
+    // El color de cada tipo de bloque se calcula una sola vez, no una vez por celda.
+    const colors = new Map<string, string>();
+    const colorOf = (block: string) => {
+      let color = colors.get(block);
+      if (color === undefined) {
+        color = blockColor(block);
+        colors.set(block, color);
+      }
+      return color;
+    };
+
+    ctx.fillStyle = GRID_BACKGROUND;
+    ctx.fillRect(0, 0, width, height);
 
     // Capa fantasma: semitransparente, detrás de la capa actual.
     if (ghostLayer && ghostLayer.width === layer.width && ghostLayer.depth === layer.depth) {
@@ -204,7 +230,7 @@ export function StructureEditorPage() {
         for (let x = 0; x < ghostLayer.width; x++) {
           const block = ghostLayer.palette[ghostLayer.cells[z * ghostLayer.width + x]];
           if (isAir(block)) continue;
-          ctx.fillStyle = blockColor(block);
+          ctx.fillStyle = colorOf(block);
           ctx.fillRect(x * cell, z * cell, cell - gap, cell - gap);
         }
       }
@@ -214,12 +240,62 @@ export function StructureEditorPage() {
     for (let z = 0; z < layer.depth; z++) {
       for (let x = 0; x < layer.width; x++) {
         const serverBlock = layer.palette[layer.cells[z * layer.width + x]];
-        const shown = displayedBlock(pending, { x, y, z }, serverBlock);
+        const shown = current.size === 0 ? serverBlock : displayedBlock(current, { x, y, z }, serverBlock);
         if (isAir(shown)) continue;
+        ctx.fillStyle = colorOf(shown);
+        ctx.fillRect(x * cell, z * cell, cell - gap, cell - gap);
+      }
+    }
+    drawnPendingRef.current = current;
+  }, [layer, y, cell, detail, mode, ghostLayer, gridOn]);
+
+  // Al pintar o deshacer, solo se repintan las celdas que han cambiado respecto a lo ya dibujado.
+  useEffect(() => {
+    const base = baseCanvasRef.current;
+    const previous = drawnPendingRef.current;
+    if (!base || !layer || mode !== "layer" || previous === pending) return;
+    const ctx = base.getContext("2d");
+    if (!ctx) return;
+    const gap = gridOn ? 1 : 0;
+
+    const touched: { x: number; y: number; z: number }[] = [];
+    for (const [key, change] of pending) if (previous.get(key) !== change) touched.push(change);
+    for (const [key, change] of previous) if (!pending.has(key)) touched.push(change);
+
+    for (const { x, y: cy, z } of touched) {
+      if (cy !== y || x >= layer.width || z >= layer.depth) continue;
+      ctx.fillStyle = GRID_BACKGROUND;
+      ctx.fillRect(x * cell, z * cell, cell, cell);
+      if (ghostLayer && ghostLayer.width === layer.width && ghostLayer.depth === layer.depth) {
+        const ghostBlock = ghostLayer.palette[ghostLayer.cells[z * ghostLayer.width + x]];
+        if (!isAir(ghostBlock)) {
+          ctx.globalAlpha = 0.3;
+          ctx.fillStyle = blockColor(ghostBlock);
+          ctx.fillRect(x * cell, z * cell, cell - gap, cell - gap);
+          ctx.globalAlpha = 1;
+        }
+      }
+      const shown = displayedBlock(pending, { x, y, z }, layer.palette[layer.cells[z * layer.width + x]]);
+      if (!isAir(shown)) {
         ctx.fillStyle = blockColor(shown);
         ctx.fillRect(x * cell, z * cell, cell - gap, cell - gap);
       }
     }
+    drawnPendingRef.current = pending;
+  }, [pending, layer, y, cell, mode, ghostLayer, gridOn]);
+
+  // Lienzo visible: la base ya dibujada más los contornos que cambian con el ratón.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const base = baseCanvasRef.current;
+    if (!canvas || !base || !layer || !detail || mode !== "layer") return;
+    if (canvas.width !== base.width) canvas.width = base.width;
+    if (canvas.height !== base.height) canvas.height = base.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const gap = gridOn ? 1 : 0;
+
+    ctx.drawImage(base, 0, 0);
 
     // Selección: contorno de la caja original (blanco) y del destino (amarillo) en la capa actual.
     if (selBox) {
@@ -265,6 +341,9 @@ export function StructureEditorPage() {
       setError(`"${target}" no es un identificador de bloque válido (p. ej. minecraft:stone).`);
       return;
     }
+    // Mover el ratón dentro de la misma celda no cambia nada: evita copiar el mapa y repintar.
+    const existing = strokeRef.current.get(cellKey(local.x, local.y, local.z));
+    if (existing && existing.block === target) return;
     strokeRef.current = withChange(strokeRef.current, local, target);
     setPending(strokeRef.current);
   }
@@ -328,8 +407,10 @@ export function StructureEditorPage() {
 
   function handleMove(event: MouseEvent<HTMLCanvasElement>) {
     const local = localAt(event);
+    const previous = hoverRef.current;
     hoverRef.current = local;
-    setHover(local);
+    // Solo se actualiza el estado al cambiar de celda; varios píxeles dentro de la misma celda no repintan nada.
+    if (previous?.x !== local?.x || previous?.y !== local?.y || previous?.z !== local?.z) setHover(local);
     if (local && paintingRef.current === "shape" && shapeRef.current) {
       shapeRef.current = { ...shapeRef.current, b: { x: local.x, z: local.z } };
       setShapePrev(shapeRef.current);

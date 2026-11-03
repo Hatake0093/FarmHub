@@ -59,9 +59,12 @@ export function visibleCubes(grid: VoxelGrid): Cube[] {
     }
   }
 
-  // Dibujar del más lejano (suma menor) al más cercano.
-  cubes.sort((a, b) => a.x + a.y + a.z - (b.x + b.y + b.z));
-  return cubes;
+  // Dibujar del más lejano (suma menor) al más cercano. Ordenación por cubetas (la suma es un entero
+  // pequeño): mismo resultado que un sort estable, pero sin comparador sobre cientos de miles de objetos.
+  const maxSum = width + height + depth;
+  const buckets: Cube[][] = Array.from({ length: maxSum }, () => []);
+  for (const cube of cubes) buckets[cube.x + cube.y + cube.z].push(cube);
+  return buckets.flat();
 }
 
 /** Proyección isométrica de un punto del mundo a píxeles, sin desplazamiento. */

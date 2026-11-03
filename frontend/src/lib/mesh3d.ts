@@ -56,30 +56,52 @@ function hslToRgb(h: number, s: number, l: number): [number, number, number] {
   return [f(0), f(8), f(4)];
 }
 
+/** Desplazamientos de las cuatro esquinas de cada cara (12 números por cara), calculados una sola vez. */
+const FACE_CORNERS: Float32Array[] = FACES.map((f) => Float32Array.from(f.corners(0, 0, 0).flat()));
+
 /**
  * Malla de las caras visibles de la rejilla. Una cara solo se dibuja si el bloque vecino en esa
  * dirección es aire. Si `tiles` tiene el bloque, la cara lleva su posición en el atlas.
+ *
+ * Es la parte más cara de abrir la vista 3D en estructuras de ~1M de celdas, así que evita asignar
+ * memoria por cara: lo que depende del tipo de bloque (si es sólido, su color, su textura) se calcula
+ * una vez por entrada de la paleta y los vértices se escriben directamente en el búfer.
  */
 export function buildMesh(grid: VoxelGrid, tiles: Map<string, TileRect> | null): MeshData {
   const { width, height, depth, blocks, palette } = grid;
+  const layerSize = width * depth;
+
+  const isSolid = new Uint8Array(palette.length);
+  const rgbs: [number, number, number][] = [];
+  const tileOf: (TileRect | null)[] = [];
+  palette.forEach((block, index) => {
+    isSolid[index] = isAir(block) ? 0 : 1;
+    rgbs[index] = blockRgb(block);
+    tileOf[index] = tiles?.get(block) ?? null;
+  });
+
   const solid = (x: number, y: number, z: number) => {
     if (x < 0 || y < 0 || z < 0 || x >= width || y >= height || z >= depth) return false;
-    return !isAir(palette[blocks[(y * depth + z) * width + x]]);
+    return isSolid[blocks[y * layerSize + z * width + x]] === 1;
   };
 
   let faces = 0;
   for (let y = 0; y < height; y++) {
     for (let z = 0; z < depth; z++) {
       for (let x = 0; x < width; x++) {
-        if (!solid(x, y, z)) continue;
-        for (const [dx, dy, dz] of NEIGHBOURS) if (!solid(x + dx, y + dy, z + dz)) faces++;
+        if (isSolid[blocks[y * layerSize + z * width + x]] === 0) continue;
+        for (let f = 0; f < 6; f++) {
+          const n = NEIGHBOURS[f];
+          if (!solid(x + n[0], y + n[1], z + n[2])) faces++;
+        }
       }
     }
   }
 
   const vertices = new Float32Array(faces * 4 * FLOATS_PER_VERTEX);
   const indices = new Uint32Array(faces * 6);
-  const uvCorners: [number, number][] = [[0, 1], [0, 0], [1, 0], [1, 1]];
+  // Esquinas de la cara en coordenadas de textura (u, v), en el orden de FACE_CORNERS.
+  const UV = [0, 1, 0, 0, 1, 0, 1, 1];
   let v = 0;
   let i = 0;
   let face = 0;
@@ -87,25 +109,37 @@ export function buildMesh(grid: VoxelGrid, tiles: Map<string, TileRect> | null):
   for (let y = 0; y < height; y++) {
     for (let z = 0; z < depth; z++) {
       for (let x = 0; x < width; x++) {
-        if (!solid(x, y, z)) continue;
-        const block = palette[blocks[(y * depth + z) * width + x]];
-        const [r, g, b] = blockRgb(block);
-        const tile = tiles?.get(block) ?? null;
+        const paletteIndex = blocks[y * layerSize + z * width + x];
+        if (isSolid[paletteIndex] === 0) continue;
+        const [r, g, b] = rgbs[paletteIndex];
+        const tile = tileOf[paletteIndex];
+        const flag = tile ? 1 : 0;
         for (let f = 0; f < 6; f++) {
-          const [dx, dy, dz] = NEIGHBOURS[f];
-          if (solid(x + dx, y + dy, z + dz)) continue;
-          const def = FACES[f];
-          const corners = def.corners(x, y, z);
+          const n = NEIGHBOURS[f];
+          if (solid(x + n[0], y + n[1], z + n[2])) continue;
+          const corners = FACE_CORNERS[f];
           for (let c = 0; c < 4; c++) {
-            const [px, py, pz] = corners[c];
-            const [cu, cv] = uvCorners[c];
-            const u = tile ? tile.u0 + (tile.u1 - tile.u0) * cu : 0;
-            const w = tile ? tile.v0 + (tile.v1 - tile.v0) * cv : 0;
-            vertices.set([px, py, pz, def.n[0], def.n[1], def.n[2], r, g, b, u, w, tile ? 1 : 0], v);
+            vertices[v] = x + corners[c * 3];
+            vertices[v + 1] = y + corners[c * 3 + 1];
+            vertices[v + 2] = z + corners[c * 3 + 2];
+            vertices[v + 3] = n[0];
+            vertices[v + 4] = n[1];
+            vertices[v + 5] = n[2];
+            vertices[v + 6] = r;
+            vertices[v + 7] = g;
+            vertices[v + 8] = b;
+            vertices[v + 9] = tile ? tile.u0 + (tile.u1 - tile.u0) * UV[c * 2] : 0;
+            vertices[v + 10] = tile ? tile.v0 + (tile.v1 - tile.v0) * UV[c * 2 + 1] : 0;
+            vertices[v + 11] = flag;
             v += FLOATS_PER_VERTEX;
           }
           const base = face * 4;
-          indices.set([base, base + 1, base + 2, base, base + 2, base + 3], i);
+          indices[i] = base;
+          indices[i + 1] = base + 1;
+          indices[i + 2] = base + 2;
+          indices[i + 3] = base;
+          indices[i + 4] = base + 2;
+          indices[i + 5] = base + 3;
           i += 6;
           face++;
         }

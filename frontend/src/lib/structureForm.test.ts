@@ -19,6 +19,12 @@ describe("validateStructureForm", () => {
     expect(validateStructureForm({ ...valid, depth: "" })).toContain("Profundidad");
   });
 
+  it("limita el volumen total a 1.000.000 aunque cada lado esté dentro de 200", () => {
+    expect(validateStructureForm({ ...valid, width: "100", height: "100", depth: "100" })).toBeNull();
+    expect(validateStructureForm({ ...valid, width: "200", height: "200", depth: "200" })).toContain("supera el máximo");
+    expect(validateStructureForm({ ...valid, width: "200", height: "200", depth: "25" })).toBeNull();
+  });
+
   it("exige coordenadas base enteras", () => {
     expect(validateStructureForm({ ...valid, baseY: "abc" })).toContain("Coordenada base Y");
   });
