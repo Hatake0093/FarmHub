@@ -78,4 +78,18 @@ describe("blockShapes", () => {
     const [box] = shapeBoxes("minecraft:oak_trapdoor[half=bottom,open=false]");
     expect(box.hi[1]).toBeCloseTo(3 / 16);
   });
+
+  it("la mitad superior de una escalera tiene el escalón debajo y la base arriba", () => {
+    const boxes = shapeBoxes("minecraft:oak_stairs[facing=east,half=top]");
+    const base = boxes[0];
+    const step = boxes[1];
+    expect(base.lo[1]).toBeCloseTo(0.5);
+    expect(step.hi[1]).toBeCloseTo(0.5);
+  });
+
+  it("una esquina exterior deja solo un cuarto del escalón", () => {
+    const [, step] = shapeBoxes("minecraft:oak_stairs[facing=east,half=bottom,shape=outer_left]");
+    expect(step.lo[2]).toBeCloseTo(0);
+    expect(step.hi[2]).toBeCloseTo(0.5);
+  });
 });

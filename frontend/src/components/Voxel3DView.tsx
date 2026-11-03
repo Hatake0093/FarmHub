@@ -154,7 +154,7 @@ export function Voxel3DView({ grid, useTextures }: Props) {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const o = orbit.current;
-      o.dist = Math.max(0.6, Math.min(10, o.dist * Math.exp(e.deltaY * 0.001)));
+      o.dist = Math.max(0.08, Math.min(10, o.dist * Math.exp(e.deltaY * 0.001)));
       draw();
     };
     canvas.addEventListener("pointerdown", onDown);

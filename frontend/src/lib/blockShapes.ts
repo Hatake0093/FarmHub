@@ -157,21 +157,60 @@ function otherBoxes(block: string): Box[] | null {
     return [box([x[0], 0, 0], [x[1], 1, 1], true)];
   }
   if (base.endsWith("_stairs")) {
-    // Escalera recta, aproximada: media celda y un escalón de media altura en el lado hacia el que sube facing.
-    // Las esquinas (shape) se dibujan como rectas.
-    const top = props.half === "top";
-    const y0 = top ? 0.5 : 0;
-    const y1 = top ? 1 : 0.5;
-    const step: Record<string, Box> = {
-      west: box([0, y0, 0], [0.5, y1, 1]),
-      north: box([0, y0, 0], [1, y1, 0.5]),
-      south: box([0, y0, 0.5], [1, y1, 1]),
-      east: box([0.5, y0, 0], [1, y1, 1]),
-    };
-    const base_ = top ? box([0, 0.5, 0], [1, 1, 1]) : box([0, 0, 0], [1, 0.5, 1]);
-    return [base_, step[props.facing ?? "east"] ?? step.east];
+    return stairBoxes(props.facing, props.half === "top", props.shape ?? "straight");
   }
   return null;
+}
+
+/**
+ * Escalera aproximada. La mitad (abajo, o arriba si half=top) es completa y el escalón sube hacia el
+ * lado de facing. shape cambia el escalón: en las esquinas (inner/outer) se queda con un cuarto de celda
+ * o se añade un cuarto en la parte de atrás. Las esquinas se aproximan, no son exactas.
+ */
+function stairBoxes(facing: string | undefined, top: boolean, shape: string): Box[] {
+  const dir = facing ?? "east";
+  const alongAxis: 0 | 2 = dir === "east" || dir === "west" ? 0 : 2;
+  const sideAxis: 0 | 2 = alongAxis === 0 ? 2 : 0;
+  const high: [number, number] = dir === "east" || dir === "south" ? [0.5, 1] : [0, 0.5];
+  const back: [number, number] = dir === "east" || dir === "south" ? [0, 0.5] : [0.5, 1];
+  // Izquierda y derecha vistas desde quien mira en la dirección de facing.
+  const leftLow = dir === "east" || dir === "north";
+  const left: [number, number] = leftLow ? [0, 0.5] : [0.5, 1];
+  const right: [number, number] = leftLow ? [0.5, 1] : [0, 0.5];
+  const full: [number, number] = [0, 1];
+
+  // Rango vertical de la mitad completa y del escalón.
+  const baseY: [number, number] = top ? [0.5, 1] : [0, 0.5];
+  const stepY: [number, number] = top ? [0, 0.5] : [0.5, 1];
+
+  const make = (along: [number, number], side: [number, number], y: [number, number]): Box => {
+    const lo: [number, number, number] = [0, y[0], 0];
+    const hi: [number, number, number] = [1, y[1], 1];
+    lo[alongAxis] = along[0];
+    hi[alongAxis] = along[1];
+    lo[sideAxis] = side[0];
+    hi[sideAxis] = side[1];
+    return { lo, hi };
+  };
+
+  const boxes: Box[] = [make(full, full, baseY)];
+  switch (shape) {
+    case "outer_left":
+      boxes.push(make(high, left, stepY));
+      break;
+    case "outer_right":
+      boxes.push(make(high, right, stepY));
+      break;
+    case "inner_left":
+      boxes.push(make(high, full, stepY), make(back, left, stepY));
+      break;
+    case "inner_right":
+      boxes.push(make(high, full, stepY), make(back, right, stepY));
+      break;
+    default:
+      boxes.push(make(high, full, stepY));
+  }
+  return boxes;
 }
 
 /** Vidrio y cristal de colores: se dibuja con transparencia. */
