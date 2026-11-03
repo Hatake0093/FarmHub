@@ -5,4 +5,6 @@ public enum DesignFileKind
     Litematic = 1,
     Image = 2,
     Pdf = 3,
+    Schematic = 4,
+    Structure = 5,
 }

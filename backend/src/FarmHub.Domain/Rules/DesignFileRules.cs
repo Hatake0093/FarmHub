@@ -27,6 +27,12 @@ public static class DesignFileRules
             case ".pdf":
                 kind = DesignFileKind.Pdf;
                 return true;
+            case ".schem":
+                kind = DesignFileKind.Schematic;
+                return true;
+            case ".nbt":
+                kind = DesignFileKind.Structure;
+                return true;
             default:
                 kind = default;
                 return false;

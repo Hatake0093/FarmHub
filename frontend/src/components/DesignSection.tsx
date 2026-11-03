@@ -3,7 +3,7 @@ import { designsApi } from "../api/designs";
 import { errorMessage } from "../api/client";
 import type { FarmDesignSummary } from "../api/types";
 import { DesignForm, type DesignFormValues } from "./DesignForm";
-import { FILE_INPUT_ACCEPT, formatBytes, kindLabel, validateUpload } from "../lib/files";
+import { FILE_INPUT_ACCEPT, STRUCTURE_KINDS, formatBytes, kindLabel, validateUpload } from "../lib/files";
 import { LitematicViewer } from "./LitematicViewer";
 
 interface Props {
@@ -147,7 +147,7 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
               <span className="muted">
                 {kindLabel(file.kind)} · {formatBytes(file.sizeBytes)}
               </span>{" "}
-              {file.kind === "Litematic" && (
+              {STRUCTURE_KINDS.includes(file.kind) && (
                 <button type="button" className="button-link" onClick={() => setViewing({ id: file.id, name: file.originalFileName })}>
                   Ver
                 </button>
@@ -171,7 +171,7 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
       )}
 
       <label className="upload">
-        Subir archivo (.litematic, imagen o PDF, máx. 25 MB)
+        Subir archivo (.litematic, .schem, .nbt, imagen o PDF, máx. 25 MB)
         <input
           type="file"
           accept={FILE_INPUT_ACCEPT}

@@ -2,16 +2,16 @@ using FarmHub.Api.Contracts;
 using FarmHub.Domain.Enums;
 using FarmHub.Domain.Litematic;
 using FarmHub.Domain.Storage;
-using FarmHub.Infrastructure.Litematic;
+using FarmHub.Infrastructure.Structures;
 using FarmHub.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace FarmHub.Api.Controllers;
 
-/// <summary>Consulta de archivos Litematica ya subidos a un diseño.</summary>
+/// <summary>Consulta de estructuras (.litematic, .schem, .nbt) ya subidas a un diseño.</summary>
 [ApiController]
-[Route("api/design-files/{id:int}/litematic")]
+[Route("api/design-files/{id:int}/structure")]
 public sealed class LitematicsController(FarmHubDbContext db, IFileStorage storage) : ControllerBase
 {
     [HttpGet]
@@ -70,16 +70,16 @@ public sealed class LitematicsController(FarmHubDbContext db, IFileStorage stora
         return new LitematicLayerResponse(target.Name, y, target.Width, target.Depth, target.Palette, cells);
     }
 
-    /// <summary>Carga el archivo del diseño y lo interpreta. Null si no es un archivo Litematica.</summary>
+    /// <summary>Carga el archivo del diseño y lo interpreta. Null si no es una estructura.</summary>
     private async Task<LitematicModel?> LoadAsync(int id, CancellationToken ct)
     {
         var file = await db.DesignFiles.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id, ct);
-        if (file is null || file.Kind != DesignFileKind.Litematic)
+        if (file is null || !StructureFileReader.IsStructureKind(file.Kind))
         {
             return null;
         }
 
         await using var stream = storage.OpenRead(file.StorageKey);
-        return LitematicReader.Read(stream);
+        return StructureFileReader.Read(file.Kind, stream);
     }
 }

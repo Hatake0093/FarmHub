@@ -1,4 +1,4 @@
-using FarmHub.Infrastructure.Litematic;
+using FarmHub.Infrastructure.Structures;
 using Xunit.Abstractions;
 
 namespace FarmHub.Tests;
@@ -24,6 +24,9 @@ public sealed class LitematicSampleTests(ITestOutputHelper output)
         return null;
     }
 
+    private static bool IsStructure(string path) =>
+        Path.GetExtension(path).ToLowerInvariant() is ".litematic" or ".schem" or ".nbt";
+
     public static IEnumerable<object[]> SampleFiles()
     {
         var dir = FindSampleDirectory();
@@ -31,7 +34,7 @@ public sealed class LitematicSampleTests(ITestOutputHelper output)
         {
             yield break;
         }
-        foreach (var file in Directory.GetFiles(dir, "*.litematic").OrderBy(f => f))
+        foreach (var file in Directory.GetFiles(dir).Where(f => IsStructure(f)).OrderBy(f => f))
         {
             yield return [Path.GetFileName(file)];
         }
@@ -44,7 +47,13 @@ public sealed class LitematicSampleTests(ITestOutputHelper output)
         var path = Path.Combine(FindSampleDirectory()!, fileName);
         using var stream = File.OpenRead(path);
 
-        var model = LitematicReader.Read(stream);
+        var kind = Path.GetExtension(fileName).ToLowerInvariant() switch
+        {
+            ".schem" => FarmHub.Domain.Enums.DesignFileKind.Schematic,
+            ".nbt" => FarmHub.Domain.Enums.DesignFileKind.Structure,
+            _ => FarmHub.Domain.Enums.DesignFileKind.Litematic,
+        };
+        var model = StructureFileReader.Read(kind, stream);
 
         Assert.NotEmpty(model.Regions);
         foreach (var region in model.Regions)

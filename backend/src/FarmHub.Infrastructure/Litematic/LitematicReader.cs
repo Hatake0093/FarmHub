@@ -16,22 +16,7 @@ public static class LitematicReader
 {
     public static LitematicModel Read(Stream stream)
     {
-        using var limited = new LimitedReadStream(stream, LitematicLimits.MaxUncompressedBytes);
-
-        var file = new NbtFile();
-        try
-        {
-            file.LoadFromStream(limited, NbtCompression.GZip);
-        }
-        catch (Exception ex) when (ex is not LitematicFormatException)
-        {
-            throw new LitematicFormatException("El archivo no es un NBT comprimido válido.");
-        }
-
-        if (file.RootTag is not NbtCompound root)
-        {
-            throw new LitematicFormatException("La raíz del NBT no es un compuesto.");
-        }
+        var root = Structures.NbtFileLoader.LoadRoot(stream);
 
         var metadata = root.Get<NbtCompound>("Metadata");
         var regionsTag = root.Get<NbtCompound>("Regions")

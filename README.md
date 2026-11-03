@@ -75,7 +75,8 @@ Formatos previstos:
 | Formato | Estado |
 |---|---|
 | `.litematic` | Prioridad de implementación |
-| `.schem` | Soporte futuro |
+| `.schem` (Sponge v2 y v3) | Soportado: lectura y visor |
+| `.nbt` (estructura de Minecraft) | Soportado: lectura y visor |
 | Imágenes de referencia | Previsto |
 | PDF | Previsto |
 | Enlaces externos | Previsto |

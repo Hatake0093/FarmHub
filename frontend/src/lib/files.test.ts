@@ -6,11 +6,13 @@ describe("validateUpload", () => {
     expect(validateUpload({ name: "granja.litematic", size: 10 })).toBeNull();
     expect(validateUpload({ name: "PREVIEW.PNG", size: 10 })).toBeNull();
     expect(validateUpload({ name: "guia.pdf", size: 10 })).toBeNull();
+    expect(validateUpload({ name: "granja.schem", size: 10 })).toBeNull();
+    expect(validateUpload({ name: "estructura.nbt", size: 10 })).toBeNull();
   });
 
   it("rechaza extensiones no admitidas", () => {
     expect(validateUpload({ name: "script.exe", size: 10 })).toMatch(/no admitido/);
-    expect(validateUpload({ name: "farm.schem", size: 10 })).toMatch(/no admitido/);
+    expect(validateUpload({ name: "mundo.dat", size: 10 })).toMatch(/no admitido/);
     expect(validateUpload({ name: "sin-extension", size: 10 })).toMatch(/no admitido/);
   });
 

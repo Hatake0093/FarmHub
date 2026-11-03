@@ -2,7 +2,7 @@ using FarmHub.Api.Contracts;
 using FarmHub.Domain.Entities;
 using FarmHub.Domain.Enums;
 using FarmHub.Domain.Litematic;
-using FarmHub.Infrastructure.Litematic;
+using FarmHub.Infrastructure.Structures;
 using FarmHub.Domain.Rules;
 using FarmHub.Domain.Storage;
 using FarmHub.Infrastructure.Persistence;
@@ -139,16 +139,16 @@ public sealed class DesignsController(FarmHubDbContext db, IFileStorage storage)
         }
 
         // Un .litematic debe interpretarse antes de guardarlo: así se rechazan archivos corruptos.
-        if (kind == DesignFileKind.Litematic)
+        if (StructureFileReader.IsStructureKind(kind))
         {
             try
             {
                 await using var check = file.OpenReadStream();
-                LitematicReader.Read(check);
+                StructureFileReader.Read(kind, check);
             }
             catch (LitematicFormatException ex)
             {
-                return ValidationProblem($"Archivo Litematica no válido: {ex.Message}");
+                return ValidationProblem($"Estructura no válida: {ex.Message}");
             }
         }
 

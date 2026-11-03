@@ -21,7 +21,7 @@ export interface FarmSummary {
   tags: string[];
 }
 
-export type DesignFileKind = "Litematic" | "Image" | "Pdf";
+export type DesignFileKind = "Litematic" | "Image" | "Pdf" | "Schematic" | "Structure";
 
 export interface DesignFile {
   id: number;

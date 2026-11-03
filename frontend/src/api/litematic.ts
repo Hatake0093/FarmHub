@@ -38,9 +38,9 @@ export interface LitematicLayer {
 }
 
 export const litematicApi = {
-  summary: (fileId: number) => apiRequest<LitematicSummary>(`/design-files/${fileId}/litematic`),
+  summary: (fileId: number) => apiRequest<LitematicSummary>(`/design-files/${fileId}/structure`),
   layer: (fileId: number, region: string, y: number) =>
     apiRequest<LitematicLayer>(
-      `/design-files/${fileId}/litematic/layer?${new URLSearchParams({ region, y: String(y) })}`,
+      `/design-files/${fileId}/structure/layer?${new URLSearchParams({ region, y: String(y) })}`,
     ),
 };

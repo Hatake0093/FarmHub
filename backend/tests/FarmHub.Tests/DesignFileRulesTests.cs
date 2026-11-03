@@ -11,6 +11,8 @@ public sealed class DesignFileRulesTests
     [InlineData("preview.png", DesignFileKind.Image)]
     [InlineData("preview.JPEG", DesignFileKind.Image)]
     [InlineData("guide.pdf", DesignFileKind.Pdf)]
+    [InlineData("farm.schem", DesignFileKind.Schematic)]
+    [InlineData("screw.NBT", DesignFileKind.Structure)]
     public void Accepted_extensions_map_to_kind(string fileName, DesignFileKind expected)
     {
         Assert.True(DesignFileRules.TryGetKind(fileName, out var kind));
@@ -19,7 +21,6 @@ public sealed class DesignFileRulesTests
 
     [Theory]
     [InlineData("script.exe")]
-    [InlineData("farm.schem")]
     [InlineData("noextension")]
     public void Unknown_extensions_are_rejected(string fileName)
     {
