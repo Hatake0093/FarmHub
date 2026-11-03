@@ -12,6 +12,7 @@ import { clipLayers, rotateGrid } from "../lib/isometric";
 import { SliceView } from "../components/SliceView";
 import { gridFromVolume } from "../lib/volume";
 import { EditHistory, type CellChange } from "../lib/history";
+import { floodFillLayer, mirrorBox, rotateBoxQuarter } from "../lib/design";
 import { LayerStepper } from "../components/LayerStepper";
 import { BlockPicker } from "../components/BlockPicker";
 import {
@@ -33,6 +34,8 @@ export function StructureEditorPage() {
   const [y, setY] = useState(0);
   const [block, setBlock] = useState("minecraft:stone");
   const [erase, setErase] = useState(false);
+  // Herramienta de relleno: un clic rellena la región conectada de la capa actual.
+  const [fillOn, setFillOn] = useState(false);
   const [pending, setPending] = useState<PendingChanges>(new Map());
   // Copia local de la rejilla (para no pedir el volumen en cada trazo) y historial de deshacer/rehacer.
   const gridRef = useRef<VoxelGrid | null>(null);
@@ -222,6 +225,18 @@ export function StructureEditorPage() {
       paintingRef.current = "select";
       return;
     }
+    // Relleno: un clic en la capa actual, sin arrastrar.
+    if (event.button === 0 && fillOn && !event.shiftKey && layer) {
+      const target = erase ? null : block.trim();
+      if (target !== null && !BLOCK_ID.test(target)) {
+        setError(`"${target}" no es un identificador de bloque válido.`);
+        return;
+      }
+      void ensureGrid()
+        .then((grid) => applyChanges(floodFillLayer(grid, local.y, local.x, local.z, target), true))
+        .catch((err: unknown) => setError(errorMessage(err)));
+      return;
+    }
     // Botón central: cuentagotas. Toma el bloque de esa celda (con los cambios pendientes).
     if (event.button === 1 && layer) {
       event.preventDefault();
@@ -374,6 +389,24 @@ export function StructureEditorPage() {
     }
   }
 
+  // Espejo o giro de la selección dentro de sí misma (no usa el desplazamiento).
+  async function transformSelection(kind: "mirror-x" | "mirror-z" | "rotate") {
+    if (!selBox) return;
+    setError(null);
+    try {
+      const grid = await ensureGrid();
+      const changes = kind === "rotate" ? rotateBoxQuarter(grid, selBox) : mirrorBox(grid, selBox, kind === "mirror-x" ? "x" : "z");
+      if (changes === null) {
+        setError("Para girar 90°, la selección tiene que ser cuadrada (igual de ancha que de profunda).");
+        return;
+      }
+      await applyChanges(changes, true);
+      setMessage(kind === "rotate" ? "Selección girada." : "Selección reflejada.");
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
   // Copia la selección al desplazamiento indicado; el original no cambia.
   async function copySelection() {
     if (!selBox || !detail) return;
@@ -454,6 +487,15 @@ export function StructureEditorPage() {
         void applySelection();
       } else if (event.key === "Escape") {
         clearSelection();
+      } else if (event.key.toLowerCase() === "h") {
+        event.preventDefault();
+        void transformSelection("mirror-x");
+      } else if (event.key.toLowerCase() === "v") {
+        event.preventDefault();
+        void transformSelection("mirror-z");
+      } else if (event.key.toLowerCase() === "r") {
+        event.preventDefault();
+        void transformSelection("rotate");
       }
     }
     window.addEventListener("keydown", onKey);
@@ -490,6 +532,8 @@ export function StructureEditorPage() {
         setErase(false);
       } else if (key === "e") {
         setErase(true);
+      } else if (key === "f") {
+        setFillOn((f) => !f);
       } else if (key === "g") {
         setGridOn((g) => !g);
       } else if (event.key === "Tab") {
@@ -660,6 +704,12 @@ export function StructureEditorPage() {
         </label>
         )}
         {mode === "layer" && (
+        <label className="checkbox">
+          <input type="checkbox" checked={fillOn} onChange={(e) => setFillOn(e.target.checked)} />
+          Relleno (F)
+        </label>
+        )}
+        {mode === "layer" && (
         <div className="clone-layer">
           <label>
             Clonar capa {y} a
@@ -721,6 +771,9 @@ export function StructureEditorPage() {
           <div className="actions">
             <button type="button" className="button button-primary" onClick={() => void applySelection()}>Aplicar</button>
             <button type="button" className="button" onClick={() => void copySelection()}>Copiar</button>
+            <button type="button" className="button" onClick={() => void transformSelection("mirror-x")}>Espejo X (H)</button>
+            <button type="button" className="button" onClick={() => void transformSelection("mirror-z")}>Espejo Z (V)</button>
+            <button type="button" className="button" onClick={() => void transformSelection("rotate")}>Girar 90° (R)</button>
             <button type="button" className="button" onClick={clearSelection}>Cancelar</button>
           </div>
         </div>
@@ -794,7 +847,7 @@ export function StructureEditorPage() {
       </fieldset>
 
       <p className="muted small">
-        Atajos: B pintar · E borrar · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
+        Atajos: B pintar · E borrar · F relleno · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
       </p>
     </section>
   );
