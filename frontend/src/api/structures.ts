@@ -4,6 +4,7 @@ import type { VolumeDto } from "../lib/volume";
 export interface StructureListItem {
   id: number;
   name: string;
+  description: string | null;
   width: number;
   height: number;
   depth: number;

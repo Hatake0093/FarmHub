@@ -68,7 +68,13 @@ a {
 .app-nav {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem 1rem;
+}
+
+.app-nav .button {
+  white-space: nowrap;
 }
 
 .container {
@@ -811,4 +817,115 @@ section > .design-form {
   aspect-ratio: auto;
   border: none;
   border-radius: 0;
+}
+
+/* Biblioteca de esquemáticos */
+.structures-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.structures-heading .muted {
+  margin: 0.25rem 0 0;
+}
+
+.structures-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.structures-actions .button {
+  cursor: pointer;
+}
+
+.button.disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
+.structures-search {
+  grid-template-columns: minmax(200px, 360px) auto;
+  align-items: end;
+  justify-content: start;
+}
+
+.structure-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 0.85rem;
+}
+
+.structure-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0.9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.structure-card:hover,
+.structure-card:focus-visible {
+  border-color: var(--accent);
+}
+
+.structure-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.structure-description {
+  margin: 0;
+  font-size: 0.9rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.structure-meta {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding-top: 0.4rem;
+}
+
+.dimension-chip {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--tag-bg);
+  color: var(--text);
+}
+
+.empty-state {
+  padding: 1.5rem;
+  text-align: center;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.empty-state p {
+  margin: 0.25rem 0;
 }

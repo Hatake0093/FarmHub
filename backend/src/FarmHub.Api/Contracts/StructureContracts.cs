@@ -19,7 +19,7 @@ public sealed record StructureMetaRequest(
     int BaseY,
     int BaseZ);
 
-public sealed record StructureListItem(int Id, string Name, int Width, int Height, int Depth, DateTime UpdatedAtUtc);
+public sealed record StructureListItem(int Id, string Name, string? Description, int Width, int Height, int Depth, DateTime UpdatedAtUtc);
 
 public sealed record StructureDetail(
     int Id,

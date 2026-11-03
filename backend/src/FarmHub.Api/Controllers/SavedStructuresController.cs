@@ -20,7 +20,7 @@ public sealed class SavedStructuresController(FarmHubDbContext db) : ControllerB
     public async Task<ActionResult<IReadOnlyList<StructureListItem>>> List(CancellationToken ct) =>
         await db.SavedStructures.AsNoTracking()
             .OrderBy(s => s.Name)
-            .Select(s => new StructureListItem(s.Id, s.Name, s.Width, s.Height, s.Depth, s.UpdatedAtUtc))
+            .Select(s => new StructureListItem(s.Id, s.Name, s.Description, s.Width, s.Height, s.Depth, s.UpdatedAtUtc))
             .ToListAsync(ct);
 
     [HttpPost]
