@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { VoxelGrid } from "../lib/isometric";
 import { buildMesh, type MeshData } from "../lib/mesh3d";
 import { buildAtlas } from "../lib/atlas";
+import { baseBlock } from "../lib/blockShapes";
 import { createRenderer, type Renderer } from "../lib/gl";
 import { lookAt, multiply, perspective, scale, translate, type Mat4, type Vec3 } from "../lib/mat4";
 import { getTexture, requestTexture } from "../lib/textures";
@@ -41,7 +42,7 @@ export function Voxel3DView({ grid, useTextures }: Props) {
   // Pide las texturas de los bloques de la rejilla; cuando llegan, se reconstruye el atlas.
   useEffect(() => {
     if (!useTextures) return;
-    for (const id of new Set(grid.palette)) {
+    for (const id of new Set(grid.palette.map(baseBlock))) {
       if (hasTextureId(id)) requestTexture(id, () => setVersion((v) => v + 1));
     }
   }, [grid, useTextures]);
@@ -50,7 +51,7 @@ export function Voxel3DView({ grid, useTextures }: Props) {
     // version cambia cuando llega una textura nueva, y así se reconstruye el atlas.
     void version;
     if (!useTextures) return null;
-    return buildAtlas([...new Set(grid.palette)].filter((id) => hasTextureId(id) && getTexture(id) !== undefined));
+    return buildAtlas([...new Set(grid.palette.map(baseBlock))].filter((id) => hasTextureId(id) && getTexture(id) !== undefined));
   }, [grid, useTextures, version]);
 
   const mesh = useMemo(() => buildMesh(grid, atlas?.tiles ?? null), [grid, atlas]);
