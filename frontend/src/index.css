@@ -783,3 +783,14 @@ section > .design-form {
   align-items: center;
   gap: 0.4rem;
 }
+
+.voxel3d-canvas {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 880 / 520;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #1b1e1a;
+  cursor: grab;
+  touch-action: none;
+}

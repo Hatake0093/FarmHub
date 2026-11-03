@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent, type WheelEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type WheelEvent } from "react";
 import { litematicApi, type LitematicLayer, type LitematicSummary } from "../api/litematic";
 import { errorMessage } from "../api/client";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
@@ -6,6 +6,7 @@ import { MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
 import { IsometricView } from "./IsometricView";
 import { LayerRange } from "./LayerRange";
 import { clipLayers, rotateGrid } from "../lib/isometric";
+import { Voxel3DView } from "./Voxel3DView";
 import { SliceView } from "./SliceView";
 import { gridFromVolume } from "../lib/volume";
 import { LayerStepper } from "./LayerStepper";
@@ -26,7 +27,8 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
   const [layer, setLayer] = useState<LitematicLayer | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [mode, setMode] = useState<"layer" | "iso" | "slice">("layer");
+  const [mode, setMode] = useState<"layer" | "iso" | "slice" | "3d">("layer");
+  const [texOn3d, setTexOn3d] = useState(true);
   const [gridOn, setGridOn] = useState(true);
   const [rangeFrom, setRangeFrom] = useState(0);
   const [rangeTo, setRangeTo] = useState<number | null>(null);
@@ -67,6 +69,14 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
       active = false;
     };
   }, [fileId, regionName, y]);
+
+  // Recorte por rango para la vista 3D: se calcula solo cuando cambian el volumen o el rango.
+  const clipped3d = useMemo(() => {
+    if (!isoGrid) return null;
+    const from = Math.min(rangeFrom, isoGrid.height - 1);
+    const to = Math.min(rangeTo ?? isoGrid.height - 1, isoGrid.height - 1);
+    return clipLayers(isoGrid, from, to);
+  }, [isoGrid, rangeFrom, rangeTo]);
 
   // Vistas isométrica y de corte: una sola petición con el volumen completo de la región.
   useEffect(() => {
@@ -185,10 +195,11 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
             </label>
             <label>
               Vista
-              <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso" | "slice")}>
+              <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso" | "slice" | "3d")}>
                 <option value="layer">Capa 2D</option>
                 <option value="iso">Isométrica</option>
                 <option value="slice">Corte lateral</option>
+                <option value="3d">3D giratoria</option>
               </select>
             </label>
             {mode === "layer" && (
@@ -225,6 +236,21 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
           )}
           {mode === "iso" && !isoGrid && <p className="muted">{isoMessage}</p>}
           {mode === "slice" && (isoGrid ? <SliceView grid={isoGrid} /> : <p className="muted">{isoMessage}</p>)}
+          {mode === "3d" && isoGrid && (
+            <>
+              <label className="checkbox">
+                <input type="checkbox" checked={texOn3d} onChange={(e) => setTexOn3d(e.target.checked)} />
+                Texturas (más lento)
+              </label>
+              <LayerRange
+                max={isoGrid.height - 1}
+                from={Math.min(rangeFrom, isoGrid.height - 1)}
+                to={Math.min(rangeTo ?? isoGrid.height - 1, isoGrid.height - 1)}
+                onChange={(f, t) => { setRangeFrom(f); setRangeTo(t); }}
+              />
+              <Voxel3DView grid={clipped3d!} useTextures={texOn3d} />
+            </>
+          )}
 
           {mode === "layer" && <canvas
             ref={canvasRef}

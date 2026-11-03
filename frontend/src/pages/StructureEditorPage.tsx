@@ -10,6 +10,7 @@ import { StackView } from "../components/StackView";
 import { LayerRange } from "../components/LayerRange";
 import { normalizeBox, planCopy, planCopyLayer, planMove, type Box, type Delta } from "../lib/selection";
 import { clipLayers, rotateGrid } from "../lib/isometric";
+import { Voxel3DView } from "../components/Voxel3DView";
 import { SliceView } from "../components/SliceView";
 import { gridFromVolume } from "../lib/volume";
 import { EditHistory, type CellChange } from "../lib/history";
@@ -80,7 +81,8 @@ export function StructureEditorPage() {
   const [hover, setHover] = useState<Coordinates | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<"layer" | "iso" | "slice" | "stack">("layer");
+  const [mode, setMode] = useState<"layer" | "iso" | "slice" | "stack" | "3d">("layer");
+  const [texOn3d, setTexOn3d] = useState(true);
   const [gridOn, setGridOn] = useState(true);
   // Selección rectangular en la capa actual (X/Z) con rango de Y, y desplazamiento pendiente.
   const [sel, setSel] = useState<{ ax: number; az: number; bx: number; bz: number; y0: number; y1: number } | null>(null);
@@ -651,6 +653,14 @@ export function StructureEditorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sel, offset, pending]);
 
+  // Recorte por rango para la vista 3D: se calcula solo cuando cambian el volumen o el rango.
+  const clipped3d = useMemo(() => {
+    if (!isoGrid) return null;
+    const from = Math.min(rangeFrom, isoGrid.height - 1);
+    const to = Math.min(rangeTo ?? isoGrid.height - 1, isoGrid.height - 1);
+    return clipLayers(isoGrid, from, to);
+  }, [isoGrid, rangeFrom, rangeTo]);
+
   // Atajos de edición. Mientras hay una selección, las flechas y RePág/AvPág son de la selección.
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -848,11 +858,12 @@ export function StructureEditorPage() {
       <div className="viewer-controls">
         <label>
           Vista
-          <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso" | "slice" | "stack")}>
+          <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso" | "slice" | "stack" | "3d")}>
             <option value="layer">Capa 2D (editable)</option>
             <option value="iso">Isométrica (guardado)</option>
             <option value="slice">Corte lateral (guardado)</option>
             <option value="stack">Capas apiladas (guardado)</option>
+            <option value="3d">3D giratoria (guardado)</option>
           </select>
         </label>
         {mode === "layer" && (
@@ -936,6 +947,23 @@ export function StructureEditorPage() {
         </>
       )}
       {mode === "iso" && !isoGrid && <p className="muted">{isoMessage}</p>}
+      {mode === "3d" && isoGrid && (
+        <>
+          <div className="rotate-bar">
+            <label className="checkbox">
+              <input type="checkbox" checked={texOn3d} onChange={(e) => setTexOn3d(e.target.checked)} />
+              Texturas (más lento)
+            </label>
+          </div>
+          <LayerRange
+            max={isoGrid.height - 1}
+            from={Math.min(rangeFrom, isoGrid.height - 1)}
+            to={Math.min(rangeTo ?? isoGrid.height - 1, isoGrid.height - 1)}
+            onChange={(f, t) => { setRangeFrom(f); setRangeTo(t); }}
+          />
+          <Voxel3DView grid={clipped3d!} useTextures={texOn3d} />
+        </>
+      )}
       {mode === "stack" && (isoGrid ? <StackView grid={isoGrid} onPickLayer={(yy) => { setY(yy); setMode("layer"); }} /> : <p className="muted">{isoMessage}</p>)}
       {mode === "slice" && (isoGrid ? <SliceView grid={isoGrid} base={{ x: detail.baseX, y: detail.baseY, z: detail.baseZ }} /> : <p className="muted">{isoMessage}</p>)}
 
