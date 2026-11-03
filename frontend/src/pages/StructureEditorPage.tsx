@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { structuresApi, type StructureDetail, type StructureLayer } from "../api/structures";
 import { blocksApi, type BlockEntry } from "../api/blocks";
 import { errorMessage } from "../api/client";
@@ -70,6 +70,7 @@ export function StructureEditorPage() {
   const { id } = useParams();
   const structureId = Number(id);
   const { confirm } = useFeedback();
+  const navigate = useNavigate();
 
   const [detail, setDetail] = useState<StructureDetail | null>(null);
   const [layer, setLayer] = useState<StructureLayer | null>(null);
@@ -447,6 +448,25 @@ export function StructureEditorPage() {
       void applyChanges(batch, true)
         .catch((err: unknown) => setError(errorMessage(err)))
         .finally(() => setPending(new Map()));
+    }
+  }
+
+  /** Borra el esquemático tras confirmar. Vuelve a la lista si sale bien. */
+  async function handleDelete() {
+    if (!detail) return;
+    const accepted = await confirm({
+      title: "Borrar esquemático",
+      message: `¿Borrar "${detail.name}"? Se borran sus bloques y no se puede deshacer.`,
+      confirmLabel: "Borrar esquemático",
+      danger: true,
+    });
+    if (!accepted) return;
+    setError(null);
+    try {
+      await structuresApi.remove(detail.id);
+      navigate("/structures");
+    } catch (err) {
+      setError(errorMessage(err));
     }
   }
 
@@ -1279,6 +1299,12 @@ export function StructureEditorPage() {
         Atajos: B pintar · E borrar · F relleno · L línea · K rectángulo · J relleno · P bloquear capa · M medir · Ctrl+C / Ctrl+V copiar y pegar · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
       </p>
       </details>
+      </div>
+
+      <div className="actions">
+        <button type="button" className="button button-danger" onClick={() => void handleDelete()}>
+          Borrar esquemático
+        </button>
       </div>
     </section>
   );
