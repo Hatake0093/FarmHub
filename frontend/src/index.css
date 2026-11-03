@@ -777,3 +777,9 @@ section > .design-form {
 .clone-layer input[type="number"] {
   width: 5rem;
 }
+
+.rotate-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}

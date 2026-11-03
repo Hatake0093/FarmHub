@@ -5,7 +5,7 @@ import { blockColor, blockLabel, isAir } from "../lib/litematicView";
 import { MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
 import { IsometricView } from "./IsometricView";
 import { LayerRange } from "./LayerRange";
-import { clipLayers } from "../lib/isometric";
+import { clipLayers, rotateGrid } from "../lib/isometric";
 import { SliceView } from "./SliceView";
 import { gridFromVolume } from "../lib/volume";
 import { LayerStepper } from "./LayerStepper";
@@ -30,6 +30,7 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
   const [gridOn, setGridOn] = useState(true);
   const [rangeFrom, setRangeFrom] = useState(0);
   const [rangeTo, setRangeTo] = useState<number | null>(null);
+  const [turns, setTurns] = useState(0);
   const [isoGrid, setIsoGrid] = useState<VoxelGrid | null>(null);
   const [isoMessage, setIsoMessage] = useState<string | null>(null);
   const [cellSize, setCellSize] = useState(16);
@@ -214,7 +215,12 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
                 to={Math.min(rangeTo ?? isoGrid.height - 1, isoGrid.height - 1)}
                 onChange={(f, t) => { setRangeFrom(f); setRangeTo(t); }}
               />
-              <IsometricView grid={clipLayers(isoGrid, Math.min(rangeFrom, isoGrid.height - 1), Math.min(rangeTo ?? isoGrid.height - 1, isoGrid.height - 1))} />
+              <div className="rotate-bar">
+                <button type="button" className="button" onClick={() => setTurns((t) => t - 1)} aria-label="Girar a la izquierda">↺</button>
+                <button type="button" className="button" onClick={() => setTurns((t) => t + 1)} aria-label="Girar a la derecha">↻</button>
+                <span className="muted small">Vista {((turns % 4) + 4) % 4 * 90}°</span>
+              </div>
+              <IsometricView grid={rotateGrid(clipLayers(isoGrid, Math.min(rangeFrom, isoGrid.height - 1), Math.min(rangeTo ?? isoGrid.height - 1, isoGrid.height - 1)), turns)} />
             </>
           )}
           {mode === "iso" && !isoGrid && <p className="muted">{isoMessage}</p>}

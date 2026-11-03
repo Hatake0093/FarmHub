@@ -69,3 +69,28 @@ describe("clipLayers", () => {
     expect(g.blocks[0]).toBe(1);
   });
 });
+
+describe("rotateGrid", () => {
+  it("cuatro giros de 90° devuelven la rejilla original", async () => {
+    const { rotateGrid } = await import("./isometric");
+    const g = grid(3, 2, 4, [[0, 0, 0], [2, 1, 3], [1, 0, 2]]);
+
+    const back = rotateGrid(g, 4);
+
+    expect(back.width).toBe(3);
+    expect(back.depth).toBe(4);
+    expect(Array.from(back.blocks)).toEqual(Array.from(g.blocks));
+  });
+
+  it("intercambia ancho y fondo y coloca cada bloque en su nueva posición", async () => {
+    const { rotateGrid } = await import("./isometric");
+    const g = grid(3, 1, 2, [[0, 0, 0]]);
+
+    const r = rotateGrid(g, 1);
+
+    // (x=0, z=0) -> (nx = depth-1-0 = 1, nz = 0): nuevo ancho 2, fondo 3.
+    expect(r.width).toBe(2);
+    expect(r.depth).toBe(3);
+    expect(r.blocks[(0 * 2 + 0) * 2 + 1]).toBe(1);
+  });
+});

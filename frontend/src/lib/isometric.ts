@@ -97,3 +97,29 @@ export function clipLayers(grid: VoxelGrid, yFrom: number, yTo: number): VoxelGr
   }
   return { ...grid, palette, blocks };
 }
+
+/** Gira la rejilla 90° alrededor del eje vertical. Cada giro cambia el ancho y el fondo. */
+export function rotateGrid90(grid: VoxelGrid): VoxelGrid {
+  const { width, height, depth, blocks } = grid;
+  const nextBlocks = new Uint16Array(blocks.length);
+  // Ancho y fondo intercambiados. Un punto (x, z) pasa a (depth-1-z, x).
+  for (let y = 0; y < height; y++) {
+    for (let z = 0; z < depth; z++) {
+      for (let x = 0; x < width; x++) {
+        const nx = depth - 1 - z;
+        const nz = x;
+        nextBlocks[(y * width + nz) * depth + nx] = blocks[(y * depth + z) * width + x];
+      }
+    }
+  }
+  return { ...grid, width: depth, depth: width, blocks: nextBlocks };
+}
+
+/** Gira la rejilla k veces de 90° (k de 0 a 3). */
+export function rotateGrid(grid: VoxelGrid, quarterTurns: number): VoxelGrid {
+  let result = grid;
+  for (let i = 0; i < ((quarterTurns % 4) + 4) % 4; i++) {
+    result = rotateGrid90(result);
+  }
+  return result;
+}
