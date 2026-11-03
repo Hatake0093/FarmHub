@@ -957,3 +957,32 @@ section > .design-form {
   gap: 0.25rem;
   margin-bottom: 0.5rem;
 }
+
+/* Paneles plegables del editor de esquemáticos */
+.panel-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.editor-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+}
+
+.editor-panel > summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style-position: inside;
+}
+
+.editor-panel[open] > summary {
+  margin-bottom: 0.6rem;
+}
+
+.editor-panel .actions {
+  margin-top: 0.5rem;
+}
