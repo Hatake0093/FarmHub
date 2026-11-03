@@ -66,6 +66,97 @@ public sealed class SavedStructuresController(FarmHubDbContext db) : ControllerB
         return StatusCode(StatusCodes.Status201Created, ToDetail(entity));
     }
 
+    /// <summary>
+    /// Crea un esquemático editable a partir de un .litematic, .schem o .nbt. Usa la primera región.
+    /// La paleta del esquemático solo admite 256 bloques distintos; el aire siempre es la entrada 0.
+    /// </summary>
+    [HttpPost("import")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(25L * 1024 * 1024)]
+    public async Task<ActionResult<StructureDetail>> Import(IFormFile file, CancellationToken ct)
+    {
+        if (file.Length == 0)
+        {
+            return ValidationProblem("El archivo está vacío.");
+        }
+        if (!FarmHub.Domain.Rules.DesignFileRules.TryGetKind(file.FileName, out var kind)
+            || !FarmHub.Infrastructure.Structures.StructureFileReader.IsStructureKind(kind))
+        {
+            return ValidationProblem("Solo se pueden importar .litematic, .schem o .nbt.");
+        }
+
+        FarmHub.Domain.Litematic.LitematicModel model;
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            model = FarmHub.Infrastructure.Structures.StructureFileReader.Read(kind, stream);
+        }
+        catch (FarmHub.Domain.Litematic.LitematicFormatException ex)
+        {
+            return ValidationProblem($"Archivo no válido: {ex.Message}");
+        }
+
+        var region = model.Regions[0];
+        var volume = region.Volume;
+        if (volume > StructureGrid.MaxVolume)
+        {
+            return ValidationProblem($"La estructura tiene {volume:N0} bloques; el máximo es {StructureGrid.MaxVolume:N0}.");
+        }
+
+        // Paleta nueva: aire en la 0 y los bloques realmente usados, como mucho 256 en total.
+        var newPalette = new List<string> { StructureGrid.Air };
+        var map = new Dictionary<int, int> { };
+        var airOld = Array.IndexOf(region.Palette.ToArray(), StructureGrid.Air);
+        if (airOld >= 0) map[airOld] = 0;
+
+        var cells = new byte[volume];
+        for (long i = 0; i < volume; i++)
+        {
+            var old = region.PaletteIndices[i];
+            if (!map.TryGetValue(old, out var mapped))
+            {
+                var name = region.Palette[old];
+                if (name == StructureGrid.Air)
+                {
+                    mapped = 0;
+                }
+                else
+                {
+                    if (newPalette.Count >= StructureGrid.MaxPaletteSize)
+                    {
+                        return ValidationProblem("La estructura usa más de 256 bloques distintos; no cabe en un esquemático editable.");
+                    }
+                    newPalette.Add(name);
+                    mapped = newPalette.Count - 1;
+                }
+                map[old] = mapped;
+            }
+            cells[i] = (byte)mapped;
+        }
+
+        var name2 = !string.IsNullOrWhiteSpace(model.Name)
+            ? model.Name
+            : Path.GetFileNameWithoutExtension(file.FileName);
+        var entity = new SavedStructure
+        {
+            Name = name2.Length > 200 ? name2[..200] : name2,
+            Description = "Importado desde " + file.FileName,
+            Width = region.Width,
+            Height = region.Height,
+            Depth = region.Depth,
+            BaseX = 0,
+            BaseY = 0,
+            BaseZ = 0,
+            PaletteText = string.Join('\n', newPalette),
+            Cells = cells,
+            UpdatedAtUtc = DateTime.UtcNow,
+        };
+        db.SavedStructures.Add(entity);
+        await db.SaveChangesAsync(ct);
+
+        return StatusCode(StatusCodes.Status201Created, ToDetail(entity));
+    }
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult<StructureDetail>> Get(int id, CancellationToken ct)
     {

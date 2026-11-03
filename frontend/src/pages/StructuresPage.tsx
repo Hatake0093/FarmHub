@@ -71,6 +71,31 @@ export function StructuresPage() {
         </ul>
       )}
 
+      <section className="import-box">
+        <h2>Importar un archivo</h2>
+        <p className="muted">Crea un esquemático editable a partir de un .litematic, .schem o .nbt (se usa la primera región).</p>
+        <label className="button">
+          Elegir archivo
+          <input
+            type="file"
+            hidden
+            accept=".litematic,.schem,.nbt"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (!file) return;
+              setError(null);
+              try {
+                const created = await structuresApi.importFile(file);
+                navigate(`/structures/${created.id}`);
+              } catch (err) {
+                setError(errorMessage(err));
+              }
+            }}
+          />
+        </label>
+      </section>
+
       <form className="farm-form narrow" onSubmit={handleCreate} noValidate>
         <h2>Nuevo esquemático</h2>
         <label>

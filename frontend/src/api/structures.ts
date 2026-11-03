@@ -60,6 +60,11 @@ export const structuresApi = {
   updateMeta: (id: number, input: StructureMetaInput) =>
     apiRequest<StructureDetail>(`/structures/${id}`, { method: "PUT", body: JSON.stringify(input) }),
   remove: (id: number) => apiRequest<void>(`/structures/${id}`, { method: "DELETE" }),
+  importFile: (file: File) => {
+    const body = new FormData();
+    body.append("file", file);
+    return apiRequest<StructureDetail>("/structures/import", { method: "POST", body });
+  },
   resize: (id: number, width: number, height: number, depth: number, confirm: boolean) =>
     apiRequest<StructureDetail>(`/structures/${id}/size`, {
       method: "PUT",
