@@ -530,3 +530,8 @@ section > .design-form {
   padding: 0.2rem 0.55rem;
   line-height: 1;
 }
+
+.container-wide {
+  max-width: none;
+  padding: 1rem 1.5rem;
+}

@@ -42,10 +42,19 @@ export function StructureEditorPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const paintingRef = useRef(false);
 
+  // Tamaño de celda según el ancho de la ventana: la rejilla crece con la pantalla.
+  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   const cell = useMemo(() => {
     if (!detail) return 16;
-    return Math.max(4, Math.min(32, Math.floor(880 / detail.width)));
-  }, [detail]);
+    const available = Math.max(320, viewportWidth - 120);
+    return Math.max(4, Math.min(40, Math.floor(available / detail.width)));
+  }, [detail, viewportWidth]);
 
   useEffect(() => {
     blocksApi.list().then(setCatalog).catch(() => setCatalog([]));

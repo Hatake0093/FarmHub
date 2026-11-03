@@ -1,6 +1,9 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 
 export function Layout() {
+  // El editor de esquemáticos usa todo el ancho de la pantalla; el resto de páginas, un contenedor centrado.
+  const location = useLocation();
+  const wide = location.pathname.startsWith("/structures/");
   return (
     <>
       <header className="app-header">
@@ -17,7 +20,7 @@ export function Layout() {
           </Link>
         </nav>
       </header>
-      <main className="container">
+      <main className={wide ? "container container-wide" : "container"}>
         <Outlet />
       </main>
     </>
