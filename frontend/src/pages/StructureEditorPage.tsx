@@ -71,8 +71,40 @@ export function StructureEditorPage() {
   const structureId = Number(id);
   const { confirm } = useFeedback();
   const navigate = useNavigate();
+  /** Guarda nombre y descripción, sin tocar la base ni los bloques. */
+  async function handleSaveMeta() {
+    if (!detail) return;
+    const name = meta.name.trim();
+    if (!name) {
+      setError("El nombre es obligatorio.");
+      return;
+    }
+    setError(null);
+    try {
+      const updated = await structuresApi.updateMeta(structureId, {
+        name,
+        description: meta.description.trim() || null,
+        baseX: detail.baseX,
+        baseY: detail.baseY,
+        baseZ: detail.baseZ,
+      });
+      setDetail(updated);
+      setMessage("Nombre y descripción guardados.");
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
 
   const [detail, setDetail] = useState<StructureDetail | null>(null);
+  const [meta, setMeta] = useState({ name: "", description: "" });
+
+  // Al cargar un esquemático (o cambiar de uno), los campos de nombre y descripción toman sus valores.
+  useEffect(() => {
+    if (detail) setMeta({ name: detail.name, description: detail.description ?? "" });
+    // Solo al cambiar de esquemático: no se pisan los cambios sin guardar al editar bloques.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detail?.id]);
+
   const [layer, setLayer] = useState<StructureLayer | null>(null);
   useDocumentTitle(detail ? `Editar ${detail.name}` : "Esquemático");
   const [y, setY] = useState(0);
@@ -1231,6 +1263,17 @@ export function StructureEditorPage() {
       </div>
 
       <div className="panel-stack">
+      <details className="editor-panel">
+        <summary>Nombre y descripción · <span className="muted">{detail.name}</span></summary>
+        <div className="dimension-grid">
+          <label>Nombre *<input value={meta.name} onChange={(e) => setMeta({ ...meta, name: e.target.value })} /></label>
+          <label>Descripción<input value={meta.description} onChange={(e) => setMeta({ ...meta, description: e.target.value })} /></label>
+        </div>
+        <div className="actions">
+          <button type="button" className="button" onClick={() => void handleSaveMeta()}>Guardar nombre</button>
+        </div>
+      </details>
+
       <details className="editor-panel">
         <summary>Coordenada base · <span className="muted">{base.x}, {base.y}, {base.z}</span></summary>
         <div className="dimension-grid">

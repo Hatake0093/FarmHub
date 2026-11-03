@@ -60,6 +60,7 @@ Aplicación web personal para planificar y documentar granjas automáticas de Mi
 Estructuras propias en un formato interno (paleta y celdas), independientes de cualquier granja.
 
 - **Crear e importar:** desde cero, o importando un `.litematic`, `.schem` o `.nbt` (se usa la primera región).
+- **Nombre y descripción:** se cambian desde el editor.
 - **Coordenada base:** la esquina mínima de la estructura en el mundo. Al tocar un bloque se muestra la coordenada del mundo donde debe ir.
 - **Tamaño:** cambiar tamaño (pide confirmación si se pierden bloques) y extender en los seis lados sin perder nada. Las coordenadas del mundo se mantienen.
 - **Pintar:** pintar, borrar, cuentagotas (botón central), relleno por región, línea, rectángulo hueco y rectángulo lleno.
