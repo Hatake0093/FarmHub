@@ -21,5 +21,3 @@ npm-debug.log*
 # Archivos subidos por la aplicación (copia local)
 backend/src/FarmHub.Api/storage/
 
-# Respaldos locales de PostgreSQL
-/backups/
