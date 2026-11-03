@@ -1,241 +1,232 @@
 # Minecraft FarmHub
 
-Aplicación web para gestionar, documentar, consultar y planificar granjas automáticas de Minecraft Java Edition.
+Aplicación web personal para planificar y documentar granjas automáticas de Minecraft Java Edition: una biblioteca de granjas con su ficha técnica, y un editor de esquemáticos (estructuras) con visores 2D, isométrica y de cortes.
 
-FarmHub no pretende ser una wiki de Minecraft. Es una herramienta de planificación e ingeniería pensada para jugadores de supervivencia técnica: una biblioteca personal de diseños, con archivos Litematica, materiales, producciones y un orden de construcción recomendado.
-
-> **Estado:** fase de diseño y definición de requisitos. Todavía no hay código implementado.
+> **Estado:** uso personal, en desarrollo. Funciona en local. No tiene cuentas ni despliegue público.
 
 ---
 
-## Tabla de contenidos
+## Índice
 
-- [Objetivo](#objetivo)
-- [Alcance](#alcance)
-- [Funcionalidades](#funcionalidades)
-- [Stack tecnológico](#stack-tecnológico)
+- [Qué hace hoy](#qué-hace-hoy)
+- [Limitaciones conocidas](#limitaciones-conocidas)
+- [Requisitos](#requisitos)
+- [Puesta en marcha](#puesta-en-marcha)
+- [Pruebas](#pruebas)
+- [Estructura del repositorio](#estructura-del-repositorio)
 - [Arquitectura](#arquitectura)
+- [Decisiones técnicas](#decisiones-técnicas)
 - [Hoja de ruta](#hoja-de-ruta)
-- [Decisiones pendientes](#decisiones-pendientes)
-- [Principios de desarrollo](#principios-de-desarrollo)
-- [Fuera del alcance inicial](#fuera-del-alcance-inicial)
 - [Licencia](#licencia)
 
 ---
 
-## Objetivo
-
-Construir una aplicación que permita:
-
-- Administrar una biblioteca personal de granjas.
-- Guardar diseños y referencias de sus creadores.
-- Importar y consultar archivos `.litematic`.
-- Visualizar construcciones por capas.
-- Consultar materiales y cantidades necesarias.
-- Registrar producciones por hora.
-- Comparar la eficiencia de diferentes granjas.
-- Organizar las granjas construidas y pendientes.
-- Planificar el orden de construcción.
-- Identificar dependencias entre granjas.
-- Consultar compatibilidad con versiones de Minecraft Java.
-
-La aplicación será inicialmente personal, pero se diseñará pensando en una futura publicación como proyecto open source para otros jugadores.
-
-## Alcance
-
-### Primera etapa: aplicación personal
-
-La primera versión la administra un único usuario. No se incluyen inicialmente:
-
-- Cuentas públicas o registro de usuarios.
-- Moderación de contenido.
-- Publicación comunitaria de diseños.
-- Valoraciones o comentarios públicos.
-
-### Evolución futura
-
-- Publicación como software de código abierto.
-- Uso por otros jugadores.
-- Bibliotecas compartidas.
-- Contribuciones comunitarias.
-- Cuentas y colecciones personales.
-
-## Funcionalidades
+## Qué hace hoy
 
 ### Biblioteca de granjas
 
-Cada granja tendrá una ficha técnica con: nombre, categoría, descripción, creador o diseñador, versiones compatibles de Minecraft Java, dificultad de construcción, materiales necesarios, producción estimada por hora, condiciones de funcionamiento, dimensiones, tutoriales y referencias, archivos descargables, y dependencias y requisitos.
+- **Granjas:** crear, editar, borrar y listar con paginación. Filtros por nombre, categoría, dificultad, etiqueta y versión de Minecraft.
+- **Ficha técnica:** categoría, dificultad, descripción, versiones de Minecraft Java compatibles, dimensiones (X, Y, Z en bloques) y condiciones de funcionamiento.
+- **Producciones por hora:** recurso, cantidad, unidad (ítems o stacks), si requiere AFK, condiciones de medición, fuente y versión usada para medir. No se inventan valores.
+- **Dependencias:** una granja puede necesitar otras. Se rechazan las autodependencias, las duplicadas y los ciclos, también los indirectos.
+- **Tutoriales y referencias:** enlaces con título, URL validada y tipo.
+- **Diseños:** cada granja tiene diseños con creador opcional y archivos. Se pueden subir, descargar y borrar. Límite de 25 MB por archivo.
+- **Esquemáticos vinculados:** una granja puede usar esquemáticos del editor, y un esquemático puede servir a varias granjas.
 
-> Las producciones se registran con su unidad, condiciones de medición y fuente cuando esté disponible. **No se inventan valores de producción ni se asume compatibilidad entre versiones.**
+### Catálogos
 
-### Diseños y blueprints
+- **Categorías y versiones de Minecraft:** crear, renombrar y borrar. Un elemento en uso no se puede borrar.
+- **Bloques:** lista curada de 330 bloques, con nombre en español editable a mano, color por bloque y textura propia (PNG, JPEG o WebP de hasta 256 × 256). Carga masiva de texturas desde una carpeta, emparejadas por nombre.
+- **Items:** lista curada de 140 items, con nombre en español y color editables. Se pueden añadir bloques e items nuevos por identificador.
 
-Formatos previstos:
+### Lectura de archivos de construcción
 
-| Formato | Estado |
-|---|---|
-| `.litematic` | Prioridad de implementación |
-| `.schem` (Sponge v2 y v3) | Soportado: lectura y visor |
-| `.nbt` (estructura de Minecraft) | Soportado: lectura y visor |
-| Imágenes de referencia | Previsto |
-| PDF | Previsto |
-| Enlaces externos | Previsto |
+- **`.litematic`** (Litematica): gzip o sin comprimir. Validado con los archivos de muestra del proyecto.
+- **`.schem`** (Sponge v2 y v3) y **`.nbt`** (estructura de Minecraft).
+- Al subir un archivo a un diseño se valida: un archivo corrupto se rechaza con el motivo.
+- Materiales por tipo de bloque, sin aire, con el número de stacks de 64.
 
-Los archivos se conservan para poder descargarlos posteriormente.
+### Visor de archivos
 
-### Visor Litematica por capas
+- **Capa 2D:** elegir región y capa, zoom, desplazamiento, rejilla y clic para ver el bloque.
+- **Isométrica:** rango de capas (desde–hasta), giros de 90° y color o textura por bloque.
+- **Corte lateral:** plano en X o en Z, con coordenadas al pasar el ratón.
+- **Capas apiladas:** en el editor de esquemáticos.
 
-**Funcionalidad principal del proyecto.** Permite importar un archivo `.litematic` y visualizar la construcción mediante una representación 2D interactiva:
+### Editor de esquemáticos
 
-- Importación y descompresión del NBT.
-- Lectura de metadatos y dimensiones.
-- Interpretación de paletas de bloques y de los datos de bloques de cada región.
-- Soporte de archivos con múltiples regiones.
-- Vista desde arriba (plano X/Z) con selección de capa en el eje Y y navegación entre capas.
-- Zoom y desplazamiento.
-- Inspección de bloques (identificador y propiedades).
-- Cálculo de cantidades por tipo de bloque.
-- Detección de archivos inválidos o incompatibles.
-- Asociación de los archivos importados a los diseños de la biblioteca.
+Estructuras propias en un formato interno (paleta y celdas), independientes de cualquier granja.
 
-Consideraciones técnicas:
+- **Crear e importar:** desde cero, o importando un `.litematic`, `.schem` o `.nbt` (se usa la primera región).
+- **Coordenada base:** la esquina mínima de la estructura en el mundo. Al tocar un bloque se muestra la coordenada del mundo donde debe ir.
+- **Tamaño:** cambiar tamaño (pide confirmación si se pierden bloques) y extender en los seis lados sin perder nada. Las coordenadas del mundo se mantienen.
+- **Pintar:** pintar, borrar, cuentagotas (botón central), relleno por región, línea, rectángulo hueco y rectángulo lleno.
+- **Selección:** arrastrar con Mayús para seleccionar una caja. Mover, copiar, reflejar en X o Z y girar 90° (si la caja es cuadrada).
+- **Portapapeles:** copiar una selección y pegarla en cualquier otro esquemático.
+- **Capas:** clonar una capa en otra, bloquear capas (una capa bloqueada no admite ediciones), y capa fantasma de la capa inferior o superior.
+- **Deshacer y rehacer:** cada trazo, movimiento o pegado es una edición deshacible.
+- **Medir:** dos puntos, aunque estén en capas distintas; diferencia por eje y distancia.
+- **Atajos:** B pintar, E borrar, F relleno, L línea, K y J rectángulos, M medir, P bloquear capa, G rejilla, Tab cambiar vista, [ ] o RePág/AvPág cambiar de capa, Ctrl+C y Ctrl+V copiar y pegar, Ctrl+Z y Ctrl+Y deshacer y rehacer, H, V y R en la selección.
 
-- El formato `.litematic` usa NBT comprimido.
-- Los índices de paleta deben interpretarse correctamente, incluido el empaquetado de los datos de bloques.
-- Soporte de coordenadas y dimensiones negativas, y de regiones superpuestas.
-- No cargar estructuras completas innecesariamente en el frontend.
-- Validar tamaños y límites de los archivos importados.
-- El backend .NET interpreta los archivos; el frontend React se encarga de la visualización e interacción.
-- Antes de implementar un parser NBT propio se evaluarán bibliotecas existentes.
+Un detalle de uso: el selector de bloques se muestra plegado y, al desplegarlo, flota sobre la rejilla. Los bloques recientes aparecen primero.
 
-### Materiales de construcción
+---
 
-- Cantidades de bloques requeridos, agrupadas por tipo.
-- Cálculo automático desde archivos Litematica.
-- Totales en unidades y en stacks de Minecraft.
-- Diferenciación entre bloques de construcción y materiales de fabricación cuando corresponda.
+## Limitaciones conocidas
 
-Las recetas de fabricación y el cálculo de recursos base quedan para una etapa posterior.
+- **Sin cuentas ni autenticación:** cualquiera con acceso a la aplicación puede modificarla. Está pensada para uso local.
+- **No exporta** a `.litematic` ni a `.schem`. Solo importa.
+- **Orden de índices del visor sin confirmar** frente a Litematica. Los conteos y las paletas son coherentes con los archivos de muestra; el orden espacial se confirma visualmente.
+- **Propiedades de bloque:** los `.litematic` y `.nbt` guardan solo el nombre del bloque. Los `.schem` conservan las propiedades (por ejemplo, `snowy=false`).
+- **Catálogo curado:** los 330 bloques y 140 items no son el catálogo completo del juego. Se amplía añadiendo líneas o desde la propia página.
+- **Nombres en español:** los escribe el usuario a mano. No hay traducción automática.
+- **Deshacer:** no cubre cambiar tamaño ni extender, porque cambian las posiciones de las celdas.
+- **Portapapeles:** vive en el navegador, no en el servidor, y tiene un límite de 200 000 celdas.
+- **Isométrica:** hasta 1 000 000 de bloques por volumen. Dibujar estructuras grandes y llenas no está medido.
+- **Solo local:** no hay despliegue público.
 
-### Producción y eficiencia
+---
 
-Datos registrados por granja: ítems producidos por hora, tipos de recursos generados, requisitos de funcionamiento, necesidad de jugador AFK, distancias y condiciones relevantes, versión de Minecraft usada en la medición y fuente del rendimiento.
+## Requisitos
 
-Los rendimientos se tratan como **estimaciones dependientes de las condiciones de funcionamiento**.
+- **.NET 10 SDK**
+- **Node.js 22** (o compatible con Vite 6)
+- **PostgreSQL 16** (o compatible)
 
-### Planificador de progresión
+---
 
-- Registro de dependencias entre granjas (por ejemplo, una granja que produce materiales necesarios para construir otra).
-- Identificación de requisitos pendientes.
-- Recomendaciones de construcción basadas en relaciones y datos registrados, no en reglas arbitrarias.
-- Secuencia de progresión y priorización según los recursos necesarios.
+## Puesta en marcha
 
-### Gestión de mundos
+### 1. Base de datos
 
-- Varios mundos de Minecraft, cada uno con nombre y versión de Minecraft Java.
-- Granjas planificadas, en construcción y terminadas, con progreso de infraestructura.
-- Una misma granja puede usarse en distintos mundos.
-- La biblioteca de diseños se mantiene separada de las instancias de granjas construidas.
+Crea el usuario y la base que usa la configuración de desarrollo (`backend/src/FarmHub.Api/appsettings.Development.json`):
 
-## Stack tecnológico
+```bash
+sudo -u postgres psql -c "CREATE ROLE farmhub LOGIN PASSWORD 'farmhub_dev';"
+sudo -u postgres createdb -O farmhub farmhub
+```
 
-| Componente | Tecnología |
-|---|---|
-| Frontend | React + TypeScript |
-| Backend | ASP.NET Core / .NET 10 |
-| Base de datos | PostgreSQL (propuesto) |
-| ORM | Entity Framework Core (propuesto) |
-| Estilos | Tailwind CSS (propuesto) |
-| Control de versiones | Git + GitHub |
+Esa contraseña es solo para desarrollo local.
+
+### 2. Backend
+
+```bash
+cd backend/src/FarmHub.Api
+dotnet run --launch-profile http
+```
+
+La API queda en `http://localhost:5167`. Al arrancar aplica las migraciones y carga los catálogos de bloques e items si faltan. No hace falta ejecutar `dotnet ef` a mano.
+
+Los archivos subidos se guardan en `backend/src/FarmHub.Api/storage/`, que está en `.gitignore`.
+
+### 3. Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Abre `http://localhost:5173`. Las llamadas a `/api` se reenvían a la API con el proxy de Vite.
+
+---
+
+## Pruebas
+
+```bash
+cd backend && dotnet test
+cd frontend && npx vitest run
+```
+
+Y para comprobar tipos y estilo:
+
+```bash
+cd frontend && npx tsc -b && npm run lint && npm run build
+```
+
+Las pruebas de backend cubren el lector de `.litematic`, `.schem` y `.nbt` (con archivos generados y con los archivos de muestra del proyecto), las reglas de dependencias y de archivos, el almacenamiento y el catálogo. Las de frontend cubren las funciones de edición (planificadores de movimiento, copia, forma, relleno, espejo, giro, portapapeles e historial), el volumen y los cortes, y los componentes críticos.
+
+---
+
+## Estructura del repositorio
+
+```text
+backend/
+  src/FarmHub.Api/             API REST (controladores, contratos, Program.cs)
+  src/FarmHub.Domain/          Entidades, reglas y modelo de dominio
+  src/FarmHub.Infrastructure/  EF Core, lectores de archivos, almacenamiento y catálogos
+  tests/FarmHub.Tests/         Pruebas xUnit
+frontend/
+  src/pages/                   Pantallas (biblioteca, ficha, editor, catálogos)
+  src/components/              Visores, selector de bloques, vistas
+  src/lib/                     Funciones puras: proyección, cortes, edición, historial
+  src/api/                     Cliente HTTP tipado
+```
+
+---
 
 ## Arquitectura
 
-Flujo de importación de un archivo `.litematic`:
-
 ```text
-Archivo .litematic
-       |
-       v
-Backend ASP.NET Core
-       |
-       v
-Descompresión y lectura NBT
-       |
-       v
-Interpretación de regiones y paletas
-       |
-       v
-Modelo interno de construcción
-       |
-       +----> Cálculo de materiales
-       |
-       +----> Metadatos y dimensiones
-       |
-       +----> Consulta de capas
+Archivo (.litematic / .schem / .nbt)
+        |
+        v
+  Lector NBT (fNbt)  ->  Modelo común: regiones, paleta, índices de bloque
+        |
+        +--> Recuento de materiales
+        +--> Resumen y capas por API
+        +--> Volumen completo por API (una petición, celdas de 16 bits en base64)
                     |
                     v
-              API REST
-                    |
-                    v
-           React + TypeScript
-                    |
-                    v
-             Visor 2D
+   Frontend: capa 2D, isométrica, cortes, capas apiladas (Canvas 2D)
+
+Editor de esquemáticos
+  Rejilla propia (paleta + celdas) en PostgreSQL
+  Copia local en el navegador, actualizada con cada edición
+  Historial de deshacer y rehacer; cada edición se envía al servidor
 ```
 
 Principios:
 
-- Separación clara entre frontend, backend, lógica de dominio y persistencia.
-- Sin microservicios ni complejidad distribuida sin una necesidad demostrable.
-- El modelo interno debe permitir añadir otras representaciones visuales (por ejemplo, 3D) sin reescribir la lógica de interpretación.
+- Frontend, backend, dominio y persistencia separados. Las reglas (ciclos, límites, validaciones) son funciones puras con pruebas.
+- Sin microservicios. Un proceso de API y una base de datos.
+- Las vistas consumen el mismo modelo: añadir una vista no obliga a reescribir la lectura de archivos.
 
-## Hoja de ruta
+---
 
-**Fase A — Fundamentos:** estructura de solución, configuración de frontend y backend, persistencia, entidades iniciales, API básica e interfaz de navegación.
-
-**Fase B — Biblioteca:** CRUD de granjas, categorías, diseños, autores, referencias y archivos, filtros y búsquedas.
-
-**Fase C — Motor Litematica:** descompresión NBT, metadatos, paletas, regiones, extracción de capas, cálculo de bloques y pruebas con archivos reales.
-
-**Fase D — Visor interactivo:** renderizado 2D, navegación por capas, zoom y desplazamiento, inspección de bloques, leyenda de materiales e integración con la biblioteca.
-
-**Fase E — Planificación:** producciones por hora, dependencias, recomendaciones, gestión de mundos y seguimiento de progreso.
-
-## Decisiones
+## Decisiones técnicas
 
 | # | Tema | Decisión |
 |---|---|---|
-| 1 | Categorías y creadores | Una categoría puede contener diseños de varios creadores. El creador va en la ficha de cada diseño. |
-| 2 | Almacenamiento de archivos | Disco local del servidor; la base de datos guarda la ruta y los metadatos. |
-| 3 | Base de datos | PostgreSQL con Entity Framework Core. |
-| 4 | Lectura NBT | fNbt (NuGet). Querz.NBT se descartó: es una biblioteca de Java y no existe paquete .NET con ese nombre. Debe validarse con archivos `.litematic` reales antes de dar la Fase C por cerrada. |
-| 5 | Renderizado 2D | Canvas 2D. |
-| 6 | Versiones de Minecraft | Tabla de versiones oficiales con relación N:M con las granjas. No se asume compatibilidad entre versiones. |
-| 7 | Clasificación | Una categoría principal más etiquetas libres para filtrar. |
-| 8 | Despliegue | Solo local por ahora. El despliegue público se decidirá más adelante. |
+| 1 | Categorías y creadores | Una categoría puede tener diseños de varios creadores. El creador va en cada diseño. |
+| 2 | Archivos subidos | Disco local del servidor. La base de datos guarda la clave y los metadatos. |
+| 3 | Base de datos | PostgreSQL con EF Core (Npgsql). Migraciones automáticas al arrancar. |
+| 4 | Lectura NBT | fNbt (NuGet). Querz.NBT se descartó: es una biblioteca de Java. |
+| 5 | Renderizado | Canvas 2D. Sin WebGL por ahora. |
+| 6 | Versiones de Minecraft | Tabla de versiones con relación N:M. No se asume compatibilidad entre versiones. |
+| 7 | Clasificación | Una categoría principal y etiquetas libres. |
+| 8 | Despliegue | Solo local por ahora. |
+| 9 | Estilos | CSS propio con variables y tema claro y oscuro. Tailwind no se ha adoptado. |
+| 10 | Formato de esquemáticos propios | Paleta y celdas en PostgreSQL. La exportación a `.litematic` queda pendiente de validar en Litematica. |
+| 11 | Edición | Cada edición se envía al servidor al terminar, y el historial guarda los valores antes y después. |
 
-## Principios de desarrollo
+---
 
-- Código comprensible y mantenible; evitar complejidad innecesaria.
-- Priorizar funcionalidades reales sobre demostraciones visuales.
-- Buenas prácticas de React, TypeScript y .NET.
-- Pruebas para los componentes críticos, especialmente el parser Litematica.
-- Documentar las decisiones arquitectónicas.
-- Trabajo con Git y Pull Requests, revisando el código generado antes de aceptarlo.
-- Mantener la posibilidad de publicar el proyecto como open source.
+## Hoja de ruta
 
-El desarrollador humano conserva la responsabilidad de arquitectura, validación y decisiones técnicas.
+Hecho: biblioteca completa, lectura de los tres formatos, visores, editor de esquemáticos con herramientas de diseño, catálogos y textura por bloque.
 
-## Fuera del alcance inicial
+Pendiente, por orden de prioridad:
 
-- Visor 3D completo.
-- Mapas interactivos de mundos.
-- Lectura automática de archivos de guardado de Minecraft.
-- Integración directa con servidores de Minecraft.
-- Marketplace de diseños.
-- Sistema social.
-- Inteligencia artificial obligatoria.
-- Compatibilidad completa con Bedrock Edition.
+1. **Validar el orden de índices** del visor con Litematica (comparando una capa real).
+2. **Exportar** esquemáticos propios a `.litematic` o `.schem`, con prueba de apertura en Litematica.
+3. **Vincular diseños** de una granja a esquemáticos concretos, y ver desde un esquemático las granjas que lo usan.
+4. **Plan de construcción:** lista de materiales por esquemático o por selección, y orden de progresión entre granjas.
+5. **Texturas por cara** (superior, lateral, inferior) para bloques como la hierba.
+6. **Vista isométrica por WebGL** si las estructuras grandes lo necesitan.
+7. **Acceso con usuario** antes de cualquier despliegue fuera del equipo local.
+
+---
 
 ## Licencia
 
