@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { ThemeToggle } from "./ThemeToggle";
 
 const NAV_ITEMS = [
   { to: "/farms", label: "Biblioteca" },
@@ -30,6 +31,7 @@ export function Layout() {
           <Link to="/farms/new" className="button button-primary">
             Nueva granja
           </Link>
+          <ThemeToggle />
         </nav>
       </header>
       <main id="contenido" tabIndex={-1} className={wide ? "container container-wide" : "container"}>

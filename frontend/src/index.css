@@ -26,7 +26,12 @@
   }
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #161815;
   --surface: #1f221e;
   --text: #e8ebe5;
@@ -1331,4 +1336,9 @@ input[type="search"] {
 .toast .toast-action {
   color: inherit;
   font-weight: 700;
+}
+
+.theme-toggle {
+  padding: 0.3rem 0.55rem;
+  line-height: 1;
 }
