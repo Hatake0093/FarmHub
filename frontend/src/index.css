@@ -766,3 +766,14 @@ section > .design-form {
 .selection-bar input[type="number"] {
   width: 4.5rem;
 }
+
+.clone-layer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.clone-layer input[type="number"] {
+  width: 5rem;
+}

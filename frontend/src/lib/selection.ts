@@ -85,3 +85,24 @@ export function planMove(grid: VoxelGrid, box: Box, delta: Delta): PlannedChange
   }
   return changes;
 }
+
+/**
+ * Cambios para copiar la capa fromY sobre toY. Si keepDestAir es true, el aire de la capa origen no
+ * borra bloques de la capa destino. Devuelve null si alguna capa está fuera de la estructura.
+ */
+export function planCopyLayer(grid: VoxelGrid, fromY: number, toY: number, keepDestAir: boolean): PlannedChange[] | null {
+  if (fromY < 0 || toY < 0 || fromY >= grid.height || toY >= grid.height) return null;
+  const layer = grid.width * grid.depth;
+  const changes: PlannedChange[] = [];
+  for (let i = 0; i < layer; i++) {
+    const x = i % grid.width;
+    const z = Math.floor(i / grid.width);
+    const source = grid.palette[grid.blocks[fromY * layer + i]];
+    const current = grid.palette[grid.blocks[toY * layer + i]];
+    if (keepDestAir && source === AIR) continue;
+    if (source !== current) {
+      changes.push({ x, y: toY, z, block: source === AIR ? null : source });
+    }
+  }
+  return changes;
+}

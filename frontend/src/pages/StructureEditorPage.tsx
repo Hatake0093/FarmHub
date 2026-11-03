@@ -7,7 +7,7 @@ import { blockColor, blockLabel, isAir } from "../lib/litematicView";
 import { MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
 import { IsometricView } from "../components/IsometricView";
 import { LayerRange } from "../components/LayerRange";
-import { normalizeBox, planMove, type Box, type Delta } from "../lib/selection";
+import { normalizeBox, planCopyLayer, planMove, type Box, type Delta } from "../lib/selection";
 import { clipLayers } from "../lib/isometric";
 import { SliceView } from "../components/SliceView";
 import { gridFromVolume } from "../lib/volume";
@@ -44,6 +44,8 @@ export function StructureEditorPage() {
   const [sel, setSel] = useState<{ ax: number; az: number; bx: number; bz: number; y0: number; y1: number } | null>(null);
   const [offset, setOffset] = useState<Delta>({ dx: 0, dy: 0, dz: 0 });
   const selAnchorRef = useRef<{ x: number; z: number } | null>(null);
+  const [copyTarget, setCopyTarget] = useState("");
+  const [copyKeepAir, setCopyKeepAir] = useState(false);
   const [rangeFrom, setRangeFrom] = useState(0);
   const [rangeTo, setRangeTo] = useState<number | null>(null);
   const [catalog, setCatalog] = useState<BlockEntry[]>([]);
@@ -284,6 +286,38 @@ export function StructureEditorPage() {
     }
   }
 
+  // Copia la capa actual sobre otra capa. Exige guardar antes, igual que mover.
+  async function cloneLayer() {
+    if (!detail) return;
+    const target = Number(copyTarget);
+    if (!Number.isInteger(target) || target < 0 || target >= detail.height) {
+      setError(`Indica una capa entre 0 y ${detail.height - 1}.`);
+      return;
+    }
+    if (target === y) {
+      setError("La capa destino es la misma que la origen.");
+      return;
+    }
+    if (pending.size > 0) {
+      setError("Guarda los cambios antes de clonar la capa.");
+      return;
+    }
+    setError(null);
+    try {
+      const grid = gridFromVolume(await structuresApi.volume(structureId));
+      const changes = planCopyLayer(grid, y, target, copyKeepAir);
+      if (changes === null) {
+        setError("No se pudo copiar la capa.");
+        return;
+      }
+      const updated = changes.length > 0 ? await structuresApi.saveBlocks(structureId, changes) : detail;
+      setDetail(updated);
+      setMessage(`Capa ${y} copiada a la ${target} (${changes.length} celdas cambiadas).`);
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
   // Teclado mientras hay selección: flechas mueven en X/Z, RePág/AvPág en Y, Enter aplica, Escape cancela.
   useEffect(() => {
     if (!sel) return;
@@ -453,6 +487,19 @@ export function StructureEditorPage() {
           <input type="checkbox" checked={gridOn} onChange={(e) => setGridOn(e.target.checked)} />
           Rejilla
         </label>
+        )}
+        {mode === "layer" && (
+        <div className="clone-layer">
+          <label>
+            Clonar capa {y} a
+            <input type="number" min={0} max={detail.height - 1} value={copyTarget} placeholder="capa" onChange={(e) => setCopyTarget(e.target.value)} />
+          </label>
+          <label className="checkbox">
+            <input type="checkbox" checked={copyKeepAir} onChange={(e) => setCopyKeepAir(e.target.checked)} />
+            Solo bloques (no borrar aire)
+          </label>
+          <button type="button" className="button" onClick={() => void cloneLayer()}>Clonar capa</button>
+        </div>
         )}
       </div>
 

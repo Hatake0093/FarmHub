@@ -43,3 +43,34 @@ describe("selection", () => {
     expect(planMove(g, normalizeBox({ x: 1, z: 0 }, { x: 1, z: 0 }, 0, 0), { dx: 1, dy: 0, dz: 0 })).toBeNull();
   });
 });
+
+describe("copy layer", () => {
+  it("copia una capa sobre otra y borra lo que había en el destino", async () => {
+    const { planCopyLayer } = await import("./selection");
+    // 2 × 2 × 1: capa 0 = [stone, air, air, air]; capa 1 = [air, hopper, air, air]
+    const g = grid(2, 2, 1, [[0, 0, 0, 1], [1, 1, 0, 2]]);
+
+    const changes = planCopyLayer(g, 0, 1, false) ?? [];
+
+    expect(changes).toEqual([
+      { x: 0, y: 1, z: 0, block: "minecraft:stone" },
+      { x: 1, y: 1, z: 0, block: null },
+    ]);
+  });
+
+  it("con keepDestAir no borra el destino donde la capa origen tiene aire", async () => {
+    const { planCopyLayer } = await import("./selection");
+    const g = grid(2, 2, 1, [[0, 0, 0, 1], [1, 1, 0, 2]]);
+
+    const changes = planCopyLayer(g, 0, 1, true) ?? [];
+
+    expect(changes).toEqual([{ x: 0, y: 1, z: 0, block: "minecraft:stone" }]);
+  });
+
+  it("rechaza una capa fuera de la estructura", async () => {
+    const { planCopyLayer } = await import("./selection");
+    const g = grid(1, 1, 1, []);
+
+    expect(planCopyLayer(g, 0, 3, false)).toBeNull();
+  });
+});
