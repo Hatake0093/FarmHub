@@ -607,11 +607,35 @@ section > .design-form {
 }
 
 .block-picker {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   width: 22rem;
   max-width: 100%;
+}
+
+/* Al desplegarse, flota sobre la rejilla sin empujarla. */
+.block-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin-top: 0.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.block-popover .block-list {
+  border: none;
+  max-height: 18rem;
 }
 
 .block-current {

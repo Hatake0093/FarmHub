@@ -87,7 +87,7 @@ export function BlockPicker({ catalog, value, onChange }: Props) {
       </button>
 
       {open && (
-      <>
+      <div className="block-popover">
       <input
         ref={searchRef}
         type="search"
@@ -122,7 +122,7 @@ export function BlockPicker({ catalog, value, onChange }: Props) {
         )}
         {options.length === 0 && !showCustom && <li className="muted block-group">No hay bloques que coincidan.</li>}
       </ul>
-      </>
+      </div>
       )}
     </div>
   );
