@@ -6,6 +6,7 @@ import { errorMessage } from "../api/client";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
 import { MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
 import { IsometricView } from "../components/IsometricView";
+import { StackView } from "../components/StackView";
 import { LayerRange } from "../components/LayerRange";
 import { normalizeBox, planCopy, planCopyLayer, planMove, type Box, type Delta } from "../lib/selection";
 import { clipLayers, rotateGrid } from "../lib/isometric";
@@ -15,6 +16,7 @@ import { EditHistory, type CellChange } from "../lib/history";
 import { floodFillLayer, mirrorBox, rotateBoxQuarter } from "../lib/design";
 import { decodeClip, encodeClip, extractBox, planPaste } from "../lib/clipboard";
 import { lineCells, rectCells, shapeChanges, type ShapeKind, type Cell } from "../lib/shapes";
+import { measure, type Point } from "../lib/measure";
 
 const CLIP_KEY = "farmhub.clipboard";
 
@@ -72,10 +74,13 @@ export function StructureEditorPage() {
   const shapeRef = useRef<{ kind: ShapeKind; y: number; a: Cell; b: Cell } | null>(null);
   const lockedRef = useRef<Set<number>>(new Set());
   const [lockedTick, setLockedTick] = useState(0);
+  // Medir: dos puntos (pueden estar en capas distintas).
+  const [measureOn, setMeasureOn] = useState(false);
+  const [measurePts, setMeasurePts] = useState<{ a: Point | null; b: Point | null }>({ a: null, b: null });
   const [hover, setHover] = useState<Coordinates | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<"layer" | "iso" | "slice">("layer");
+  const [mode, setMode] = useState<"layer" | "iso" | "slice" | "stack">("layer");
   const [gridOn, setGridOn] = useState(true);
   // Selección rectangular en la capa actual (X/Z) con rango de Y, y desplazamiento pendiente.
   const [sel, setSel] = useState<{ ax: number; az: number; bx: number; bz: number; y0: number; y1: number } | null>(null);
@@ -260,6 +265,11 @@ export function StructureEditorPage() {
       setSel({ ax: local.x, az: local.z, bx: local.x, bz: local.z, y0: local.y, y1: local.y });
       setOffset({ dx: 0, dy: 0, dz: 0 });
       paintingRef.current = "select";
+      return;
+    }
+    // Medir: el primer clic fija A, el segundo fija B; un tercero empieza de nuevo.
+    if (measureOn && event.button === 0 && layer) {
+      setMeasurePts((cur) => (cur.a && !cur.b ? { a: cur.a, b: { x: local.x, y: local.y, z: local.z } } : { a: { x: local.x, y: local.y, z: local.z }, b: null }));
       return;
     }
     // Línea o rectángulo: arrastrar desde un punto hasta otro, en la capa actual.
@@ -690,6 +700,9 @@ export function StructureEditorPage() {
         setShape((k) => (k === "box" ? null : "box"));
       } else if (key === "p") {
         toggleLock();
+      } else if (key === "m") {
+        setMeasureOn((on) => !on);
+        setMeasurePts({ a: null, b: null });
       } else if (key === "g") {
         setGridOn((g) => !g);
       } else if (event.key === "Tab") {
@@ -702,6 +715,16 @@ export function StructureEditorPage() {
     // undo y redo leen refs y estado actual; se vuelve a registrar al cambiar la vista o la selección.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sel, detail, mode]);
+
+  // Atajo Escape fuera de la selección: limpia la medida.
+  useEffect(() => {
+    if (!measureOn) return;
+    function onEsc(event: KeyboardEvent) {
+      if (event.key === "Escape") setMeasurePts({ a: null, b: null });
+    }
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, [measureOn]);
 
   // Carga la capa fantasma (inferior o superior) cuando está activa.
   useEffect(() => {
@@ -825,10 +848,11 @@ export function StructureEditorPage() {
       <div className="viewer-controls">
         <label>
           Vista
-          <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso" | "slice")}>
+          <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso" | "slice" | "stack")}>
             <option value="layer">Capa 2D (editable)</option>
             <option value="iso">Isométrica (guardado)</option>
             <option value="slice">Corte lateral (guardado)</option>
+            <option value="stack">Capas apiladas (guardado)</option>
           </select>
         </label>
         {mode === "layer" && (
@@ -846,6 +870,10 @@ export function StructureEditorPage() {
         )}
         {mode === "layer" && (
         <div className="shape-tools" aria-label="Herramientas de forma" key={lockedTick}>
+          <label className="checkbox">
+            <input type="checkbox" checked={measureOn} onChange={(e) => { setMeasureOn(e.target.checked); setMeasurePts({ a: null, b: null }); }} />
+            Medir (M)
+          </label>
           <button type="button" className={`button${shape === "line" ? " button-primary" : ""}`} onClick={() => setShape(shape === "line" ? null : "line")}>Línea (L)</button>
           <button type="button" className={`button${shape === "rect" ? " button-primary" : ""}`} onClick={() => setShape(shape === "rect" ? null : "rect")}>Rectángulo hueco (K)</button>
           <button type="button" className={`button${shape === "box" ? " button-primary" : ""}`} onClick={() => setShape(shape === "box" ? null : "box")}>Rectángulo lleno (J)</button>
@@ -908,6 +936,7 @@ export function StructureEditorPage() {
         </>
       )}
       {mode === "iso" && !isoGrid && <p className="muted">{isoMessage}</p>}
+      {mode === "stack" && (isoGrid ? <StackView grid={isoGrid} onPickLayer={(yy) => { setY(yy); setMode("layer"); }} /> : <p className="muted">{isoMessage}</p>)}
       {mode === "slice" && (isoGrid ? <SliceView grid={isoGrid} base={{ x: detail.baseX, y: detail.baseY, z: detail.baseZ }} /> : <p className="muted">{isoMessage}</p>)}
 
       {mode === "layer" && (
@@ -925,6 +954,21 @@ export function StructureEditorPage() {
         </div>
       )}
 
+      {measureOn && (
+        <div className="coord-panel" aria-live="polite">
+          {!measurePts.a && <p className="muted">Medir: pulsa el primer punto.</p>}
+          {measurePts.a && !measurePts.b && <p className="muted">A: X {measurePts.a.x} · Y {measurePts.a.y} · Z {measurePts.a.z}. Pulsa el segundo punto (puede estar en otra capa).</p>}
+          {measurePts.a && measurePts.b && (() => {
+            const m = measure(measurePts.a, measurePts.b);
+            return (
+              <p>
+                Δ X {m.dx} · Δ Y {m.dy} · Δ Z {m.dz} · <strong>distancia {m.distance.toFixed(2)} bloques</strong>
+                <span className="muted small"> (Escape para empezar de nuevo)</span>
+              </p>
+            );
+          })()}
+        </div>
+      )}
       {mode === "layer" && selBox && detail && (
         <div className="selection-bar" role="region" aria-label="Selección">
           <span>
@@ -1018,7 +1062,7 @@ export function StructureEditorPage() {
       </fieldset>
 
       <p className="muted small">
-        Atajos: B pintar · E borrar · F relleno · L línea · K rectángulo · J relleno · P bloquear capa · Ctrl+C / Ctrl+V copiar y pegar · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
+        Atajos: B pintar · E borrar · F relleno · L línea · K rectángulo · J relleno · P bloquear capa · M medir · Ctrl+C / Ctrl+V copiar y pegar · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
       </p>
     </section>
   );
