@@ -39,7 +39,11 @@ export function StructureEditorPage() {
   const [isoMessage, setIsoMessage] = useState<string | null>(null);
   const [base, setBase] = useState({ x: "0", y: "0", z: "0" });
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const paintingRef = useRef(false);
+  // Qué hace el arrastre actual: pintar (botón izquierdo) o borrar (botón derecho).
+  const paintingRef = useRef<"paint" | "erase" | null>(null);
+  // Capa fantasma: la capa inferior o superior se dibuja semitransparente detrás de la actual.
+  const [ghost, setGhost] = useState<"none" | "below" | "above">("none");
+  const [ghostLayer, setGhostLayer] = useState<StructureLayer | null>(null);
 
   // Tamaño de celda según el ancho de la ventana: la rejilla crece con la pantalla.
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
@@ -115,6 +119,20 @@ export function StructureEditorPage() {
     ctx.fillStyle = "#1b1e1a";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Capa fantasma: semitransparente, detrás de la capa actual.
+    if (ghostLayer && ghostLayer.width === layer.width && ghostLayer.depth === layer.depth) {
+      ctx.globalAlpha = 0.3;
+      for (let z = 0; z < ghostLayer.depth; z++) {
+        for (let x = 0; x < ghostLayer.width; x++) {
+          const block = ghostLayer.palette[ghostLayer.cells[z * ghostLayer.width + x]];
+          if (isAir(block)) continue;
+          ctx.fillStyle = blockColor(block);
+          ctx.fillRect(x * cell, z * cell, cell - 1, cell - 1);
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
     for (let z = 0; z < layer.depth; z++) {
       for (let x = 0; x < layer.width; x++) {
         const serverBlock = layer.palette[layer.cells[z * layer.width + x]];
@@ -130,7 +148,7 @@ export function StructureEditorPage() {
       ctx.lineWidth = 2;
       ctx.strokeRect(hover.x * cell, hover.z * cell, cell - 1, cell - 1);
     }
-  }, [layer, pending, hover, y, cell, detail, mode]);
+  }, [layer, pending, hover, y, cell, detail, mode, ghostLayer]);
 
   function localAt(event: MouseEvent<HTMLCanvasElement>): Coordinates | null {
     const canvas = canvasRef.current;
@@ -142,9 +160,9 @@ export function StructureEditorPage() {
     return { x, y, z };
   }
 
-  function paint(local: Coordinates) {
+  function paint(local: Coordinates, asErase: boolean) {
     if (!layer) return;
-    const target = erase ? null : block.trim();
+    const target = asErase || erase ? null : block.trim();
     if (target !== null && !BLOCK_ID.test(target)) {
       setError(`"${target}" no es un identificador de bloque válido (p. ej. minecraft:stone).`);
       return;
@@ -155,20 +173,43 @@ export function StructureEditorPage() {
   function handleDown(event: MouseEvent<HTMLCanvasElement>) {
     const local = localAt(event);
     if (!local) return;
-    paintingRef.current = true;
+    // Botón derecho: borra. Botón izquierdo: pinta.
+    const action = event.button === 2 ? "erase" : "paint";
+    paintingRef.current = action;
     setHover(local);
-    paint(local);
+    paint(local, action === "erase");
   }
 
   function handleMove(event: MouseEvent<HTMLCanvasElement>) {
     const local = localAt(event);
     setHover(local);
-    if (local && paintingRef.current) paint(local);
+    if (local && paintingRef.current) paint(local, paintingRef.current === "erase");
   }
 
   function stopPainting() {
-    paintingRef.current = false;
+    paintingRef.current = null;
   }
+
+  // Carga la capa fantasma (inferior o superior) cuando está activa.
+  useEffect(() => {
+    if (ghost === "none" || !detail) {
+      setGhostLayer(null);
+      return;
+    }
+    const target = ghost === "below" ? y - 1 : y + 1;
+    if (target < 0 || target >= detail.height) {
+      setGhostLayer(null);
+      return;
+    }
+    let active = true;
+    structuresApi
+      .layer(structureId, target)
+      .then((l) => active && setGhostLayer(l))
+      .catch(() => active && setGhostLayer(null));
+    return () => {
+      active = false;
+    };
+  }, [ghost, y, detail, structureId]);
 
   const hoverBlock = hover && layer
     ? displayedBlock(pending, hover, layer.palette[layer.cells[hover.z * layer.width + hover.x]])
@@ -235,6 +276,16 @@ export function StructureEditorPage() {
           </select>
         </label>
         {mode === "layer" && (
+        <label>
+          Capa fantasma
+          <select value={ghost} onChange={(e) => setGhost(e.target.value as "none" | "below" | "above")}>
+            <option value="none">Ninguna</option>
+            <option value="below">Capa inferior</option>
+            <option value="above">Capa superior</option>
+          </select>
+        </label>
+        )}
+        {mode === "layer" && (
         <LayerStepper value={y} max={detail.height - 1} onChange={setY} />
         )}
         {mode === "layer" && (
@@ -258,6 +309,7 @@ export function StructureEditorPage() {
             onMouseDown={handleDown}
             onMouseMove={handleMove}
             onMouseUp={stopPainting}
+            onContextMenu={(e) => e.preventDefault()}
             onMouseLeave={() => { stopPainting(); setHover(null); }}
           />
         </div>
