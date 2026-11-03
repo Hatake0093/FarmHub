@@ -1,20 +1,21 @@
-import { useEffect, useState } from "react";
-
-type HealthState = "checking" | "ok" | "error";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Layout } from "./components/Layout";
+import { FarmDetailPage } from "./pages/FarmDetailPage";
+import { FarmFormPage } from "./pages/FarmFormPage";
+import { FarmListPage } from "./pages/FarmListPage";
 
 export default function App() {
-  const [health, setHealth] = useState<HealthState>("checking");
-
-  useEffect(() => {
-    fetch("/api/health")
-      .then((res) => setHealth(res.ok ? "ok" : "error"))
-      .catch(() => setHealth("error"));
-  }, []);
-
   return (
-    <main>
-      <h1>Minecraft FarmHub</h1>
-      <p>Backend: {health}</p>
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<Navigate to="/farms" replace />} />
+          <Route path="farms" element={<FarmListPage />} />
+          <Route path="farms/new" element={<FarmFormPage />} />
+          <Route path="farms/:id" element={<FarmDetailPage />} />
+          <Route path="farms/:id/edit" element={<FarmFormPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
