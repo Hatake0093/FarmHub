@@ -42,6 +42,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
+  line-height: 1.5;
 }
 
 a {
@@ -68,7 +69,8 @@ a {
 .app-nav {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
 }
 
 .container {
@@ -811,4 +813,188 @@ section > .design-form {
   aspect-ratio: auto;
   border: none;
   border-radius: 0;
+}
+
+/* ==== Experiencia de uso: base compartida ==== */
+
+/* Foco visible para quien navega con teclado; no molesta al usar el ratón. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+main:focus {
+  outline: none;
+}
+
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -4rem;
+  z-index: 200;
+  padding: 0.5rem 0.9rem;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-text);
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.nav-link {
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  background: var(--tag-bg);
+}
+
+.nav-link.active {
+  background: var(--tag-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.button {
+  transition: background-color 0.12s, border-color 0.12s, filter 0.12s;
+}
+
+.button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.button-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.button:disabled,
+.button-link:disabled {
+  cursor: not-allowed;
+}
+
+/* Los botones sin clase (paginación, etc.) se ven como botones. */
+.pagination button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.pagination button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline-offset: 0;
+  border-color: var(--accent);
+}
+
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.farm-table tbody tr:hover {
+  background: color-mix(in srgb, var(--tag-bg) 55%, transparent);
+}
+
+.farm-table th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.farm-table a {
+  font-weight: 600;
+}
+
+.results-meta {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.is-refreshing {
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.empty-state h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.empty-state p {
+  margin: 0;
+  max-width: 32rem;
+}
+
+.alert {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  color: var(--danger);
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    position: static;
+  }
+
+  .container {
+    padding: 0.75rem;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }

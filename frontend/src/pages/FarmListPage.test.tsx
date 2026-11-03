@@ -47,7 +47,7 @@ describe("FarmListPage", () => {
     expect(await screen.findByRole("link", { name: "Granja de caña" })).toBeTruthy();
     const table = screen.getByRole("table");
     expect(within(table).getByText("Media")).toBeTruthy();
-    expect(screen.getByText("Página 1 de 1 (1 granjas)")).toBeTruthy();
+    expect(screen.getByText("Página 1 de 1 (1 granja)")).toBeTruthy();
   });
 
   it("envía los filtros de la URL a la API", async () => {
@@ -73,6 +73,21 @@ describe("FarmListPage", () => {
 
     renderList();
 
-    expect(await screen.findByRole("alert")).toHaveProperty("textContent", "Fallo del servidor");
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("Fallo del servidor");
+    expect(within(alert).getByRole("button", { name: "Reintentar" })).toBeTruthy();
+  });
+
+  it("invita a crear la primera granja cuando la biblioteca está vacía", async () => {
+    mockApi({
+      "/api/farms": { items: [], page: 1, pageSize: 20, totalCount: 0 },
+      "/api/categories": [],
+      "/api/minecraft-versions": [],
+    });
+
+    renderList();
+
+    expect(await screen.findByText("Tu biblioteca está vacía")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Crear la primera granja" })).toBeTruthy();
   });
 });
