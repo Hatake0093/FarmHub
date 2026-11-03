@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using FarmHub.Api.Contracts;
 using FarmHub.Domain.Entities;
 using FarmHub.Domain.Structures;
@@ -14,7 +13,6 @@ namespace FarmHub.Api.Controllers;
 public sealed class SavedStructuresController(FarmHubDbContext db) : ControllerBase
 {
     private const int MaxChangesPerRequest = 100_000;
-    private static readonly Regex BlockId = new(@"^[a-z0-9_.-]+:[a-z0-9/_.-]+$", RegexOptions.Compiled);
 
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<StructureListItem>>> List(CancellationToken ct)
@@ -416,9 +414,9 @@ public sealed class SavedStructuresController(FarmHubDbContext db) : ControllerB
 
         foreach (var change in request.Changes)
         {
-            if (!string.IsNullOrWhiteSpace(change.Block) && !BlockId.IsMatch(change.Block.Trim()))
+            if (!string.IsNullOrWhiteSpace(change.Block) && !BlockStates.IsValid(change.Block))
             {
-                return ValidationProblem($"'{change.Block}' no es un identificador de bloque válido (p. ej. minecraft:stone).");
+                return ValidationProblem($"'{change.Block}' no es un bloque válido (p. ej. minecraft:stone o minecraft:oak_stairs[facing=east]).");
             }
         }
 
@@ -429,7 +427,7 @@ public sealed class SavedStructuresController(FarmHubDbContext db) : ControllerB
         {
             foreach (var change in request.Changes)
             {
-                grid.Set(change.X, change.Y, change.Z, change.Block);
+                grid.Set(change.X, change.Y, change.Z, string.IsNullOrWhiteSpace(change.Block) ? change.Block : BlockStates.Normalize(change.Block));
             }
         }
         catch (Exception ex) when (ex is ArgumentOutOfRangeException or InvalidOperationException)

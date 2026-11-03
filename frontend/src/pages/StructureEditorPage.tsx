@@ -42,6 +42,9 @@ import { LayerStepper } from "../components/LayerStepper";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 import { useFeedback } from "../lib/feedback";
 import { BlockPicker } from "../components/BlockPicker";
+import { OrientationFields } from "../components/OrientationFields";
+import { defaultState } from "../lib/blockStates";
+import { baseBlock } from "../lib/blockShapes";
 import {
   cellKey,
   displayedBlock,
@@ -1014,7 +1017,8 @@ export function StructureEditorPage() {
           <aside className="editor-tools" aria-label="Herramientas de edición">
             <div className="tool-group">
               <span className="tool-title">Pincel</span>
-              <BlockPicker catalog={catalog} value={block} onChange={(id) => { setBlock(id); setErase(false); }} />
+              <BlockPicker catalog={catalog} value={baseBlock(block)} onChange={(id) => { setBlock(defaultState(id)); setErase(false); }} />
+              <OrientationFields block={block} onChange={setBlock} />
               <div className="tool-row">
                 <label className="checkbox">
                   <input type="checkbox" checked={erase} onChange={(e) => setErase(e.target.checked)} />
