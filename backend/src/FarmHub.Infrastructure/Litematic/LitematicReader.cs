@@ -6,10 +6,11 @@ namespace FarmHub.Infrastructure.Litematic;
 /// <summary>
 /// Lee archivos .litematic (NBT comprimido con GZip) y los convierte a <see cref="LitematicModel"/>.
 ///
-/// Supuestos del formato que deben validarse con archivos reales de Litematica:
-///  - Índice de bloque local: (y * depth + z) * width + x.
-///  - Empaquetado: cada entrada ocupa bits = max(2, ceil(log2(tamaño de paleta))) bits y no cruza
-///    los límites de un long (formato a partir de Minecraft 1.16).
+/// Empaquetado de BlockStates: cada entrada ocupa bits = max(2, ceil(log2(tamaño de paleta))) bits
+/// de forma continua, pudiendo cruzar el límite entre dos long. Verificado con los archivos de ejemplo.
+///
+/// Pendiente de validar: el orden del índice local (y * depth + z) * width + x. La distribución de
+/// bloques es coherente, pero el orden solo se confirma visualmente en el visor.
 /// </summary>
 public static class LitematicReader
 {
@@ -109,10 +110,9 @@ public static class LitematicReader
     private static int[] Unpack(long[] data, int count, int paletteSize, string regionName)
     {
         int bits = Math.Max(2, (int)Math.Ceiling(Math.Log2(paletteSize)));
-        int perLong = 64 / bits;
         long mask = (1L << bits) - 1;
 
-        long needed = (count + perLong - 1) / perLong;
+        long needed = ((long)count * bits + 63) / 64;
         if (data.Length < needed)
         {
             throw new LitematicFormatException($"Los BlockStates de '{regionName}' son demasiado cortos.");
@@ -121,9 +121,15 @@ public static class LitematicReader
         var result = new int[count];
         for (int i = 0; i < count; i++)
         {
-            long word = data[i / perLong];
-            int shift = (i % perLong) * bits;
-            int index = (int)((word >> shift) & mask);
+            long bitIndex = (long)i * bits;
+            int longIndex = (int)(bitIndex >> 6);
+            int offset = (int)(bitIndex & 63);
+            long value = (long)((ulong)data[longIndex] >> offset);
+            if (offset + bits > 64)
+            {
+                value |= data[longIndex + 1] << (64 - offset);
+            }
+            int index = (int)(value & mask);
             if (index >= paletteSize)
             {
                 throw new LitematicFormatException($"Índice de paleta fuera de rango en '{regionName}'.");
