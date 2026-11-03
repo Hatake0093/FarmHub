@@ -105,6 +105,17 @@ export function StructureEditorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detail?.id]);
 
+  // Modal de configuración (nombre, base, tamaño, extender, borrar): se abre al pulsar el nombre.
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = settingsRef.current;
+    if (!settingsOpen || !dialog || dialog.open) return;
+    // jsdom y navegadores antiguos no tienen showModal: se abre igualmente.
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+  }, [settingsOpen]);
+
   const [layer, setLayer] = useState<StructureLayer | null>(null);
   useDocumentTitle(detail ? `Editar ${detail.name}` : "Esquemático");
   const [y, setY] = useState(0);
@@ -787,7 +798,7 @@ export function StructureEditorPage() {
     if (!sel) return;
     function onKey(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
-      if (target.closest("input, textarea, select")) return;
+      if (target.closest("input, textarea, select, dialog")) return;
       const keys: Record<string, Partial<Delta>> = {
         ArrowLeft: { dx: -1 }, ArrowRight: { dx: 1 }, ArrowUp: { dz: -1 }, ArrowDown: { dz: 1 },
         PageUp: { dy: 1 }, PageDown: { dy: -1 },
@@ -829,7 +840,7 @@ export function StructureEditorPage() {
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
-      if (target.closest("input, textarea, select")) return;
+      if (target.closest("input, textarea, select, dialog")) return;
       const mod = event.ctrlKey || event.metaKey;
       const key = event.key.toLowerCase();
       if (mod && key === "z" && !event.shiftKey) {
@@ -1035,7 +1046,17 @@ export function StructureEditorPage() {
       <div className="page-heading">
         <div>
           <p className="muted"><Link to="/structures">Esquemáticos</Link> / {detail.name}</p>
-          <h1>{detail.name}</h1>
+          <h1>
+            <button
+              type="button"
+              className="title-button"
+              title="Configuración del esquemático"
+              aria-haspopup="dialog"
+              onClick={() => setSettingsOpen(true)}
+            >
+              {detail.name} <span className="title-button-icon" aria-hidden="true">⚙</span>
+            </button>
+          </h1>
         </div>
         <span className="muted">{detail.blockCount} bloques · {detail.width} × {detail.height} × {detail.depth}</span>
       </div>
@@ -1264,6 +1285,57 @@ export function StructureEditorPage() {
 
       <div className="panel-stack">
       <details className="editor-panel">
+        <summary>Materiales · <span className="muted">{materials.length} tipos · {materials.reduce((sum, m) => sum + m.count, 0).toLocaleString("es-ES")} bloques</span></summary>
+        {materials.length === 0 ? (
+          <p className="muted">Sin bloques todavía.</p>
+        ) : (
+          <table className="farm-table">
+            <thead>
+              <tr><th>Bloque</th><th>Cantidad</th><th>Stacks</th></tr>
+            </thead>
+            <tbody>
+              {materials.map((m) => (
+                <tr key={m.block}>
+                  <td>{blockLabel(m.block)}</td>
+                  <td>{m.count.toLocaleString("es-ES")}</td>
+                  <td>{m.stacks.toLocaleString("es-ES")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </details>
+      <details className="editor-panel">
+        <summary>Atajos de teclado</summary>
+      <p className="muted small">
+        Atajos: B pintar · E borrar · F relleno · L línea · K rectángulo · J relleno · P bloquear capa · M medir · Ctrl+C / Ctrl+V copiar y pegar · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
+      </p>
+      </details>
+      </div>
+
+      {settingsOpen && (
+        <dialog
+          ref={settingsRef}
+          className="confirm-dialog settings-dialog"
+          aria-labelledby="settings-title"
+          onCancel={(event) => {
+            event.preventDefault();
+            setSettingsOpen(false);
+          }}
+          onClick={(event) => {
+            // Clic en el fondo (fuera de la caja del modal) lo cierra.
+            if (event.target !== event.currentTarget) return;
+            const r = event.currentTarget.getBoundingClientRect();
+            const inside = event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom;
+            if (!inside) setSettingsOpen(false);
+          }}
+        >
+          <div className="settings-header">
+            <h2 id="settings-title">Configuración del esquemático</h2>
+            <button type="button" className="button" aria-label="Cerrar" onClick={() => setSettingsOpen(false)}>✕</button>
+          </div>
+          <div className="panel-stack">
+      <details className="editor-panel" open>
         <summary>Nombre y descripción · <span className="muted">{detail.name}</span></summary>
         <div className="dimension-grid">
           <label>Nombre *<input value={meta.name} onChange={(e) => setMeta({ ...meta, name: e.target.value })} /></label>
@@ -1315,40 +1387,14 @@ export function StructureEditorPage() {
         <p className="muted small">Nunca borra bloques. Las coordenadas del mundo se mantienen: la base se ajusta si añades por la izquierda, abajo o atrás.</p>
       </details>
 
-      <details className="editor-panel">
-        <summary>Materiales · <span className="muted">{materials.length} tipos · {materials.reduce((sum, m) => sum + m.count, 0).toLocaleString("es-ES")} bloques</span></summary>
-        {materials.length === 0 ? (
-          <p className="muted">Sin bloques todavía.</p>
-        ) : (
-          <table className="farm-table">
-            <thead>
-              <tr><th>Bloque</th><th>Cantidad</th><th>Stacks</th></tr>
-            </thead>
-            <tbody>
-              {materials.map((m) => (
-                <tr key={m.block}>
-                  <td>{blockLabel(m.block)}</td>
-                  <td>{m.count.toLocaleString("es-ES")}</td>
-                  <td>{m.stacks.toLocaleString("es-ES")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </details>
-      <details className="editor-panel">
-        <summary>Atajos de teclado</summary>
-      <p className="muted small">
-        Atajos: B pintar · E borrar · F relleno · L línea · K rectángulo · J relleno · P bloquear capa · M medir · Ctrl+C / Ctrl+V copiar y pegar · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
-      </p>
-      </details>
-      </div>
-
-      <div className="actions">
-        <button type="button" className="button button-danger" onClick={() => void handleDelete()}>
-          Borrar esquemático
-        </button>
-      </div>
+          </div>
+          <div className="actions settings-danger">
+            <button type="button" className="button button-danger" onClick={() => void handleDelete()}>
+              Borrar esquemático
+            </button>
+          </div>
+        </dialog>
+      )}
     </section>
   );
 }

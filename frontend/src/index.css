@@ -1597,3 +1597,54 @@ input[type="search"] {
   line-height: 16px;
   cursor: pointer;
 }
+
+/* Nombre del esquemático como botón que abre su configuración */
+.title-button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.title-button:hover,
+.title-button:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.title-button-icon {
+  font-size: 0.7em;
+  opacity: 0.55;
+  vertical-align: middle;
+}
+
+.title-button:hover .title-button-icon {
+  opacity: 1;
+}
+
+.settings-dialog {
+  width: min(40rem, calc(100vw - 2rem));
+  max-width: none;
+  max-height: calc(100vh - 2rem);
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.settings-header h2 {
+  margin: 0;
+}
+
+.settings-dialog .actions.settings-danger {
+  justify-content: flex-start;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
