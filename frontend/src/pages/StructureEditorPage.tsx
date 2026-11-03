@@ -6,6 +6,8 @@ import { errorMessage } from "../api/client";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
 import { MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
 import { IsometricView } from "../components/IsometricView";
+import { LayerRange } from "../components/LayerRange";
+import { clipLayers } from "../lib/isometric";
 import { SliceView } from "../components/SliceView";
 import { gridFromVolume } from "../lib/volume";
 import { LayerStepper } from "../components/LayerStepper";
@@ -36,6 +38,9 @@ export function StructureEditorPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<"layer" | "iso" | "slice">("layer");
+  const [gridOn, setGridOn] = useState(true);
+  const [rangeFrom, setRangeFrom] = useState(0);
+  const [rangeTo, setRangeTo] = useState<number | null>(null);
   const [catalog, setCatalog] = useState<BlockEntry[]>([]);
   const [isoGrid, setIsoGrid] = useState<VoxelGrid | null>(null);
   const [isoMessage, setIsoMessage] = useState<string | null>(null);
@@ -121,6 +126,7 @@ export function StructureEditorPage() {
     canvas.height = layer.depth * cell;
     ctx.fillStyle = "#1b1e1a";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const gap = gridOn ? 1 : 0;
 
     // Capa fantasma: semitransparente, detrás de la capa actual.
     if (ghostLayer && ghostLayer.width === layer.width && ghostLayer.depth === layer.depth) {
@@ -130,7 +136,7 @@ export function StructureEditorPage() {
           const block = ghostLayer.palette[ghostLayer.cells[z * ghostLayer.width + x]];
           if (isAir(block)) continue;
           ctx.fillStyle = blockColor(block);
-          ctx.fillRect(x * cell, z * cell, cell - 1, cell - 1);
+          ctx.fillRect(x * cell, z * cell, cell - gap, cell - gap);
         }
       }
       ctx.globalAlpha = 1;
@@ -142,16 +148,16 @@ export function StructureEditorPage() {
         const shown = displayedBlock(pending, { x, y, z }, serverBlock);
         if (isAir(shown)) continue;
         ctx.fillStyle = blockColor(shown);
-        ctx.fillRect(x * cell, z * cell, cell - 1, cell - 1);
+        ctx.fillRect(x * cell, z * cell, cell - gap, cell - gap);
       }
     }
 
     if (hover && hover.y === y) {
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 2;
-      ctx.strokeRect(hover.x * cell, hover.z * cell, cell - 1, cell - 1);
+      ctx.strokeRect(hover.x * cell, hover.z * cell, cell - gap, cell - gap);
     }
-  }, [layer, pending, hover, y, cell, detail, mode, ghostLayer]);
+  }, [layer, pending, hover, y, cell, detail, mode, ghostLayer, gridOn]);
 
   function localAt(event: MouseEvent<HTMLCanvasElement>): Coordinates | null {
     const canvas = canvasRef.current;
@@ -331,9 +337,26 @@ export function StructureEditorPage() {
           Borrar (aire)
         </label>
         )}
+        {mode === "layer" && (
+        <label className="checkbox">
+          <input type="checkbox" checked={gridOn} onChange={(e) => setGridOn(e.target.checked)} />
+          Rejilla
+        </label>
+        )}
       </div>
 
-      {mode === "iso" && (isoGrid ? <IsometricView grid={isoGrid} /> : <p className="muted">{isoMessage}</p>)}
+      {mode === "iso" && isoGrid && (
+        <>
+          <LayerRange
+            max={isoGrid.height - 1}
+            from={Math.min(rangeFrom, isoGrid.height - 1)}
+            to={Math.min(rangeTo ?? isoGrid.height - 1, isoGrid.height - 1)}
+            onChange={(f, t) => { setRangeFrom(f); setRangeTo(t); }}
+          />
+          <IsometricView grid={clipLayers(isoGrid, Math.min(rangeFrom, isoGrid.height - 1), Math.min(rangeTo ?? isoGrid.height - 1, isoGrid.height - 1))} />
+        </>
+      )}
+      {mode === "iso" && !isoGrid && <p className="muted">{isoMessage}</p>}
       {mode === "slice" && (isoGrid ? <SliceView grid={isoGrid} base={{ x: detail.baseX, y: detail.baseY, z: detail.baseZ }} /> : <p className="muted">{isoMessage}</p>)}
 
       {mode === "layer" && (

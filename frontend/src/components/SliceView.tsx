@@ -16,6 +16,7 @@ export function SliceView({ grid, base }: Props) {
   const [axis, setAxis] = useState<SliceAxis>("z");
   const [index, setIndex] = useState(0);
   const [hover, setHover] = useState<{ col: number; row: number } | null>(null);
+  const [gridOn, setGridOn] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const range = sliceRange(grid, axis);
@@ -31,20 +32,21 @@ export function SliceView({ grid, base }: Props) {
     canvas.height = slice.rows * cell;
     ctx.fillStyle = "#1b1e1a";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const gap = gridOn ? 1 : 0;
     for (let row = 0; row < slice.rows; row++) {
       for (let col = 0; col < slice.cols; col++) {
         const block = slice.palette[slice.cells[row * slice.cols + col]];
         if (isAir(block)) continue;
         ctx.fillStyle = blockColor(block);
-        ctx.fillRect(col * cell, row * cell, cell - 1, cell - 1);
+        ctx.fillRect(col * cell, row * cell, cell - gap, cell - gap);
       }
     }
     if (hover) {
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 2;
-      ctx.strokeRect(hover.col * cell, hover.row * cell, cell - 1, cell - 1);
+      ctx.strokeRect(hover.col * cell, hover.row * cell, cell - gap, cell - gap);
     }
-  }, [slice, cell, hover]);
+  }, [slice, cell, hover, gridOn]);
 
   function cellAt(event: MouseEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
@@ -73,6 +75,10 @@ export function SliceView({ grid, base }: Props) {
             <option value="z">Lateral (plano Z fijo)</option>
             <option value="x">Frontal (plano X fijo)</option>
           </select>
+        </label>
+        <label className="checkbox">
+          <input type="checkbox" checked={gridOn} onChange={(e) => setGridOn(e.target.checked)} />
+          Rejilla
         </label>
         <label>
           Corte {axis.toUpperCase()}: {current} / {range - 1}

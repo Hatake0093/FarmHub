@@ -79,3 +79,21 @@ export function shade(block: string, lightness: number): string {
   }
   return `hsl(${hash % 360} 50% ${lightness}%)`;
 }
+
+/**
+ * Muestra solo las capas entre yFrom e yTo (ambas incluidas). Lo que queda fuera pasa a aire,
+ * así que el corte se ve como una sección real. Usa un índice de aire nuevo al final de la paleta,
+ * porque la paleta de un archivo no siempre tiene el aire en la posición 0.
+ */
+export function clipLayers(grid: VoxelGrid, yFrom: number, yTo: number): VoxelGrid {
+  const airIndex = grid.palette.length;
+  const palette = [...grid.palette, "minecraft:air"];
+  const blocks = new Uint16Array(grid.blocks);
+  const layer = grid.width * grid.depth;
+  for (let y = 0; y < grid.height; y++) {
+    if (y < yFrom || y > yTo) {
+      blocks.fill(airIndex, y * layer, (y + 1) * layer);
+    }
+  }
+  return { ...grid, palette, blocks };
+}

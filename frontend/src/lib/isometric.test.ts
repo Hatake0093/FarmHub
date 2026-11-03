@@ -47,3 +47,25 @@ describe("isometric", () => {
     expect(project(0, 1, 0, 10)).toEqual([0, -10]);
   });
 });
+
+describe("clipLayers", () => {
+  it("deja solo las capas del rango y el resto pasa a aire", async () => {
+    const { clipLayers } = await import("./isometric");
+    const g = grid(2, 3, 1, [[0, 0, 0], [0, 1, 0], [0, 2, 0]]);
+
+    const clipped = clipLayers(g, 1, 1);
+
+    expect(clipped.palette[clipped.blocks[0]]).toBe("minecraft:air");
+    expect(clipped.palette[clipped.blocks[2]]).toBe("minecraft:stone");
+    expect(clipped.palette[clipped.blocks[4]]).toBe("minecraft:air");
+  });
+
+  it("no modifica la rejilla original", async () => {
+    const { clipLayers } = await import("./isometric");
+    const g = grid(1, 2, 1, [[0, 0, 0], [0, 1, 0]]);
+
+    clipLayers(g, 1, 1);
+
+    expect(g.blocks[0]).toBe(1);
+  });
+});

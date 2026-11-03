@@ -741,3 +741,13 @@ section > .design-form {
 .swatch-empty {
   background: repeating-conic-gradient(#555 0 25%, transparent 0 50%) 50% / 8px 8px;
 }
+
+.layer-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.layer-range label {
+  min-width: 14rem;
+}

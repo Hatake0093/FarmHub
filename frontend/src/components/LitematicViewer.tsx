@@ -4,6 +4,8 @@ import { errorMessage } from "../api/client";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
 import { MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
 import { IsometricView } from "./IsometricView";
+import { LayerRange } from "./LayerRange";
+import { clipLayers } from "../lib/isometric";
 import { SliceView } from "./SliceView";
 import { gridFromVolume } from "../lib/volume";
 import { LayerStepper } from "./LayerStepper";
@@ -25,6 +27,9 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [mode, setMode] = useState<"layer" | "iso" | "slice">("layer");
+  const [gridOn, setGridOn] = useState(true);
+  const [rangeFrom, setRangeFrom] = useState(0);
+  const [rangeTo, setRangeTo] = useState<number | null>(null);
   const [isoGrid, setIsoGrid] = useState<VoxelGrid | null>(null);
   const [isoMessage, setIsoMessage] = useState<string | null>(null);
   const [cellSize, setCellSize] = useState(16);
@@ -96,6 +101,7 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
     const height = canvas.height;
     ctx.fillStyle = "#1b1e1a";
     ctx.fillRect(0, 0, width, height);
+    const gap = gridOn ? 1 : 0;
 
     // Cuadrícula de bloques: x a la derecha, z hacia abajo (vista desde arriba).
     for (let z = 0; z < layer.depth; z++) {
@@ -103,7 +109,7 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
         const block = layer.palette[layer.cells[z * layer.width + x]];
         if (isAir(block)) continue;
         ctx.fillStyle = blockColor(block);
-        ctx.fillRect(offset.x + x * cellSize, offset.y + z * cellSize, cellSize - 1, cellSize - 1);
+        ctx.fillRect(offset.x + x * cellSize, offset.y + z * cellSize, cellSize - gap, cellSize - gap);
       }
     }
 
@@ -112,9 +118,9 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 2;
       const [sx, sz] = selected.split(",").map(Number);
-      ctx.strokeRect(offset.x + sx * cellSize, offset.y + sz * cellSize, cellSize - 1, cellSize - 1);
+      ctx.strokeRect(offset.x + sx * cellSize, offset.y + sz * cellSize, cellSize - gap, cellSize - gap);
     }
-  }, [layer, cellSize, offset, selected, mode]);
+  }, [layer, cellSize, offset, selected, mode, gridOn]);
 
   function cellAt(event: MouseEvent<HTMLCanvasElement>): { x: number; z: number } | null {
     const canvas = canvasRef.current;
@@ -192,11 +198,26 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
                   <input type="range" min={MIN_CELL} max={MAX_CELL} value={cellSize} onChange={(e) => setCellSize(Number(e.target.value))} />
                 </label>
                 <button type="button" className="button" onClick={() => setOffset({ x: 0, y: 0 })}>Centrar</button>
+                <label className="checkbox">
+                  <input type="checkbox" checked={gridOn} onChange={(e) => setGridOn(e.target.checked)} />
+                  Rejilla
+                </label>
               </>
             )}
           </div>
 
-          {mode === "iso" && (isoGrid ? <IsometricView grid={isoGrid} /> : <p className="muted">{isoMessage}</p>)}
+          {mode === "iso" && isoGrid && (
+            <>
+              <LayerRange
+                max={isoGrid.height - 1}
+                from={Math.min(rangeFrom, isoGrid.height - 1)}
+                to={Math.min(rangeTo ?? isoGrid.height - 1, isoGrid.height - 1)}
+                onChange={(f, t) => { setRangeFrom(f); setRangeTo(t); }}
+              />
+              <IsometricView grid={clipLayers(isoGrid, Math.min(rangeFrom, isoGrid.height - 1), Math.min(rangeTo ?? isoGrid.height - 1, isoGrid.height - 1))} />
+            </>
+          )}
+          {mode === "iso" && !isoGrid && <p className="muted">{isoMessage}</p>}
           {mode === "slice" && (isoGrid ? <SliceView grid={isoGrid} /> : <p className="muted">{isoMessage}</p>)}
 
           {mode === "layer" && <canvas
