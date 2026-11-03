@@ -535,3 +535,22 @@ section > .design-form {
   max-width: none;
   padding: 1rem 1.5rem;
 }
+
+.grid-scroll {
+  width: 100%;
+  overflow: auto;
+  max-height: 70vh;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #1b1e1a;
+}
+
+.grid-scroll .structure-canvas {
+  display: block;
+  width: auto;
+  max-width: none;
+  height: auto;
+  aspect-ratio: auto;
+  border: none;
+  border-radius: 0;
+}

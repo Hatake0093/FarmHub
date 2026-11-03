@@ -53,7 +53,7 @@ export function StructureEditorPage() {
   const cell = useMemo(() => {
     if (!detail) return 16;
     const available = Math.max(320, viewportWidth - 120);
-    return Math.max(4, Math.min(40, Math.floor(available / detail.width)));
+    return Math.max(8, Math.min(40, Math.floor(available / detail.width)));
   }, [detail, viewportWidth]);
 
   useEffect(() => {
@@ -284,14 +284,18 @@ export function StructureEditorPage() {
 
       {mode === "iso" && (isoGrid ? <IsometricView grid={isoGrid} /> : <p className="muted">{isoMessage}</p>)}
 
-      {mode === "layer" && <canvas
-        ref={canvasRef}
-        className="viewer-canvas structure-canvas"
-        onMouseDown={handleDown}
-        onMouseMove={handleMove}
-        onMouseUp={stopPainting}
-        onMouseLeave={() => { stopPainting(); setHover(null); }}
-      />}
+      {mode === "layer" && (
+        <div className="grid-scroll">
+          <canvas
+            ref={canvasRef}
+            className="structure-canvas"
+            onMouseDown={handleDown}
+            onMouseMove={handleMove}
+            onMouseUp={stopPainting}
+            onMouseLeave={() => { stopPainting(); setHover(null); }}
+          />
+        </div>
+      )}
 
       <div className="coord-panel" aria-live="polite">
         {hover && world && hoverBlock ? (
