@@ -53,6 +53,26 @@ internal static class NbtFileLoader
             ?? throw new LitematicFormatException("La raíz del NBT no es un compuesto.");
     }
 
+    /// <summary>
+    /// Nombre de bloque con sus propiedades, como en Minecraft: "minecraft:oak_slab[type=top,waterlogged=false]".
+    /// Las propiedades van ordenadas por nombre, así el mismo estado siempre da el mismo texto.
+    /// </summary>
+    public static string BlockStateName(NbtCompound entry)
+    {
+        var name = entry.Get<NbtString>("Name")?.Value ?? "minecraft:air";
+        var props = entry.Get<NbtCompound>("Properties");
+        if (props is null || props.Count == 0)
+        {
+            return name;
+        }
+
+        var parts = props
+            .Select(p => (p as NbtString)?.Value is { } v ? $"{p.Name}={v}" : null)
+            .Where(p => p is not null)
+            .OrderBy(p => p, StringComparer.Ordinal);
+        return $"{name}[{string.Join(",", parts)}]";
+    }
+
     /// <summary>Lee un entero de cualquier tipo numérico NBT habitual.</summary>
     public static int ToInt(NbtTag? tag, string field) => tag switch
     {

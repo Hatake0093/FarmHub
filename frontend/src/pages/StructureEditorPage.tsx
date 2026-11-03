@@ -18,6 +18,7 @@ import { floodFillLayer, mirrorBox, rotateBoxQuarter } from "../lib/design";
 import { decodeClip, encodeClip, extractBox, planPaste } from "../lib/clipboard";
 import { lineCells, rectCells, shapeChanges, type ShapeKind, type Cell } from "../lib/shapes";
 import { measure, type Point } from "../lib/measure";
+import { countMaterials, type MaterialCount } from "../lib/materials";
 
 const CLIP_KEY = "farmhub.clipboard";
 
@@ -79,6 +80,7 @@ export function StructureEditorPage() {
   const [pending, setPending] = useState<PendingChanges>(new Map());
   // Copia local de la rejilla (para no pedir el volumen en cada trazo) y historial de deshacer/rehacer.
   const gridRef = useRef<VoxelGrid | null>(null);
+  const [materials, setMaterials] = useState<MaterialCount[]>([]);
   const historyRef = useRef(new EditHistory());
   const [, setHistoryTick] = useState(0);
   const strokeRef = useRef<PendingChanges>(new Map());
@@ -444,6 +446,20 @@ export function StructureEditorPage() {
         .finally(() => setPending(new Map()));
     }
   }
+
+  // Recalcula los materiales cada vez que cambia el detalle: cada edición, deshacer o redimensión lo cambia.
+  useEffect(() => {
+    if (!detail) return;
+    let active = true;
+    ensureGrid()
+      .then((grid) => active && setMaterials(countMaterials(grid)))
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+    // ensureGrid depende de structureId y se usa solo aquí.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detail]);
 
   /** Copia local de la rejilla: se pide una vez y se mantiene al día con cada edición. */
   async function ensureGrid(): Promise<VoxelGrid> {
@@ -1190,10 +1206,9 @@ export function StructureEditorPage() {
         </div>
       </div>
 
-      <details className="editor-settings">
-        <summary>Ajustes de la estructura: base, tamaño y extender</summary>
-      <fieldset className="base-form">
-        <legend>Coordenada base del mundo (esquina mínima)</legend>
+      <div className="panel-stack">
+      <details className="editor-panel">
+        <summary>Coordenada base · <span className="muted">{base.x}, {base.y}, {base.z}</span></summary>
         <div className="dimension-grid">
           <label>X<input inputMode="numeric" value={base.x} onChange={(e) => setBase({ ...base, x: e.target.value })} /></label>
           <label>Y<input inputMode="numeric" value={base.y} onChange={(e) => setBase({ ...base, y: e.target.value })} /></label>
@@ -1202,10 +1217,10 @@ export function StructureEditorPage() {
         <div className="actions">
           <button type="button" className="button" onClick={handleSaveBase}>Guardar base</button>
         </div>
-      </fieldset>
+      </details>
 
-      <fieldset className="base-form">
-        <legend>Tamaño (bloques). Actual: {detail.width} × {detail.height} × {detail.depth}</legend>
+      <details className="editor-panel">
+        <summary>Tamaño · <span className="muted">{detail.width} × {detail.height} × {detail.depth}</span></summary>
         <div className="dimension-grid">
           <label>Ancho (X)<input inputMode="numeric" placeholder={String(detail.width)} value={size.w} onChange={(e) => setSize({ ...size, w: e.target.value })} /></label>
           <label>Alto (Y)<input inputMode="numeric" placeholder={String(detail.height)} value={size.h} onChange={(e) => setSize({ ...size, h: e.target.value })} /></label>
@@ -1215,10 +1230,10 @@ export function StructureEditorPage() {
           <button type="button" className="button" onClick={handleResize}>Cambiar tamaño</button>
         </div>
         <p className="muted small">Los bloques que queden fuera del nuevo tamaño se borran, y se te pedirá confirmación antes.</p>
-      </fieldset>
+      </details>
 
-      <fieldset className="base-form">
-        <legend>Extender (añadir celdas vacías)</legend>
+      <details className="editor-panel">
+        <summary>Extender · <span className="muted">añadir celdas vacías</span></summary>
         <div className="dimension-grid">
           <label>Izquierda (−X)<input inputMode="numeric" value={ext.left} onChange={(e) => setExt({ ...ext, left: e.target.value })} /></label>
           <label>Derecha (+X)<input inputMode="numeric" value={ext.right} onChange={(e) => setExt({ ...ext, right: e.target.value })} /></label>
@@ -1231,16 +1246,36 @@ export function StructureEditorPage() {
           <button type="button" className="button" onClick={handleExtend}>Extender</button>
         </div>
         <p className="muted small">Nunca borra bloques. Las coordenadas del mundo se mantienen: la base se ajusta si añades por la izquierda, abajo o atrás.</p>
-      </fieldset>
-
       </details>
 
-      <details className="editor-settings">
+      <details className="editor-panel">
+        <summary>Materiales · <span className="muted">{materials.length} tipos · {materials.reduce((sum, m) => sum + m.count, 0).toLocaleString("es-ES")} bloques</span></summary>
+        {materials.length === 0 ? (
+          <p className="muted">Sin bloques todavía.</p>
+        ) : (
+          <table className="farm-table">
+            <thead>
+              <tr><th>Bloque</th><th>Cantidad</th><th>Stacks</th></tr>
+            </thead>
+            <tbody>
+              {materials.map((m) => (
+                <tr key={m.block}>
+                  <td>{blockLabel(m.block)}</td>
+                  <td>{m.count.toLocaleString("es-ES")}</td>
+                  <td>{m.stacks.toLocaleString("es-ES")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </details>
+      <details className="editor-panel">
         <summary>Atajos de teclado</summary>
       <p className="muted small">
         Atajos: B pintar · E borrar · F relleno · L línea · K rectángulo · J relleno · P bloquear capa · M medir · Ctrl+C / Ctrl+V copiar y pegar · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
       </p>
       </details>
+      </div>
     </section>
   );
 }

@@ -17,11 +17,27 @@ public sealed class SavedStructuresController(FarmHubDbContext db) : ControllerB
     private static readonly Regex BlockId = new(@"^[a-z0-9_.-]+:[a-z0-9/_.-]+$", RegexOptions.Compiled);
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<StructureListItem>>> List(CancellationToken ct) =>
-        await db.SavedStructures.AsNoTracking()
+    public async Task<ActionResult<IReadOnlyList<StructureListItem>>> List(CancellationToken ct)
+    {
+        // Las celdas se leen para contar los bloques (el aire es el índice 0). Son pocas estructuras
+        // en uso personal; si crecen, conviene guardar el recuento en una columna.
+        var rows = await db.SavedStructures.AsNoTracking()
             .OrderBy(s => s.Name)
-            .Select(s => new StructureListItem(s.Id, s.Name, s.Width, s.Height, s.Depth, s.UpdatedAtUtc))
+            .Select(s => new { s.Id, s.Name, s.Description, s.Width, s.Height, s.Depth, s.BaseX, s.BaseY, s.BaseZ, s.UpdatedAtUtc, s.Cells })
             .ToListAsync(ct);
+        return rows.Select(r => new StructureListItem(
+            r.Id,
+            r.Name,
+            r.Description,
+            r.Width,
+            r.Height,
+            r.Depth,
+            r.BaseX,
+            r.BaseY,
+            r.BaseZ,
+            (long)r.Width * r.Height * r.Depth - r.Cells.LongCount(c => c == 0),
+            r.UpdatedAtUtc)).ToList();
+    }
 
     [HttpPost]
     public async Task<ActionResult<StructureDetail>> Create(StructureRequest request, CancellationToken ct)

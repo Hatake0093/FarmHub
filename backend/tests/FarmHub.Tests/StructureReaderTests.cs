@@ -173,4 +173,28 @@ public sealed class StructureReaderTests
 
         Assert.Throws<LitematicFormatException>(() => StructureNbtReader.Read(Save(root)));
     }
+
+    [Fact]
+    public void Structure_nbt_keeps_block_properties_in_the_palette()
+    {
+        var blocks = new NbtList("blocks", NbtTagType.Compound)
+        {
+            new NbtCompound { new NbtList("pos", NbtTagType.Int) { new NbtInt(0), new NbtInt(0), new NbtInt(0) }, new NbtInt("state", 0) },
+        };
+        var slab = new NbtCompound
+        {
+            new NbtString("Name", "minecraft:oak_slab"),
+            new NbtCompound("Properties") { new NbtString("type", "top"), new NbtString("waterlogged", "false") },
+        };
+        var root = new NbtCompound("")
+        {
+            new NbtList("size", NbtTagType.Int) { new NbtInt(1), new NbtInt(1), new NbtInt(1) },
+            new NbtList("palette", NbtTagType.Compound) { slab },
+            blocks,
+        };
+
+        var region = Assert.Single(StructureNbtReader.Read(Save(root)).Regions);
+
+        Assert.Equal("minecraft:oak_slab[type=top,waterlogged=false]", region.Palette[region.PaletteIndices[0]]);
+    }
 }

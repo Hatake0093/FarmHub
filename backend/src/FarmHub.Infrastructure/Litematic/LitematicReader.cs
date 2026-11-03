@@ -63,7 +63,7 @@ public static class LitematicReader
         var paletteTag = region.Get<NbtList>("BlockStatePalette")
             ?? throw new LitematicFormatException($"La región '{tag.Name}' no tiene paleta.");
         var palette = paletteTag.Select(entry =>
-            entry is NbtCompound c ? c.Get<NbtString>("Name")?.Value ?? "minecraft:air" : "minecraft:air").ToList();
+            entry is NbtCompound c ? Structures.NbtFileLoader.BlockStateName(c) : "minecraft:air").ToList();
         if (palette.Count == 0)
         {
             throw new LitematicFormatException($"La región '{tag.Name}' tiene una paleta vacía.");

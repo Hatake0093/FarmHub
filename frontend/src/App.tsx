@@ -1,9 +1,11 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { FarmDetailPage } from "./pages/FarmDetailPage";
 import { FarmFormPage } from "./pages/FarmFormPage";
 import { FarmListPage } from "./pages/FarmListPage";
 import { CatalogsPage } from "./pages/CatalogsPage";
+import { StructurePreviewPage } from "./pages/StructurePreviewPage";
 import { StructuresPage } from "./pages/StructuresPage";
 import { BlocksPage } from "./pages/BlocksPage";
 import { ItemsPage } from "./pages/ItemsPage";
@@ -22,6 +24,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <FeedbackProvider>
+        <ErrorBoundary>
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Navigate to="/farms" replace />} />
@@ -31,11 +34,13 @@ export default function App() {
           <Route path="farms/:id/edit" element={<FarmFormPage />} />
           <Route path="catalogs" element={<CatalogsPage />} />
           <Route path="structures" element={<StructuresPage />} />
+          <Route path="structures/preview" element={<StructurePreviewPage />} />
           <Route path="blocks" element={<BlocksPage />} />
           <Route path="items" element={<ItemsPage />} />
           <Route path="structures/:id" element={<StructureEditorPage />} />
         </Route>
       </Routes>
+        </ErrorBoundary>
       </FeedbackProvider>
     </BrowserRouter>
   );

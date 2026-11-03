@@ -18,11 +18,12 @@ public sealed class LitematicsController(FarmHubDbContext db, IFileStorage stora
     public async Task<ActionResult<LitematicSummaryResponse>> Summary(int id, CancellationToken ct)
     {
         var model = await LoadAsync(id, ct);
-        if (model is null)
-        {
-            return NotFound();
-        }
+        return model is null ? NotFound() : BuildSummary(model);
+    }
 
+    /// <summary>Resumen de un archivo: regiones, recuento de bloques y total. Lo usan también las vistas previas.</summary>
+    internal static LitematicSummaryResponse BuildSummary(LitematicModel model)
+    {
         var counts = LitematicStatistics.CountBlocks(model);
         var blockCounts = counts.Select(kv => new LitematicBlockCount(kv.Key, kv.Value, (kv.Value + 63) / 64)).ToList();
 
@@ -61,13 +62,17 @@ public sealed class LitematicsController(FarmHubDbContext db, IFileStorage stora
             return ValidationProblem($"La región tiene {count:N0} bloques; el máximo para la vista de volumen es {VolumeEncoder.MaxCells:N0}.");
         }
 
-        return new VolumeResponse(
-            target.Width,
-            target.Height,
-            target.Depth,
-            target.Palette,
-            VolumeEncoder.EncodeUInt16(target.PaletteIndices, target.PaletteIndices.Length));
+        return BuildVolume(target);
     }
+
+    /// <summary>Volumen de una región codificado en 16 bits y base64. Quien llama comprueba el límite.</summary>
+    internal static VolumeResponse BuildVolume(LitematicRegion region) =>
+        new(
+            region.Width,
+            region.Height,
+            region.Depth,
+            region.Palette,
+            VolumeEncoder.EncodeUInt16(region.PaletteIndices, region.PaletteIndices.Length));
 
     [HttpGet("layer")]
     public async Task<ActionResult<LitematicLayerResponse>> Layer(
