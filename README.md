@@ -207,7 +207,7 @@ Principios:
 | 1 | Categorías y creadores | Una categoría puede contener diseños de varios creadores. El creador va en la ficha de cada diseño. |
 | 2 | Almacenamiento de archivos | Disco local del servidor; la base de datos guarda la ruta y los metadatos. |
 | 3 | Base de datos | PostgreSQL con Entity Framework Core. |
-| 4 | Lectura NBT | Querz.NBT. Debe validarse con archivos `.litematic` reales antes de dar la Fase C por cerrada. |
+| 4 | Lectura NBT | fNbt (NuGet). Querz.NBT se descartó: es una biblioteca de Java y no existe paquete .NET con ese nombre. Debe validarse con archivos `.litematic` reales antes de dar la Fase C por cerrada. |
 | 5 | Renderizado 2D | Canvas 2D. |
 | 6 | Versiones de Minecraft | Tabla de versiones oficiales con relación N:M con las granjas. No se asume compatibilidad entre versiones. |
 | 7 | Clasificación | Una categoría principal más etiquetas libres para filtrar. |
