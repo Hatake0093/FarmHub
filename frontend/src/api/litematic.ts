@@ -1,4 +1,5 @@
 import { apiRequest } from "./client";
+import type { VolumeDto } from "../lib/volume";
 
 export interface LitematicRegion {
   name: string;
@@ -38,6 +39,8 @@ export interface LitematicLayer {
 }
 
 export const litematicApi = {
+  volume: (fileId: number, region: string) =>
+    apiRequest<VolumeDto>(`/design-files/${fileId}/structure/volume?${new URLSearchParams({ region })}`),
   summary: (fileId: number) => apiRequest<LitematicSummary>(`/design-files/${fileId}/structure`),
   layer: (fileId: number, region: string, y: number) =>
     apiRequest<LitematicLayer>(

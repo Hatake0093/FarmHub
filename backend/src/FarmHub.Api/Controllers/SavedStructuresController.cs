@@ -142,6 +142,25 @@ public sealed class SavedStructuresController(FarmHubDbContext db) : ControllerB
     /// Cambia el tamaño. Los bloques que siguen dentro se conservan; los que quedan fuera se borran.
     /// Si se borrarían bloques y Confirm es false, responde 409 con el número de bloques afectados.
     /// </summary>
+    /// <summary>Volumen completo de una vez, para vistas isométrica y de cortes.</summary>
+    [HttpGet("{id:int}/volume")]
+    public async Task<ActionResult<VolumeResponse>> Volume(int id, CancellationToken ct)
+    {
+        var entity = await db.SavedStructures.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id, ct);
+        if (entity is null)
+        {
+            return NotFound();
+        }
+
+        var count = entity.Cells.Length;
+        return new VolumeResponse(
+            entity.Width,
+            entity.Height,
+            entity.Depth,
+            entity.PaletteText.Split('\n'),
+            VolumeEncoder.EncodeUInt16(entity.Cells.Select(c => (int)c), count));
+    }
+
     [HttpPut("{id:int}/size")]
     public async Task<ActionResult<StructureDetail>> Resize(int id, StructureResizeRequest request, CancellationToken ct)
     {

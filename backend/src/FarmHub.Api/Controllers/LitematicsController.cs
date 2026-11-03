@@ -37,6 +37,38 @@ public sealed class LitematicsController(FarmHubDbContext db, IFileStorage stora
             counts.Values.Sum());
     }
 
+    /// <summary>Volumen completo de una región, de una vez. Por defecto la primera región.</summary>
+    [HttpGet("volume")]
+    public async Task<ActionResult<VolumeResponse>> Volume(int id, [FromQuery] string? region, CancellationToken ct)
+    {
+        var model = await LoadAsync(id, ct);
+        if (model is null)
+        {
+            return NotFound();
+        }
+
+        var target = region is null
+            ? model.Regions.FirstOrDefault()
+            : model.Regions.FirstOrDefault(r => r.Name == region);
+        if (target is null)
+        {
+            return NotFound(new ProblemDetails { Title = "La región no existe en el archivo." });
+        }
+
+        var count = target.Volume;
+        if (count > VolumeEncoder.MaxCells)
+        {
+            return ValidationProblem($"La región tiene {count:N0} bloques; el máximo para la vista de volumen es {VolumeEncoder.MaxCells:N0}.");
+        }
+
+        return new VolumeResponse(
+            target.Width,
+            target.Height,
+            target.Depth,
+            target.Palette,
+            VolumeEncoder.EncodeUInt16(target.PaletteIndices, target.PaletteIndices.Length));
+    }
+
     [HttpGet("layer")]
     public async Task<ActionResult<LitematicLayerResponse>> Layer(
         int id, [FromQuery] string region, [FromQuery] int y, CancellationToken ct)

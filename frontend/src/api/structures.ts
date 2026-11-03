@@ -1,4 +1,5 @@
 import { apiRequest } from "./client";
+import type { VolumeDto } from "../lib/volume";
 
 export interface StructureListItem {
   id: number;
@@ -65,6 +66,7 @@ export const structuresApi = {
       body: JSON.stringify({ width, height, depth, confirm }),
     }),
   layer: (id: number, y: number) => apiRequest<StructureLayer>(`/structures/${id}/layer?y=${y}`),
+  volume: (id: number) => apiRequest<VolumeDto>(`/structures/${id}/volume`),
   saveBlocks: (id: number, changes: { x: number; y: number; z: number; block: string | null }[]) =>
     apiRequest<StructureDetail>(`/structures/${id}/blocks`, {
       method: "PATCH",

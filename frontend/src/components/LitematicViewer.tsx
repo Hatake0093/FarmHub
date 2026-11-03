@@ -2,8 +2,10 @@ import { useEffect, useRef, useState, type MouseEvent, type WheelEvent } from "r
 import { litematicApi, type LitematicLayer, type LitematicSummary } from "../api/litematic";
 import { errorMessage } from "../api/client";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
-import { gridFromLayers, MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
+import { MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
 import { IsometricView } from "./IsometricView";
+import { SliceView } from "./SliceView";
+import { gridFromVolume } from "../lib/volume";
 import { LayerStepper } from "./LayerStepper";
 
 interface Props {
@@ -22,7 +24,7 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
   const [layer, setLayer] = useState<LitematicLayer | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [mode, setMode] = useState<"layer" | "iso">("layer");
+  const [mode, setMode] = useState<"layer" | "iso" | "slice">("layer");
   const [isoGrid, setIsoGrid] = useState<VoxelGrid | null>(null);
   const [isoMessage, setIsoMessage] = useState<string | null>(null);
   const [cellSize, setCellSize] = useState(16);
@@ -60,9 +62,9 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
     };
   }, [fileId, regionName, y]);
 
-  // Vista isométrica: carga todas las capas de la región (con límite de volumen).
+  // Vistas isométrica y de corte: una sola petición con el volumen completo de la región.
   useEffect(() => {
-    if (mode !== "iso" || !region) return;
+    if (mode === "layer" || !region) return;
     const volume = region.width * region.height * region.depth;
     if (volume > MAX_ISOMETRIC_VOLUME) {
       setIsoGrid(null);
@@ -70,11 +72,12 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
       return;
     }
     let active = true;
-    setIsoMessage("Cargando capas…");
-    Promise.all(Array.from({ length: region.height }, (_, yy) => litematicApi.layer(fileId, regionName, yy)))
-      .then((layers) => {
+    setIsoMessage("Cargando volumen…");
+    litematicApi
+      .volume(fileId, regionName)
+      .then((dto) => {
         if (!active) return;
-        setIsoGrid(gridFromLayers(region.width, region.height, region.depth, layers));
+        setIsoGrid(gridFromVolume(dto));
         setIsoMessage(null);
       })
       .catch((err: unknown) => active && setIsoMessage(errorMessage(err)));
@@ -175,9 +178,10 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
             </label>
             <label>
               Vista
-              <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso")}>
+              <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso" | "slice")}>
                 <option value="layer">Capa 2D</option>
                 <option value="iso">Isométrica</option>
+                <option value="slice">Corte lateral</option>
               </select>
             </label>
             {mode === "layer" && (
@@ -193,6 +197,7 @@ export function LitematicViewer({ fileId, fileName, onClose }: Props) {
           </div>
 
           {mode === "iso" && (isoGrid ? <IsometricView grid={isoGrid} /> : <p className="muted">{isoMessage}</p>)}
+          {mode === "slice" && (isoGrid ? <SliceView grid={isoGrid} /> : <p className="muted">{isoMessage}</p>)}
 
           {mode === "layer" && <canvas
             ref={canvasRef}

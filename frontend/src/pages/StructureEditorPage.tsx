@@ -4,8 +4,10 @@ import { structuresApi, type StructureDetail, type StructureLayer } from "../api
 import { blocksApi, type BlockEntry } from "../api/blocks";
 import { errorMessage } from "../api/client";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
-import { gridFromLayers, MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
+import { MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
 import { IsometricView } from "../components/IsometricView";
+import { SliceView } from "../components/SliceView";
+import { gridFromVolume } from "../lib/volume";
 import { LayerStepper } from "../components/LayerStepper";
 import { BlockPicker } from "../components/BlockPicker";
 import {
@@ -33,7 +35,7 @@ export function StructureEditorPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [mode, setMode] = useState<"layer" | "iso">("layer");
+  const [mode, setMode] = useState<"layer" | "iso" | "slice">("layer");
   const [catalog, setCatalog] = useState<BlockEntry[]>([]);
   const [isoGrid, setIsoGrid] = useState<VoxelGrid | null>(null);
   const [isoMessage, setIsoMessage] = useState<string | null>(null);
@@ -85,9 +87,9 @@ export function StructureEditorPage() {
     };
   }, [detail, structureId, y]);
 
-  // Vista isométrica: muestra lo guardado en el servidor, con todas las capas.
+  // Vistas isométrica y de corte: lo guardado en el servidor, en una sola petición.
   useEffect(() => {
-    if (mode !== "iso" || !detail) return;
+    if (mode === "layer" || !detail) return;
     const volume = detail.width * detail.height * detail.depth;
     if (volume > MAX_ISOMETRIC_VOLUME) {
       setIsoGrid(null);
@@ -95,11 +97,12 @@ export function StructureEditorPage() {
       return;
     }
     let active = true;
-    setIsoMessage("Cargando capas…");
-    Promise.all(Array.from({ length: detail.height }, (_, yy) => structuresApi.layer(structureId, yy)))
-      .then((layers) => {
+    setIsoMessage("Cargando volumen…");
+    structuresApi
+      .volume(structureId)
+      .then((dto) => {
         if (!active) return;
-        setIsoGrid(gridFromLayers(detail.width, detail.height, detail.depth, layers));
+        setIsoGrid(gridFromVolume(dto));
         setIsoMessage(null);
       })
       .catch((err: unknown) => active && setIsoMessage(errorMessage(err)));
@@ -300,9 +303,10 @@ export function StructureEditorPage() {
       <div className="viewer-controls">
         <label>
           Vista
-          <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso")}>
+          <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso" | "slice")}>
             <option value="layer">Capa 2D (editable)</option>
             <option value="iso">Isométrica (guardado)</option>
+            <option value="slice">Corte lateral (guardado)</option>
           </select>
         </label>
         {mode === "layer" && (
@@ -330,6 +334,7 @@ export function StructureEditorPage() {
       </div>
 
       {mode === "iso" && (isoGrid ? <IsometricView grid={isoGrid} /> : <p className="muted">{isoMessage}</p>)}
+      {mode === "slice" && (isoGrid ? <SliceView grid={isoGrid} base={{ x: detail.baseX, y: detail.baseY, z: detail.baseZ }} /> : <p className="muted">{isoMessage}</p>)}
 
       {mode === "layer" && (
         <div className="grid-scroll">

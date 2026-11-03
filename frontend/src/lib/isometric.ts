@@ -16,8 +16,8 @@ export interface LayerData {
   palette: string[];
 }
 
-/** Límite de celdas para la vista isométrica (cargar todas las capas tiene coste). */
-export const MAX_ISOMETRIC_VOLUME = 200_000;
+/** Límite de celdas para la vista isométrica y de cortes (el volumen se envía en una sola petición). */
+export const MAX_ISOMETRIC_VOLUME = 1_000_000;
 
 export function gridFromLayers(width: number, height: number, depth: number, layers: LayerData[]): VoxelGrid {
   const palette = layers[0]?.palette ?? ["minecraft:air"];
