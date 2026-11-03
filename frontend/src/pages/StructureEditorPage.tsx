@@ -7,7 +7,7 @@ import { blockColor, blockLabel, isAir } from "../lib/litematicView";
 import { MAX_ISOMETRIC_VOLUME, type VoxelGrid } from "../lib/isometric";
 import { IsometricView } from "../components/IsometricView";
 import { LayerRange } from "../components/LayerRange";
-import { normalizeBox, planCopyLayer, planMove, type Box, type Delta } from "../lib/selection";
+import { normalizeBox, planCopy, planCopyLayer, planMove, type Box, type Delta } from "../lib/selection";
 import { clipLayers, rotateGrid } from "../lib/isometric";
 import { SliceView } from "../components/SliceView";
 import { gridFromVolume } from "../lib/volume";
@@ -287,6 +287,37 @@ export function StructureEditorPage() {
     }
   }
 
+  // Copia la selección al desplazamiento indicado; el original no cambia.
+  async function copySelection() {
+    if (!selBox || !detail) return;
+    if (offset.dx === 0 && offset.dy === 0 && offset.dz === 0) {
+      setError("Mueve la copia con las flechas o RePág/AvPág antes de copiar.");
+      return;
+    }
+    if (pending.size > 0) {
+      setError("Guarda los cambios antes de copiar la selección.");
+      return;
+    }
+    setError(null);
+    try {
+      const grid = gridFromVolume(await structuresApi.volume(structureId));
+      const changes = planCopy(grid, selBox, offset, copyKeepAir);
+      if (changes === null) {
+        setError("La copia queda fuera de la estructura.");
+        return;
+      }
+      if (changes.length > 100_000) {
+        setError("La selección es demasiado grande para copiar de una vez.");
+        return;
+      }
+      const updated = changes.length > 0 ? await structuresApi.saveBlocks(structureId, changes) : detail;
+      setDetail(updated);
+      setMessage(`Selección copiada (${changes.length} celdas cambiadas).`);
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
   // Copia la capa actual sobre otra capa. Exige guardar antes, igual que mover.
   async function cloneLayer() {
     if (!detail) return;
@@ -523,22 +554,6 @@ export function StructureEditorPage() {
       {mode === "iso" && !isoGrid && <p className="muted">{isoMessage}</p>}
       {mode === "slice" && (isoGrid ? <SliceView grid={isoGrid} base={{ x: detail.baseX, y: detail.baseY, z: detail.baseZ }} /> : <p className="muted">{isoMessage}</p>)}
 
-      {mode === "layer" && selBox && detail && (
-        <div className="selection-bar" role="region" aria-label="Selección">
-          <span>
-            Selección X {selBox.x0}–{selBox.x1} · Z {selBox.z0}–{selBox.z1} · Y{" "}
-            <input type="number" min={0} max={detail.height - 1} value={sel?.y0 ?? 0} onChange={(e) => setSel((c) => (c ? { ...c, y0: Number(e.target.value) } : c))} />
-            {" – "}
-            <input type="number" min={0} max={detail.height - 1} value={sel?.y1 ?? 0} onChange={(e) => setSel((c) => (c ? { ...c, y1: Number(e.target.value) } : c))} />
-            {" · desplazamiento X "}{offset.dx} Y {offset.dy} Z {offset.dz}
-          </span>
-          <span className="muted small">Flechas: X/Z · RePág/AvPág: Y · Enter: aplicar · Escape: cancelar</span>
-          <div className="actions">
-            <button type="button" className="button button-primary" onClick={() => void applySelection()}>Aplicar</button>
-            <button type="button" className="button" onClick={clearSelection}>Cancelar</button>
-          </div>
-        </div>
-      )}
       {mode === "layer" && (
         <div className="grid-scroll">
           <canvas
@@ -554,6 +569,23 @@ export function StructureEditorPage() {
         </div>
       )}
 
+      {mode === "layer" && selBox && detail && (
+        <div className="selection-bar" role="region" aria-label="Selección">
+          <span>
+            Selección X {selBox.x0}–{selBox.x1} · Z {selBox.z0}–{selBox.z1} · Y{" "}
+            <input type="number" min={0} max={detail.height - 1} value={sel?.y0 ?? 0} onChange={(e) => setSel((c) => (c ? { ...c, y0: Number(e.target.value) } : c))} />
+            {" – "}
+            <input type="number" min={0} max={detail.height - 1} value={sel?.y1 ?? 0} onChange={(e) => setSel((c) => (c ? { ...c, y1: Number(e.target.value) } : c))} />
+            {" · desplazamiento X "}{offset.dx} Y {offset.dy} Z {offset.dz}
+          </span>
+          <span className="muted small">Flechas: X/Z · RePág/AvPág: Y · Enter: mover · Escape: cancelar · Copiar: deja el original</span>
+          <div className="actions">
+            <button type="button" className="button button-primary" onClick={() => void applySelection()}>Aplicar</button>
+            <button type="button" className="button" onClick={() => void copySelection()}>Copiar</button>
+            <button type="button" className="button" onClick={clearSelection}>Cancelar</button>
+          </div>
+        </div>
+      )}
       <div className="coord-panel" aria-live="polite">
         {hover && world && hoverBlock ? (
           <>

@@ -74,3 +74,22 @@ describe("copy layer", () => {
     expect(planCopyLayer(g, 0, 3, false)).toBeNull();
   });
 });
+
+describe("copy selection", () => {
+  it("copia la caja a otra altura y deja el origen como estaba", async () => {
+    const { planCopy, normalizeBox } = await import("./selection");
+    // 1 × 2 × 1: capa 0 tiene piedra; capa 1 está vacía.
+    const g = grid(1, 2, 1, [[0, 0, 0, 1]]);
+
+    const changes = planCopy(g, normalizeBox({ x: 0, z: 0 }, { x: 0, z: 0 }, 0, 0), { dx: 0, dy: 1, dz: 0 }, false) ?? [];
+
+    expect(changes).toEqual([{ x: 0, y: 1, z: 0, block: "minecraft:stone" }]);
+  });
+
+  it("rechaza un destino fuera de la estructura", async () => {
+    const { planCopy, normalizeBox } = await import("./selection");
+    const g = grid(1, 1, 1, []);
+
+    expect(planCopy(g, normalizeBox({ x: 0, z: 0 }, { x: 0, z: 0 }, 0, 0), { dx: 0, dy: 1, dz: 0 }, false)).toBeNull();
+  });
+});

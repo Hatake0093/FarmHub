@@ -106,3 +106,33 @@ export function planCopyLayer(grid: VoxelGrid, fromY: number, toY: number, keepD
   }
   return changes;
 }
+
+/**
+ * Cambios para copiar la caja a otra posición (el origen no cambia). Las celdas del destino toman el
+ * bloque de su origen. Si keepDestAir es true, el aire del origen no borra bloques del destino.
+ * Devuelve null si el destino queda fuera de la estructura.
+ */
+export function planCopy(grid: VoxelGrid, box: Box, delta: Delta, keepDestAir: boolean): PlannedChange[] | null {
+  const dest: Box = {
+    x0: box.x0 + delta.dx, x1: box.x1 + delta.dx,
+    y0: box.y0 + delta.dy, y1: box.y1 + delta.dy,
+    z0: box.z0 + delta.dz, z1: box.z1 + delta.dz,
+  };
+  if (dest.x0 < 0 || dest.y0 < 0 || dest.z0 < 0 || dest.x1 >= grid.width || dest.y1 >= grid.height || dest.z1 >= grid.depth) {
+    return null;
+  }
+  const blockAt = (x: number, y: number, z: number) => grid.palette[grid.blocks[(y * grid.depth + z) * grid.width + x]];
+  const changes: PlannedChange[] = [];
+  for (let y = dest.y0; y <= dest.y1; y++) {
+    for (let z = dest.z0; z <= dest.z1; z++) {
+      for (let x = dest.x0; x <= dest.x1; x++) {
+        const source = blockAt(x - delta.dx, y - delta.dy, z - delta.dz);
+        if (keepDestAir && source === AIR) continue;
+        if (blockAt(x, y, z) !== source) {
+          changes.push({ x, y, z, block: source === AIR ? null : source });
+        }
+      }
+    }
+  }
+  return changes;
+}
