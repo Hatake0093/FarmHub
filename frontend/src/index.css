@@ -1514,21 +1514,86 @@ input[type="search"] {
 .theme-toggle {
   padding: 0.3rem 0.55rem;
   line-height: 1;
+}
 
-/* Texturas por cara en la página de bloques */
+/* Página de bloques: cada fila en una sola línea */
+.blocks-table th {
+  white-space: nowrap;
+}
+
+.blocks-table td {
+  vertical-align: middle;
+}
+
+.block-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  white-space: nowrap;
+}
+
+.block-preview {
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+
 .texture-faces {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  align-items: center;
+  gap: 0.9rem;
+  white-space: nowrap;
 }
 
 .texture-face {
+  position: relative;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
-.texture-face > .small {
-  min-width: 3.5rem;
+.texture-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.texture-slot img {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.texture-slot-empty {
+  border-style: dashed;
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+
+.texture-slot:hover,
+.texture-slot:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.texture-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #b3261e;
+  color: #fff;
+  font-size: 12px;
+  line-height: 16px;
+  cursor: pointer;
 }

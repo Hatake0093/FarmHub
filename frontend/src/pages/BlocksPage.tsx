@@ -7,6 +7,8 @@ import { forgetTexture } from "../lib/textures";
 import type { TextureFace } from "../lib/blockFaces";
 import { matchTextureFiles } from "../lib/textureImport";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
+import { blockColor } from "../lib/litematicView";
+import { BlockPreview } from "../components/BlockPreview";
 
 const TEXTURE_SLOTS: { face: TextureFace; label: string }[] = [
   { face: "side", label: "Lados" },
@@ -267,7 +269,7 @@ export function BlocksPage() {
         <button type="submit" className="button button-primary">Añadir bloque</button>
       </form>
 
-      <table className="farm-table">
+      <table className="farm-table blocks-table">
         <thead>
           <tr>
             <th>Inglés</th>
@@ -284,7 +286,17 @@ export function BlocksPage() {
             const dirty = isDirty(b);
             return (
               <tr key={b.id} className={dirty ? "row-dirty" : undefined}>
-                <td>{b.englishName}</td>
+                <td>
+                  <div className="block-name-cell">
+                    <BlockPreview
+                      name={shortName(b.id)}
+                      faces={b.textureFaces}
+                      color={(b.id in colorDrafts ? colorDrafts[b.id] : b.color) ?? blockColor(b.id)}
+                      version={(face) => textureVersion[`${b.id}#${face}`] ?? 0}
+                    />
+                    <span>{b.englishName}</span>
+                  </div>
+                </td>
                 <td className="muted">{b.id}</td>
                 <td>
                   <input
@@ -307,22 +319,26 @@ export function BlocksPage() {
                   <div className="texture-faces">
                     {TEXTURE_SLOTS.map(({ face, label }) => {
                       const has = b.textureFaces.includes(face);
+                      const what = `${label.toLowerCase()} de ${b.englishName}`;
                       return (
                         <div className="texture-face" key={face}>
                           <span className="muted small">{label}</span>
-                          {has && (
-                            <img
-                              className="texture-thumb"
-                              alt={`Textura de ${label.toLowerCase()} de ${b.englishName}`}
-                              src={`/api/blocks/${shortName(b.id)}/texture/${face}?v=${textureVersion[`${b.id}#${face}`] ?? 0}`}
-                            />
-                          )}
-                          <label className="button-link">
-                            {has ? "Cambiar" : "Subir"}
+                          <label
+                            className={has ? "texture-slot" : "texture-slot texture-slot-empty"}
+                            title={has ? `Cambiar textura de ${what}` : `Subir textura de ${what}`}
+                          >
+                            {has ? (
+                              <img
+                                alt={`Textura de ${what}`}
+                                src={`/api/blocks/${shortName(b.id)}/texture/${face}?v=${textureVersion[`${b.id}#${face}`] ?? 0}`}
+                              />
+                            ) : (
+                              <span aria-hidden="true">+</span>
+                            )}
                             <input
                               type="file"
                               accept="image/png,image/jpeg,image/webp"
-                              aria-label={`Subir textura de ${label.toLowerCase()} de ${b.englishName}`}
+                              aria-label={`${has ? "Cambiar" : "Subir"} textura de ${what}`}
                               className="visually-hidden"
                               onChange={(e) => {
                                 void uploadTexture(b, face, e.target.files?.[0]);
@@ -331,8 +347,14 @@ export function BlocksPage() {
                             />
                           </label>
                           {has && (
-                            <button type="button" className="button-link button-danger" onClick={() => void removeTexture(b, face)}>
-                              Quitar
+                            <button
+                              type="button"
+                              className="texture-remove"
+                              aria-label={`Quitar textura de ${what}`}
+                              title="Quitar"
+                              onClick={() => void removeTexture(b, face)}
+                            >
+                              ×
                             </button>
                           )}
                         </div>
