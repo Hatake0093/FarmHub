@@ -1,5 +1,12 @@
+using FarmHub.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
+var connectionString = builder.Configuration.GetConnectionString("FarmHub")
+    ?? throw new InvalidOperationException("Falta la cadena de conexión 'FarmHub'.");
+
+builder.Services.AddDbContext<FarmHubDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
