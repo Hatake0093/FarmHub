@@ -66,6 +66,27 @@ const VIEW_MODES: { value: "layer" | "iso" | "slice" | "stack" | "3d"; label: st
   { value: "3d", label: "3D" },
 ];
 
+/** Atajos del editor: teclas y lo que hacen. Se muestran en el modal de ayuda. */
+const SHORTCUTS: [string[], string][] = [
+  [["B"], "Pintar"],
+  [["E"], "Borrar"],
+  [["F"], "Relleno"],
+  [["L"], "Línea"],
+  [["K"], "Rectángulo hueco"],
+  [["J"], "Rectángulo lleno"],
+  [["M"], "Medir"],
+  [["P"], "Bloquear capa"],
+  [["G"], "Rejilla"],
+  [["[", "]"], "Capa anterior / siguiente"],
+  [["RePág", "AvPág"], "Capa anterior / siguiente"],
+  [["Tab"], "Cambiar de vista"],
+  [["Mayús + arrastrar"], "Seleccionar"],
+  [["Ctrl+C", "Ctrl+V"], "Copiar y pegar"],
+  [["Ctrl+Z"], "Deshacer"],
+  [["Ctrl+Y"], "Rehacer"],
+  [["?"], "Abrir esta ayuda"],
+];
+
 export function StructureEditorPage() {
   const { id } = useParams();
   const structureId = Number(id);
@@ -115,6 +136,28 @@ export function StructureEditorPage() {
     if (typeof dialog.showModal === "function") dialog.showModal();
     else dialog.setAttribute("open", "");
   }, [settingsOpen]);
+
+  // Modal de ayuda con los atajos de teclado y la lista de materiales. Se abre con el botón de arriba o con «?».
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = helpRef.current;
+    if (!helpOpen || !dialog || dialog.open) return;
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+  }, [helpOpen]);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.closest("input, textarea, select, dialog")) return;
+      if (event.key === "?") {
+        event.preventDefault();
+        setHelpOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const [layer, setLayer] = useState<StructureLayer | null>(null);
   useDocumentTitle(detail ? `Editar ${detail.name}` : "Esquemático");
@@ -1058,7 +1101,12 @@ export function StructureEditorPage() {
             </button>
           </h1>
         </div>
-        <span className="muted">{detail.blockCount} bloques · {detail.width} × {detail.height} × {detail.depth}</span>
+        <div className="editor-heading-side">
+          <span className="muted">{detail.blockCount} bloques · {detail.width} × {detail.height} × {detail.depth}</span>
+          <button type="button" className="button" aria-haspopup="dialog" title="Atajos de teclado y materiales (?)" onClick={() => setHelpOpen(true)}>
+            ⌨ Atajos y materiales
+          </button>
+        </div>
       </div>
 
       <div className="editor-toolbar">
@@ -1283,35 +1331,66 @@ export function StructureEditorPage() {
         </div>
       </div>
 
-      <div className="panel-stack">
-      <details className="editor-panel">
-        <summary>Materiales · <span className="muted">{materials.length} tipos · {materials.reduce((sum, m) => sum + m.count, 0).toLocaleString("es-ES")} bloques</span></summary>
-        {materials.length === 0 ? (
-          <p className="muted">Sin bloques todavía.</p>
-        ) : (
-          <table className="farm-table">
-            <thead>
-              <tr><th>Bloque</th><th>Cantidad</th><th>Stacks</th></tr>
-            </thead>
-            <tbody>
-              {materials.map((m) => (
-                <tr key={m.block}>
-                  <td>{blockLabel(m.block)}</td>
-                  <td>{m.count.toLocaleString("es-ES")}</td>
-                  <td>{m.stacks.toLocaleString("es-ES")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </details>
-      <details className="editor-panel">
-        <summary>Atajos de teclado</summary>
-      <p className="muted small">
-        Atajos: B pintar · E borrar · F relleno · L línea · K rectángulo · J relleno · P bloquear capa · M medir · Ctrl+C / Ctrl+V copiar y pegar · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
-      </p>
-      </details>
-      </div>
+      {helpOpen && (
+        <dialog
+          ref={helpRef}
+          className="confirm-dialog settings-dialog help-dialog"
+          aria-labelledby="help-title"
+          onCancel={(event) => {
+            event.preventDefault();
+            setHelpOpen(false);
+          }}
+          onClick={(event) => {
+            // Clic en el fondo (fuera de la caja del modal) lo cierra.
+            if (event.target !== event.currentTarget) return;
+            const r = event.currentTarget.getBoundingClientRect();
+            const inside = event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom;
+            if (!inside) setHelpOpen(false);
+          }}
+        >
+          <div className="settings-header">
+            <h2 id="help-title">Atajos y materiales</h2>
+            <button type="button" className="button" aria-label="Cerrar" onClick={() => setHelpOpen(false)}>✕</button>
+          </div>
+          <div className="help-columns">
+            <section aria-labelledby="help-shortcuts">
+              <h3 id="help-shortcuts">Atajos de teclado</h3>
+              <dl className="shortcut-list">
+                {SHORTCUTS.map(([keys, action]) => (
+                  <div key={keys.join(" ")}>
+                    <dt>{keys.map((k, i) => <span key={k}>{i > 0 && " / "}<kbd>{k}</kbd></span>)}</dt>
+                    <dd>{action}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="muted small">Los cambios se guardan al soltar el ratón.</p>
+            </section>
+            <section aria-labelledby="help-materials">
+              <h3 id="help-materials">
+                Materiales · <span className="muted">{materials.length} tipos · {materials.reduce((sum, m) => sum + m.count, 0).toLocaleString("es-ES")} bloques</span>
+              </h3>
+              {materials.length === 0 ? (
+                <p className="muted">Sin bloques todavía.</p>
+              ) : (
+                <table className="farm-table">
+                  <thead>
+                    <tr><th>Bloque</th><th>Cantidad</th><th>Stacks</th></tr>
+                  </thead>
+                  <tbody>
+                    {materials.map((m) => (
+                      <tr key={m.block}>
+                        <td>{blockLabel(m.block)}</td>
+                        <td>{m.count.toLocaleString("es-ES")}</td>
+                        <td>{m.stacks.toLocaleString("es-ES")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </section>
+          </div>
+        </dialog>
+      )}
 
       {settingsOpen && (
         <dialog
