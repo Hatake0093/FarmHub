@@ -182,6 +182,19 @@ export function StructureEditorPage() {
   function handleDown(event: MouseEvent<HTMLCanvasElement>) {
     const local = localAt(event);
     if (!local) return;
+    // Botón central: cuentagotas. Toma el bloque de esa celda (con los cambios pendientes).
+    if (event.button === 1 && layer) {
+      event.preventDefault();
+      const serverBlock = layer.palette[layer.cells[local.z * layer.width + local.x]];
+      const picked = displayedBlock(pending, local, serverBlock);
+      if (isAir(picked)) {
+        setErase(true);
+      } else {
+        setBlock(picked);
+        setErase(false);
+      }
+      return;
+    }
     // Botón derecho: borra. Botón izquierdo: pinta.
     const action = event.button === 2 ? "erase" : "paint";
     paintingRef.current = action;
@@ -367,6 +380,7 @@ export function StructureEditorPage() {
             onMouseDown={handleDown}
             onMouseMove={handleMove}
             onMouseUp={stopPainting}
+            onAuxClick={(e) => e.preventDefault()}
             onContextMenu={(e) => e.preventDefault()}
             onMouseLeave={() => { stopPainting(); setHover(null); }}
           />
