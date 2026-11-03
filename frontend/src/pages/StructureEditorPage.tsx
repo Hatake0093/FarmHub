@@ -38,6 +38,7 @@ function writeClipText(text: string): boolean {
   }
 }
 import { LayerStepper } from "../components/LayerStepper";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 import { BlockPicker } from "../components/BlockPicker";
 import {
   displayedBlock,
@@ -49,12 +50,21 @@ import {
 
 const BLOCK_ID = /^[a-z0-9_.-]+:[a-z0-9/_.-]+$/;
 
+const VIEW_MODES: { value: "layer" | "iso" | "slice" | "stack" | "3d"; label: string }[] = [
+  { value: "layer", label: "Capa 2D (editar)" },
+  { value: "iso", label: "Isométrica" },
+  { value: "slice", label: "Corte lateral" },
+  { value: "stack", label: "Capas apiladas" },
+  { value: "3d", label: "3D" },
+];
+
 export function StructureEditorPage() {
   const { id } = useParams();
   const structureId = Number(id);
 
   const [detail, setDetail] = useState<StructureDetail | null>(null);
   const [layer, setLayer] = useState<StructureLayer | null>(null);
+  useDocumentTitle(detail ? `Editar ${detail.name}` : "Esquemático");
   const [y, setY] = useState(0);
   const [block, setBlock] = useState("minecraft:stone");
   const [erase, setErase] = useState(false);
@@ -839,8 +849,23 @@ export function StructureEditorPage() {
     }
   }
 
-  if (error && !detail) return <p className="alert" role="alert">{error}</p>;
-  if (!detail || !layer) return <p className="muted">Cargando esquemático…</p>;
+  if (error && !detail)
+    return (
+      <div className="empty-state">
+        <p className="alert" role="alert">
+          {error}
+        </p>
+        <Link to="/structures" className="button">
+          Volver a esquemáticos
+        </Link>
+      </div>
+    );
+  if (!detail || !layer)
+    return (
+      <p className="muted" role="status">
+        Cargando esquemático…
+      </p>
+    );
 
   const baseCoords = { x: detail.baseX, y: detail.baseY, z: detail.baseZ };
   const world = hover ? worldCoordinates(baseCoords, hover) : null;
@@ -855,81 +880,117 @@ export function StructureEditorPage() {
         <span className="muted">{detail.blockCount} bloques · {detail.width} × {detail.height} × {detail.depth}</span>
       </div>
 
-      <div className="viewer-controls">
-        <label>
-          Vista
-          <select value={mode} onChange={(e) => setMode(e.target.value as "layer" | "iso" | "slice" | "stack" | "3d")}>
-            <option value="layer">Capa 2D (editable)</option>
-            <option value="iso">Isométrica (guardado)</option>
-            <option value="slice">Corte lateral (guardado)</option>
-            <option value="stack">Capas apiladas (guardado)</option>
-            <option value="3d">3D giratoria (guardado)</option>
-          </select>
-        </label>
-        {mode === "layer" && (
-        <label>
-          Capa fantasma
-          <select value={ghost} onChange={(e) => setGhost(e.target.value as "none" | "below" | "above")}>
-            <option value="none">Ninguna</option>
-            <option value="below">Capa inferior</option>
-            <option value="above">Capa superior</option>
-          </select>
-        </label>
-        )}
-        {mode === "layer" && (
-        <LayerStepper value={y} max={detail.height - 1} onChange={setY} />
-        )}
-        {mode === "layer" && (
-        <div className="shape-tools" aria-label="Herramientas de forma" key={lockedTick}>
-          <label className="checkbox">
-            <input type="checkbox" checked={measureOn} onChange={(e) => { setMeasureOn(e.target.checked); setMeasurePts({ a: null, b: null }); }} />
-            Medir (M)
-          </label>
-          <button type="button" className={`button${shape === "line" ? " button-primary" : ""}`} onClick={() => setShape(shape === "line" ? null : "line")}>Línea (L)</button>
-          <button type="button" className={`button${shape === "rect" ? " button-primary" : ""}`} onClick={() => setShape(shape === "rect" ? null : "rect")}>Rectángulo hueco (K)</button>
-          <button type="button" className={`button${shape === "box" ? " button-primary" : ""}`} onClick={() => setShape(shape === "box" ? null : "box")}>Rectángulo lleno (J)</button>
-          <label className="checkbox">
-            <input type="checkbox" checked={lockedRef.current.has(y)} onChange={toggleLock} />
-            {lockedRef.current.has(y) ? "Capa bloqueada (P)" : "Bloquear capa (P)"}
-          </label>
+      <div className="editor-toolbar">
+        <div className="tool-group">
+          <span className="tool-title" id="vista-titulo">Vista</span>
+          <div className="view-tabs" role="group" aria-labelledby="vista-titulo">
+            {VIEW_MODES.map((m) => (
+              <button
+                key={m.value}
+                type="button"
+                className={`button${mode === m.value ? " button-primary" : ""}`}
+                aria-pressed={mode === m.value}
+                onClick={() => setMode(m.value)}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+          {mode !== "layer" && <span className="muted small">Vista de solo lectura: muestra la última versión guardada. Para editar, vuelve a «Capa 2D».</span>}
         </div>
-        )}
-        {mode === "layer" && (
-        <BlockPicker catalog={catalog} value={block} onChange={(id) => { setBlock(id); setErase(false); }} />
-        )}
-        {mode === "layer" && (
-        <label className="checkbox">
-          <input type="checkbox" checked={erase} onChange={(e) => setErase(e.target.checked)} />
-          Borrar (aire)
-        </label>
-        )}
-        {mode === "layer" && (
-        <label className="checkbox">
-          <input type="checkbox" checked={gridOn} onChange={(e) => setGridOn(e.target.checked)} />
-          Rejilla
-        </label>
-        )}
-        {mode === "layer" && (
-        <label className="checkbox">
-          <input type="checkbox" checked={fillOn} onChange={(e) => setFillOn(e.target.checked)} />
-          Relleno (F)
-        </label>
-        )}
-        {mode === "layer" && (
-        <div className="clone-layer">
-          <label>
-            Clonar capa {y} a
-            <input type="number" min={0} max={detail.height - 1} value={copyTarget} placeholder="capa" onChange={(e) => setCopyTarget(e.target.value)} />
-          </label>
-          <label className="checkbox">
-            <input type="checkbox" checked={copyKeepAir} onChange={(e) => setCopyKeepAir(e.target.checked)} />
-            Solo bloques (no borrar aire)
-          </label>
-          <button type="button" className="button" onClick={() => void cloneLayer()}>Clonar capa</button>
-        </div>
-        )}
+
       </div>
 
+      {message && <p className="notice" role="status">{message}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
+
+      <div className={mode === "layer" ? "editor-layout" : undefined}>
+        {mode === "layer" && (
+          <aside className="editor-tools" aria-label="Herramientas de edición">
+            <div className="tool-group">
+              <span className="tool-title">Pincel</span>
+              <BlockPicker catalog={catalog} value={block} onChange={(id) => { setBlock(id); setErase(false); }} />
+              <div className="tool-row">
+                <label className="checkbox">
+                  <input type="checkbox" checked={erase} onChange={(e) => setErase(e.target.checked)} />
+                  Borrar (aire)
+                </label>
+                <label className="checkbox">
+                  <input type="checkbox" checked={fillOn} onChange={(e) => setFillOn(e.target.checked)} />
+                  Relleno (F)
+                </label>
+              </div>
+            </div>
+
+            <div className="tool-group" key={lockedTick}>
+              <span className="tool-title" id="formas-titulo">Formas y medición</span>
+              <div className="tool-row" role="group" aria-labelledby="formas-titulo">
+                <button type="button" className={`button${shape === "line" ? " button-primary" : ""}`} aria-pressed={shape === "line"} onClick={() => setShape(shape === "line" ? null : "line")}>Línea (L)</button>
+                <button type="button" className={`button${shape === "rect" ? " button-primary" : ""}`} aria-pressed={shape === "rect"} onClick={() => setShape(shape === "rect" ? null : "rect")}>Rectángulo hueco (K)</button>
+                <button type="button" className={`button${shape === "box" ? " button-primary" : ""}`} aria-pressed={shape === "box"} onClick={() => setShape(shape === "box" ? null : "box")}>Rectángulo lleno (J)</button>
+              </div>
+              <label className="checkbox">
+                <input type="checkbox" checked={measureOn} onChange={(e) => { setMeasureOn(e.target.checked); setMeasurePts({ a: null, b: null }); }} />
+                Medir (M)
+              </label>
+            </div>
+
+            <div className="tool-group" key={`capa-${lockedTick}`}>
+              <span className="tool-title">Capa</span>
+              <LayerStepper value={y} max={detail.height - 1} onChange={setY} />
+              <div className="tool-row">
+                <label>
+                  Capa fantasma
+                  <select value={ghost} onChange={(e) => setGhost(e.target.value as "none" | "below" | "above")}>
+                    <option value="none">Ninguna</option>
+                    <option value="below">Capa inferior</option>
+                    <option value="above">Capa superior</option>
+                  </select>
+                </label>
+              </div>
+              <div className="tool-row">
+                <label className="checkbox">
+                  <input type="checkbox" checked={lockedRef.current.has(y)} onChange={toggleLock} />
+                  {lockedRef.current.has(y) ? "Capa bloqueada (P)" : "Bloquear capa (P)"}
+                </label>
+                <label className="checkbox">
+                  <input type="checkbox" checked={gridOn} onChange={(e) => setGridOn(e.target.checked)} />
+                  Rejilla (G)
+                </label>
+              </div>
+              <details className="clone-details">
+                <summary>Clonar capa {y} a otra</summary>
+                <div className="clone-layer">
+                  <label>
+                    Capa destino
+                    <input type="number" min={0} max={detail.height - 1} value={copyTarget} placeholder="capa" onChange={(e) => setCopyTarget(e.target.value)} />
+                  </label>
+                  <label className="checkbox">
+                    <input type="checkbox" checked={copyKeepAir} onChange={(e) => setCopyKeepAir(e.target.checked)} />
+                    Solo bloques (no borrar aire)
+                  </label>
+                  <button type="button" className="button" onClick={() => void cloneLayer()}>Clonar capa</button>
+                </div>
+              </details>
+            </div>
+
+            <div className="tool-group">
+              <span className="tool-title">Edición</span>
+              <div className="tool-row">
+                <button type="button" className="button" onClick={() => void undo()} disabled={!historyRef.current.canUndo}>
+                  Deshacer (Ctrl+Z)
+                </button>
+                <button type="button" className="button" onClick={() => void redo()} disabled={!historyRef.current.canRedo}>
+                  Rehacer (Ctrl+Y)
+                </button>
+                <button type="button" className="button" onClick={() => void pasteClipboard()} disabled={!hasClip}>
+                  Pegar (Ctrl+V)
+                </button>
+              </div>
+            </div>
+          </aside>
+        )}
+        <div className="editor-main">
       {mode === "iso" && isoGrid && (
         <>
           <LayerRange
@@ -1018,36 +1079,29 @@ export function StructureEditorPage() {
           </div>
         </div>
       )}
-      <div className="coord-panel" aria-live="polite">
-        {hover && world && hoverBlock ? (
-          <>
-            <p>
-              Coordenada del mundo: <strong>X {world.x} · Y {world.y} · Z {world.z}</strong>
-              <span className="muted"> (local {hover.x}, {hover.y}, {hover.z})</span>
-            </p>
-            <p>
-              Bloque aquí: {isAir(hoverBlock) ? <em>vacío (aire)</em> : <strong>{blockLabel(hoverBlock)}</strong>}
-            </p>
-          </>
-        ) : (
-          <p className="muted">Pasa el ratón por la rejilla para ver la coordenada del mundo.</p>
-        )}
+      {mode === "layer" && (
+        <div className="coord-panel" aria-live="polite">
+          {hover && world && hoverBlock ? (
+            <>
+              <p>
+                Coordenada del mundo: <strong>X {world.x} · Y {world.y} · Z {world.z}</strong>
+                <span className="muted"> (local {hover.x}, {hover.y}, {hover.z})</span>
+              </p>
+              <p>
+                Bloque aquí: {isAir(hoverBlock) ? <em>vacío (aire)</em> : <strong>{blockLabel(hoverBlock)}</strong>}
+              </p>
+            </>
+          ) : (
+            <p className="muted">Pasa el ratón por la rejilla para ver la coordenada del mundo.</p>
+          )}
+        </div>
+      )}
+
+        </div>
       </div>
 
-      <div className="actions">
-        <button type="button" className="button" onClick={() => void undo()} disabled={!historyRef.current.canUndo}>
-          Deshacer (Ctrl+Z)
-        </button>
-        <button type="button" className="button" onClick={() => void redo()} disabled={!historyRef.current.canRedo}>
-          Rehacer (Ctrl+Y)
-        </button>
-        <button type="button" className="button" onClick={() => void pasteClipboard()} disabled={!hasClip}>
-          Pegar (Ctrl+V)
-        </button>
-      </div>
-      {message && <p className="muted" role="status">{message}</p>}
-      {error && <p className="alert" role="alert">{error}</p>}
-
+      <details className="editor-settings">
+        <summary>Ajustes de la estructura: base, tamaño y extender</summary>
       <fieldset className="base-form">
         <legend>Coordenada base del mundo (esquina mínima)</legend>
         <div className="dimension-grid">
@@ -1089,9 +1143,14 @@ export function StructureEditorPage() {
         <p className="muted small">Nunca borra bloques. Las coordenadas del mundo se mantienen: la base se ajusta si añades por la izquierda, abajo o atrás.</p>
       </fieldset>
 
+      </details>
+
+      <details className="editor-settings">
+        <summary>Atajos de teclado</summary>
       <p className="muted small">
         Atajos: B pintar · E borrar · F relleno · L línea · K rectángulo · J relleno · P bloquear capa · M medir · Ctrl+C / Ctrl+V copiar y pegar · G rejilla · [ ] o RePág/AvPág capa · Tab vista · Mayús+arrastrar seleccionar · Ctrl+Z deshacer · Ctrl+Y rehacer. Los cambios se guardan al soltar el ratón.
       </p>
+      </details>
     </section>
   );
 }

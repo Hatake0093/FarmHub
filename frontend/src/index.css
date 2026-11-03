@@ -525,6 +525,8 @@ section > .design-form {
 }
 
 .layer-controls input[type="range"] {
+  flex: 1;
+  min-width: 6rem;
   width: 12rem;
 }
 
@@ -1082,4 +1084,129 @@ input[type="search"] {
 
 .import-box p {
   margin: 0;
+}
+
+/* ==== Editor de esquemáticos: barra de herramientas agrupada ==== */
+
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: stretch;
+  margin-bottom: 0.75rem;
+}
+
+.tool-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.tool-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.tool-row,
+.view-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+}
+
+.view-tabs {
+  gap: 0.4rem;
+}
+
+.tool-group .button[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.clone-details summary,
+.editor-settings summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+
+.clone-details .clone-layer {
+  margin-top: 0.5rem;
+}
+
+.editor-settings {
+  margin-top: 1rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.editor-settings[open] summary {
+  margin-bottom: 0.75rem;
+}
+
+.editor-settings .base-form {
+  margin: 0 0 0.75rem;
+}
+
+.notice {
+  margin: 0.5rem 0;
+  padding: 0.4rem 0.75rem;
+  border-left: 3px solid var(--accent);
+  background: var(--tag-bg);
+  border-radius: 4px;
+}
+
+/* Herramientas a la izquierda y lienzo a la derecha; en pantallas estrechas se apilan. */
+.editor-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.editor-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: sticky;
+  top: 4.25rem;
+}
+
+.editor-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.editor-toolbar {
+  margin-bottom: 0.75rem;
+}
+
+.editor-toolbar .tool-group {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.editor-tools .block-picker {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-tools {
+    position: static;
+  }
 }
