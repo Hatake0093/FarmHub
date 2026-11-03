@@ -8,11 +8,13 @@ import { DesignSection } from "../components/DesignSection";
 import { FarmSheetSections } from "../components/FarmSheetSections";
 import { formatDimensions } from "../lib/format";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
+import { useFeedback } from "../lib/feedback";
 
 export function FarmDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const farmId = Number(id);
+  const { confirm } = useFeedback();
 
   const [farm, setFarm] = useState<FarmDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,9 +48,12 @@ export function FarmDetailPage() {
 
   async function handleDelete() {
     if (!farm) return;
-    const confirmed = window.confirm(
-      `¿Borrar "${farm.name}"? También se borrarán sus diseños y archivos. Esta acción no se puede deshacer.`,
-    );
+    const confirmed = await confirm({
+      title: "Borrar granja",
+      message: `¿Borrar "${farm.name}"? También se borrarán sus diseños y archivos. Esta acción no se puede deshacer.`,
+      confirmLabel: "Borrar granja",
+      danger: true,
+    });
     if (!confirmed) return;
 
     setDeleteError(null);

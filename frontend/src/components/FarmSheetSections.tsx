@@ -15,6 +15,7 @@ import type {
 } from "../api/types";
 import { formatAmount } from "../lib/format";
 import { isHttpUrl } from "../lib/url";
+import { useDeferredRemoval } from "../lib/useDeferredRemoval";
 
 interface Props {
   farm: FarmDetail;
@@ -62,12 +63,14 @@ function StructuresSection({
   const [available, setAvailable] = useState<StructureListItem[]>([]);
   const [choice, setChoice] = useState("");
   const { error, run, setError } = useAction(onChanged);
+  const { hidden, remove } = useDeferredRemoval(onChanged, setError);
 
   useEffect(() => {
     structuresApi.list().then(setAvailable).catch(() => setAvailable([]));
   }, [linked]);
 
   const linkedIds = new Set(linked.map((s) => s.id));
+  const shown = linked.filter((s) => !hidden.has(s.id));
   const candidates = available.filter((s) => !linkedIds.has(s.id));
 
   async function handleLink(event: FormEvent<HTMLFormElement>) {
@@ -84,9 +87,9 @@ function StructuresSection({
     <section>
       <h2>Esquemáticos vinculados</h2>
       <p className="muted">Estructuras propias usadas en esta granja. Desvincular no borra el esquemático.</p>
-      {linked.length === 0 && <p className="muted">No hay esquemáticos vinculados.</p>}
+      {shown.length === 0 && <p className="muted">No hay esquemáticos vinculados.</p>}
       <ul className="file-list">
-        {linked.map((s) => (
+        {shown.map((s) => (
           <li key={s.id}>
             <Link to={`/structures/${s.id}`}>{s.name}</Link>{" "}
             <span className="muted">
@@ -96,11 +99,7 @@ function StructuresSection({
               type="button"
               className="button-link button-danger"
               aria-label={`Desvincular ${s.name}`}
-              onClick={() => {
-                if (window.confirm(`¿Desvincular "${s.name}" de esta granja?`)) {
-                  void run(() => farmStructuresApi.unlink(farmId, s.id));
-                }
-              }}
+              onClick={() => void remove(s.id, `el vínculo con "${s.name}"`, () => farmStructuresApi.unlink(farmId, s.id))}
             >
               Desvincular
             </button>
@@ -134,6 +133,8 @@ function LinksSection({ farmId, links, onChanged }: { farmId: number; links: Far
   const [url, setUrl] = useState("");
   const [kind, setKind] = useState<LinkKind>("Tutorial");
   const { error, run, setError } = useAction(onChanged);
+  const { hidden, remove } = useDeferredRemoval(onChanged, setError);
+  const shown = links.filter((l) => !hidden.has(l.id));
 
   async function handleAdd(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -153,9 +154,9 @@ function LinksSection({ farmId, links, onChanged }: { farmId: number; links: Far
   return (
     <section>
       <h2>Tutoriales y referencias</h2>
-      {links.length === 0 && <p className="muted">No hay enlaces todavía.</p>}
+      {shown.length === 0 && <p className="muted">No hay enlaces todavía.</p>}
       <ul className="file-list">
-        {links.map((link) => (
+        {shown.map((link) => (
           <li key={link.id}>
             <a href={link.url} target="_blank" rel="noopener noreferrer">
               {link.title}
@@ -165,11 +166,7 @@ function LinksSection({ farmId, links, onChanged }: { farmId: number; links: Far
               type="button"
               className="button-link button-danger"
               aria-label={`Quitar el enlace ${link.title}`}
-              onClick={() => {
-                if (window.confirm(`¿Quitar el enlace "${link.title}"?`)) {
-                  void run(() => linksApi.remove(link.id));
-                }
-              }}
+              onClick={() => void remove(link.id, `el enlace "${link.title}"`, () => linksApi.remove(link.id))}
             >
               Quitar
             </button>
@@ -213,7 +210,9 @@ function ProductionsSection({
   const [source, setSource] = useState("");
   const [versionId, setVersionId] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
-  const { error, run } = useAction(onChanged);
+  const { error, run, setError } = useAction(onChanged);
+  const { hidden, remove } = useDeferredRemoval(onChanged, setError);
+  const shown = productions.filter((p) => !hidden.has(p.id));
 
   useEffect(() => {
     versionsApi.list().then(setVersions).catch(() => setVersions([]));
@@ -254,7 +253,7 @@ function ProductionsSection({
       <h2>Producción por hora</h2>
       <p className="muted">Son estimaciones válidas solo bajo las condiciones de medición indicadas.</p>
 
-      {productions.length === 0 ? (
+      {shown.length === 0 ? (
         <p className="muted">No hay producciones registradas.</p>
       ) : (
         <table className="farm-table">
@@ -269,7 +268,7 @@ function ProductionsSection({
             </tr>
           </thead>
           <tbody>
-            {productions.map((p) => (
+            {shown.map((p) => (
               <tr key={p.id}>
                 <td data-label="Recurso">{p.resourceName}</td>
                 <td data-label="Por hora">
@@ -287,11 +286,7 @@ function ProductionsSection({
                     type="button"
                     className="button-link button-danger"
                     aria-label={`Borrar la producción de ${p.resourceName}`}
-                    onClick={() => {
-                      if (window.confirm(`¿Borrar la producción de "${p.resourceName}"?`)) {
-                        void run(() => productionsApi.remove(p.id));
-                      }
-                    }}
+                    onClick={() => void remove(p.id, `la producción de "${p.resourceName}"`, () => productionsApi.remove(p.id))}
                   >
                     Borrar
                   </button>
@@ -362,7 +357,8 @@ function DependenciesSection({ farm, onChanged }: { farm: FarmDetail; onChanged:
   const [requiredId, setRequiredId] = useState("");
   const [note, setNote] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
-  const { error, run } = useAction(onChanged);
+  const { error, run, setError } = useAction(onChanged);
+  const { hidden, remove } = useDeferredRemoval(onChanged, setError);
 
   useEffect(() => {
     farmsApi
@@ -392,9 +388,9 @@ function DependenciesSection({ farm, onChanged }: { farm: FarmDetail; onChanged:
 
       <h3>Necesita</h3>
       <RelationList
-        relations={farm.requires}
+        relations={farm.requires.filter((r) => !hidden.has(r.dependencyId))}
         emptyText="Esta granja no depende de otras."
-        onRemove={(r) => run(() => dependenciesApi.remove(r.dependencyId))}
+        onRemove={(r) => void remove(r.dependencyId, `la dependencia de "${r.farmName}"`, () => dependenciesApi.remove(r.dependencyId))}
       />
 
       <h3>Es requerida por</h3>

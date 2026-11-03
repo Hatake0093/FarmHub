@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import { blocksApi } from "./api/blocks";
 import { setColorOverrides } from "./lib/blockColors";
 import { StructureEditorPage } from "./pages/StructureEditorPage";
+import { FeedbackProvider } from "./components/FeedbackProvider";
 
 export default function App() {
   // Carga los colores elegidos al abrir la aplicación, para que todos los visores los usen.
@@ -20,6 +21,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <FeedbackProvider>
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Navigate to="/farms" replace />} />
@@ -34,6 +36,7 @@ export default function App() {
           <Route path="structures/:id" element={<StructureEditorPage />} />
         </Route>
       </Routes>
+      </FeedbackProvider>
     </BrowserRouter>
   );
 }

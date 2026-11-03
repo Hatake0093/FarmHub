@@ -5,6 +5,7 @@ import { errorMessage } from "../api/client";
 import type { Category, Difficulty, FarmSummary, MinecraftVersion, Paged } from "../api/types";
 import { DIFFICULTIES, difficultyLabel } from "../lib/labels";
 import { plural } from "../lib/plural";
+import { useFeedback } from "../lib/feedback";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 const PAGE_SIZE = 20;
@@ -25,6 +26,7 @@ function readQuery(params: URLSearchParams): FarmListQuery {
 
 export function FarmListPage() {
   useDocumentTitle("Biblioteca");
+  const { confirm } = useFeedback();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchKey = searchParams.toString();
   const query = useMemo(() => readQuery(new URLSearchParams(searchKey)), [searchKey]);
@@ -65,7 +67,13 @@ export function FarmListPage() {
   }, [query, reloadKey]);
 
   async function handleDelete(farm: FarmSummary) {
-    if (!window.confirm(`¿Borrar "${farm.name}" con sus diseños y archivos? No se puede deshacer.`)) return;
+    const accepted = await confirm({
+      title: "Borrar granja",
+      message: `¿Borrar "${farm.name}" con sus diseños y archivos? No se puede deshacer.`,
+      confirmLabel: "Borrar granja",
+      danger: true,
+    });
+    if (!accepted) return;
     setActionError(null);
     try {
       await farmsApi.remove(farm.id);

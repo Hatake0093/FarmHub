@@ -28,7 +28,7 @@ describe("CatalogsPage", () => {
       </MemoryRouter>,
     );
 
-    await userEvent.click(await screen.findByRole("button", { name: "Borrar" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Borrar la categoría Mobs" }));
 
     expect(await screen.findByRole("alert")).toHaveProperty("textContent", expect.stringContaining("3 granjas"));
     await waitFor(() =>

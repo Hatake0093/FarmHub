@@ -3,6 +3,7 @@ import { categoriesApi, versionsApi } from "../api/farms";
 import { errorMessage } from "../api/client";
 import type { Category, MinecraftVersion } from "../api/types";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
+import { useFeedback } from "../lib/feedback";
 
 export function CatalogsPage() {
   useDocumentTitle("Catálogos");
@@ -31,6 +32,7 @@ function useList<T>(load: () => Promise<T[]>) {
 }
 
 function CategoriesSection() {
+  const { confirm } = useFeedback();
   const { items, reload } = useList<Category>(() => categoriesApi.list());
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -118,8 +120,9 @@ function CategoriesSection() {
                   <button
                     type="button"
                     className="button-link button-danger"
-                    onClick={() => {
-                      if (window.confirm(`¿Borrar la categoría "${c.name}"?`)) {
+                    aria-label={`Borrar la categoría ${c.name}`}
+                    onClick={async () => {
+                      if (await confirm({ title: "Borrar categoría", message: `¿Borrar la categoría "${c.name}"?`, confirmLabel: "Borrar", danger: true })) {
                         void run(() => categoriesApi.remove(c.id));
                       }
                     }}
@@ -144,6 +147,7 @@ function CategoriesSection() {
 }
 
 function VersionsSection() {
+  const { confirm } = useFeedback();
   const { items, reload } = useList<MinecraftVersion>(() => versionsApi.list());
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -178,8 +182,9 @@ function VersionsSection() {
             <button
               type="button"
               className="button-link button-danger"
-              onClick={() => {
-                if (window.confirm(`¿Borrar la versión ${v.name}?`)) {
+              aria-label={`Borrar la versión ${v.name}`}
+              onClick={async () => {
+                if (await confirm({ title: "Borrar versión", message: `¿Borrar la versión ${v.name}?`, confirmLabel: "Borrar", danger: true })) {
                   void run(() => versionsApi.remove(v.id));
                 }
               }}

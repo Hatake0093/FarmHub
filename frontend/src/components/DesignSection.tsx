@@ -5,6 +5,7 @@ import type { FarmDesignSummary } from "../api/types";
 import { DesignForm, type DesignFormValues } from "./DesignForm";
 import { FILE_INPUT_ACCEPT, STRUCTURE_KINDS, formatBytes, kindLabel, validateUpload } from "../lib/files";
 import { LitematicViewer } from "./LitematicViewer";
+import { useFeedback } from "../lib/feedback";
 
 interface Props {
   farmId: number;
@@ -31,6 +32,7 @@ export function DesignSection({ farmId, designs, onChanged }: Props) {
 type Feedback = { kind: "ok" | "error"; text: string } | null;
 
 function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChanged: () => void }) {
+  const { confirm } = useFeedback();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -58,9 +60,12 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
   }
 
   async function handleDelete() {
-    const confirmed = window.confirm(
-      `¿Borrar el diseño "${design.name}" y sus ${design.files.length} archivos? No se puede deshacer.`,
-    );
+    const confirmed = await confirm({
+      title: "Borrar diseño",
+      message: `¿Borrar el diseño "${design.name}" y sus ${design.files.length} archivos? No se puede deshacer.`,
+      confirmLabel: "Borrar diseño",
+      danger: true,
+    });
     if (!confirmed) return;
     try {
       await designsApi.remove(design.id);
@@ -71,7 +76,13 @@ function DesignCard({ design, onChanged }: { design: FarmDesignSummary; onChange
   }
 
   async function handleRemoveFile(fileId: number, fileName: string) {
-    if (!window.confirm(`¿Borrar el archivo "${fileName}"?`)) return;
+    const accepted = await confirm({
+      title: "Borrar archivo",
+      message: `¿Borrar el archivo "${fileName}"?`,
+      confirmLabel: "Borrar archivo",
+      danger: true,
+    });
+    if (!accepted) return;
     try {
       await designsApi.removeFile(fileId);
       onChanged();

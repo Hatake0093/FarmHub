@@ -39,6 +39,7 @@ function writeClipText(text: string): boolean {
 }
 import { LayerStepper } from "../components/LayerStepper";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
+import { useFeedback } from "../lib/feedback";
 import { BlockPicker } from "../components/BlockPicker";
 import {
   displayedBlock,
@@ -61,6 +62,7 @@ const VIEW_MODES: { value: "layer" | "iso" | "slice" | "stack" | "3d"; label: st
 export function StructureEditorPage() {
   const { id } = useParams();
   const structureId = Number(id);
+  const { confirm } = useFeedback();
 
   const [detail, setDetail] = useState<StructureDetail | null>(null);
   const [layer, setLayer] = useState<StructureLayer | null>(null);
@@ -815,7 +817,13 @@ export function StructureEditorPage() {
       } catch (err) {
         // 409: el cambio borraría bloques. Se pide confirmación antes de repetirlo.
         const message = errorMessage(err);
-        if (!window.confirm(`${message}\n\n¿Continuar?`)) return;
+        const accepted = await confirm({
+          title: "Cambiar tamaño",
+          message: `${message} ¿Continuar?`,
+          confirmLabel: "Cambiar tamaño",
+          danger: true,
+        });
+        if (!accepted) return;
         updated = await structuresApi.resize(structureId, w, h, d, true);
       }
       setDetail(updated);
@@ -1025,6 +1033,7 @@ export function StructureEditorPage() {
           <Voxel3DView grid={clipped3d!} useTextures={texOn3d} />
         </>
       )}
+      {mode === "3d" && !isoGrid && <p className="muted" role="status">{isoMessage}</p>}
       {mode === "stack" && (isoGrid ? <StackView grid={isoGrid} onPickLayer={(yy) => { setY(yy); setMode("layer"); }} /> : <p className="muted">{isoMessage}</p>)}
       {mode === "slice" && (isoGrid ? <SliceView grid={isoGrid} base={{ x: detail.baseX, y: detail.baseY, z: detail.baseZ }} /> : <p className="muted">{isoMessage}</p>)}
 
