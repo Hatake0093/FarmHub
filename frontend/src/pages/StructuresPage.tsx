@@ -179,12 +179,21 @@ export function StructuresPage() {
                 <p className={s.description ? "structure-description" : "structure-description muted"}>
                   {s.description ?? "Sin descripción"}
                 </p>
-                <div className="structure-meta">
-                  <span className="dimension-chip">
-                    {s.width} × {s.height} × {s.depth}
-                  </span>
-                  <span className="muted small">Actualizado {formatDate(s.updatedAtUtc)}</span>
-                </div>
+                <dl className="structure-facts">
+                  <div>
+                    <dt>Tamaño</dt>
+                    <dd>{s.width} × {s.height} × {s.depth}</dd>
+                  </div>
+                  <div>
+                    <dt>Bloques</dt>
+                    <dd>{s.blockCount.toLocaleString("es-ES")}</dd>
+                  </div>
+                  <div>
+                    <dt>Base</dt>
+                    <dd>{s.baseX}, {s.baseY}, {s.baseZ}</dd>
+                  </div>
+                </dl>
+                <span className="muted small">Actualizado {formatDate(s.updatedAtUtc)}</span>
               </Link>
             </li>
           ))}

@@ -8,6 +8,10 @@ export interface StructureListItem {
   width: number;
   height: number;
   depth: number;
+  baseX: number;
+  baseY: number;
+  baseZ: number;
+  blockCount: number;
   updatedAtUtc: string;
 }
 
