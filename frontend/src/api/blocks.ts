@@ -14,6 +14,7 @@ export const blocksApi = {
     body.append("file", file);
     return apiRequest<BlockEntry>(`/blocks/${shortName}/texture`, { method: "PUT", body });
   },
+  add: (name: string) => apiRequest<BlockEntry>("/blocks", { method: "POST", body: JSON.stringify({ name }) }),
   removeTexture: (shortName: string) => apiRequest<void>(`/blocks/${shortName}/texture`, { method: "DELETE" }),
   list: (q = "", missingSpanish = false) => {
     const params = new URLSearchParams();

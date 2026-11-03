@@ -12,6 +12,7 @@ export function BlocksPage() {
   const [onlyMissing, setOnlyMissing] = useState(true);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [colorDrafts, setColorDrafts] = useState<Record<string, string | null>>({});
+  const [newBlock, setNewBlock] = useState("");
   const [importPreview, setImportPreview] = useState<{ matched: { file: File; blockId: string }[]; unmatched: File[] } | null>(null);
   const [importProgress, setImportProgress] = useState<string | null>(null);
   // Versión de cada textura para que la miniatura se recargue tras subir una nueva.
@@ -215,6 +216,31 @@ export function BlocksPage() {
         )}
         {importProgress && <p className="muted" role="status">{importProgress}</p>}
       </section>
+
+      <form
+        className="inline-form"
+        noValidate
+        onSubmit={async (event) => {
+          event.preventDefault();
+          if (!newBlock.trim()) return;
+          setError(null);
+          try {
+            await blocksApi.add(newBlock.trim());
+            setNewBlock("");
+            load();
+          } catch (err) {
+            setError(errorMessage(err));
+          }
+        }}
+      >
+        <input
+          aria-label="Identificador del nuevo bloque"
+          placeholder="Nuevo bloque, p. ej. cherry_sign"
+          value={newBlock}
+          onChange={(e) => setNewBlock(e.target.value)}
+        />
+        <button type="submit" className="button button-primary">Añadir bloque</button>
+      </form>
 
       <table className="farm-table">
         <thead>

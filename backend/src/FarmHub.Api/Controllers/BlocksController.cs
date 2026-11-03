@@ -36,6 +36,28 @@ public sealed class BlocksController(FarmHubDbContext db, IFileStorage storage) 
         return items;
     }
 
+    /// <summary>Añade un bloque al catálogo, con identificador sin prefijo (p. ej. "cherry_sign").</summary>
+    [HttpPost]
+    public async Task<ActionResult<BlockNameResponse>> Add(NewItemRequest request, CancellationToken ct)
+    {
+        var name = request.Name?.Trim().ToLowerInvariant() ?? "";
+        if (!System.Text.RegularExpressions.Regex.IsMatch(name, "^[a-z0-9_]{1,80}$"))
+        {
+            return ValidationProblem("El identificador solo admite letras minúsculas, números y guiones bajos.");
+        }
+        var id = "minecraft:" + name;
+        if (await db.BlockNames.AnyAsync(b => b.Id == id, ct))
+        {
+            return Conflict(new ProblemDetails { Title = "Ese bloque ya está en el catálogo." });
+        }
+
+        var block = new BlockName { Id = id };
+        db.BlockNames.Add(block);
+        await db.SaveChangesAsync(ct);
+        return StatusCode(StatusCodes.Status201Created,
+            new BlockNameResponse(block.Id, BlockCatalog.EnglishName(block.Id), null, null, false));
+    }
+
     /// <summary>Acepta #rrggbb (en minúsculas) o null para volver al color automático.</summary>
     public static string? NormalizeColor(string? color)
     {
