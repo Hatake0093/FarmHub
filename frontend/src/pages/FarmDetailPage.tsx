@@ -5,6 +5,8 @@ import { errorMessage } from "../api/client";
 import type { FarmDetail } from "../api/types";
 import { difficultyLabel } from "../lib/labels";
 import { DesignSection } from "../components/DesignSection";
+import { FarmSheetSections } from "../components/FarmSheetSections";
+import { formatDimensions } from "../lib/format";
 
 export function FarmDetailPage() {
   const { id } = useParams();
@@ -91,6 +93,10 @@ export function FarmDetailPage() {
           <dd>{farm.minecraftVersions.map((v) => v.name).join(", ") || "Sin versiones registradas"}</dd>
         </div>
         <div>
+          <dt>Dimensiones (X × Y × Z)</dt>
+          <dd>{formatDimensions(farm.widthX, farm.heightY, farm.depthZ) ?? "No indicadas"} {farm.widthX !== null || farm.heightY !== null || farm.depthZ !== null ? "bloques" : ""}</dd>
+        </div>
+        <div>
           <dt>Etiquetas</dt>
           <dd>
             {farm.tags.length
@@ -111,7 +117,16 @@ export function FarmDetailPage() {
         </section>
       )}
 
+      {farm.operatingConditions && (
+        <section>
+          <h2>Condiciones de funcionamiento</h2>
+          <p className="description">{farm.operatingConditions}</p>
+        </section>
+      )}
+
       <DesignSection farmId={farm.id} designs={farm.designs} onChanged={loadFarm} />
+
+      <FarmSheetSections farm={farm} onChanged={loadFarm} />
     </article>
   );
 }

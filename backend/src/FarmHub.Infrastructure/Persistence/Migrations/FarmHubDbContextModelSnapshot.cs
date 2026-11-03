@@ -160,6 +160,9 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
                     b.Property<int>("CategoryId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("DepthZ")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Description")
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
@@ -169,10 +172,20 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<int?>("HeightY")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("OperatingConditions")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int?>("WidthX")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -181,6 +194,115 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
                     b.HasIndex("Name");
 
                     b.ToTable("Farms");
+                });
+
+            modelBuilder.Entity("FarmHub.Domain.Entities.FarmDependency", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("RequiredFarmId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequiredFarmId");
+
+                    b.HasIndex("FarmId", "RequiredFarmId")
+                        .IsUnique();
+
+                    b.ToTable("FarmDependencies");
+                });
+
+            modelBuilder.Entity("FarmHub.Domain.Entities.FarmLink", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FarmId");
+
+                    b.ToTable("FarmLinks");
+                });
+
+            modelBuilder.Entity("FarmHub.Domain.Entities.FarmProduction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AmountPerHour")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MeasuredInVersionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MeasurementConditions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<bool>("RequiresAfk")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ResourceName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FarmId");
+
+                    b.HasIndex("MeasuredInVersionId");
+
+                    b.ToTable("FarmProductions");
                 });
 
             modelBuilder.Entity("FarmHub.Domain.Entities.MinecraftVersion", b =>
@@ -295,6 +417,54 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("FarmHub.Domain.Entities.FarmDependency", b =>
+                {
+                    b.HasOne("FarmHub.Domain.Entities.Farm", "Farm")
+                        .WithMany("Requires")
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FarmHub.Domain.Entities.Farm", "RequiredFarm")
+                        .WithMany("RequiredBy")
+                        .HasForeignKey("RequiredFarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Farm");
+
+                    b.Navigation("RequiredFarm");
+                });
+
+            modelBuilder.Entity("FarmHub.Domain.Entities.FarmLink", b =>
+                {
+                    b.HasOne("FarmHub.Domain.Entities.Farm", "Farm")
+                        .WithMany("Links")
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Farm");
+                });
+
+            modelBuilder.Entity("FarmHub.Domain.Entities.FarmProduction", b =>
+                {
+                    b.HasOne("FarmHub.Domain.Entities.Farm", "Farm")
+                        .WithMany("Productions")
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FarmHub.Domain.Entities.MinecraftVersion", "MeasuredInVersion")
+                        .WithMany()
+                        .HasForeignKey("MeasuredInVersionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Farm");
+
+                    b.Navigation("MeasuredInVersion");
+                });
+
             modelBuilder.Entity("FarmMinecraftVersion", b =>
                 {
                     b.HasOne("FarmHub.Domain.Entities.Farm", null)
@@ -343,6 +513,14 @@ namespace FarmHub.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("FarmHub.Domain.Entities.Farm", b =>
                 {
                     b.Navigation("Designs");
+
+                    b.Navigation("Links");
+
+                    b.Navigation("Productions");
+
+                    b.Navigation("RequiredBy");
+
+                    b.Navigation("Requires");
                 });
 #pragma warning restore 612, 618
         }

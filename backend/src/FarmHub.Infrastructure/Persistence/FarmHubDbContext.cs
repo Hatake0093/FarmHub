@@ -12,6 +12,9 @@ public sealed class FarmHubDbContext(DbContextOptions<FarmHubDbContext> options)
     public DbSet<DesignFile> DesignFiles => Set<DesignFile>();
     public DbSet<MinecraftVersion> MinecraftVersions => Set<MinecraftVersion>();
     public DbSet<Tag> Tags => Set<Tag>();
+    public DbSet<FarmLink> FarmLinks => Set<FarmLink>();
+    public DbSet<FarmProduction> FarmProductions => Set<FarmProduction>();
+    public DbSet<FarmDependency> FarmDependencies => Set<FarmDependency>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -30,7 +33,41 @@ public sealed class FarmHubDbContext(DbContextOptions<FarmHubDbContext> options)
             entity.HasMany(f => f.MinecraftVersions).WithMany(v => v.Farms);
             entity.HasMany(f => f.Tags).WithMany(t => t.Farms);
 
+            entity.Property(f => f.OperatingConditions).HasMaxLength(4000);
+
             entity.HasIndex(f => f.Name);
+        });
+
+        modelBuilder.Entity<FarmLink>(entity =>
+        {
+            entity.Property(l => l.Title).HasMaxLength(200).IsRequired();
+            entity.Property(l => l.Url).HasMaxLength(2000).IsRequired();
+            entity.Property(l => l.Kind).HasConversion<string>().HasMaxLength(20);
+            entity.HasOne(l => l.Farm).WithMany(f => f.Links).HasForeignKey(l => l.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<FarmProduction>(entity =>
+        {
+            entity.Property(p => p.ResourceName).HasMaxLength(200).IsRequired();
+            entity.Property(p => p.AmountPerHour).HasPrecision(18, 4);
+            entity.Property(p => p.Unit).HasConversion<string>().HasMaxLength(20);
+            entity.Property(p => p.MeasurementConditions).HasMaxLength(2000);
+            entity.Property(p => p.Source).HasMaxLength(500);
+            entity.HasOne(p => p.Farm).WithMany(f => f.Productions).HasForeignKey(p => p.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(p => p.MeasuredInVersion).WithMany().HasForeignKey(p => p.MeasuredInVersionId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<FarmDependency>(entity =>
+        {
+            entity.Property(d => d.Note).HasMaxLength(500);
+            entity.HasOne(d => d.Farm).WithMany(f => f.Requires).HasForeignKey(d => d.FarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(d => d.RequiredFarm).WithMany(f => f.RequiredBy).HasForeignKey(d => d.RequiredFarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(d => new { d.FarmId, d.RequiredFarmId }).IsUnique();
         });
 
         modelBuilder.Entity<Design>(entity =>

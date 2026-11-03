@@ -18,6 +18,10 @@ interface FormState {
   categoryId: string;
   versionIds: number[];
   tagsText: string;
+  widthX: string;
+  heightY: string;
+  depthZ: string;
+  operatingConditions: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -27,7 +31,17 @@ const EMPTY_FORM: FormState = {
   categoryId: "",
   versionIds: [],
   tagsText: "",
+  widthX: "",
+  heightY: "",
+  depthZ: "",
+  operatingConditions: "",
 };
+
+const MAX_DIMENSION = 10000;
+
+function parseDimension(value: string): number | null {
+  return value.trim() === "" ? null : Number(value);
+}
 
 function validate(form: FormState): FieldErrors {
   const errors: FieldErrors = {};
@@ -43,6 +57,15 @@ function validate(form: FormState): FieldErrors {
   }
   if (!form.categoryId) {
     errors.categoryId = ["Selecciona una categoría."];
+  }
+  for (const [field, value] of [["widthX", form.widthX], ["heightY", form.heightY], ["depthZ", form.depthZ]] as const) {
+    const size = parseDimension(value);
+    if (size !== null && (!Number.isInteger(size) || size < 1 || size > MAX_DIMENSION)) {
+      errors[field] = [`Debe ser un número entero entre 1 y ${MAX_DIMENSION}.`];
+    }
+  }
+  if (form.operatingConditions.length > MAX_DESCRIPTION_LENGTH) {
+    errors.operatingConditions = [`No puede superar ${MAX_DESCRIPTION_LENGTH} caracteres.`];
   }
   return errors;
 }
@@ -82,6 +105,10 @@ export function FarmFormPage() {
             categoryId: String(farm.category.id),
             versionIds: farm.minecraftVersions.map((v) => v.id),
             tagsText: farm.tags.join(", "),
+            widthX: farm.widthX?.toString() ?? "",
+            heightY: farm.heightY?.toString() ?? "",
+            depthZ: farm.depthZ?.toString() ?? "",
+            operatingConditions: farm.operatingConditions ?? "",
           });
         })
         .catch((err: unknown) => active && setFormError(errorMessage(err)))
@@ -119,6 +146,10 @@ export function FarmFormPage() {
       categoryId: Number(form.categoryId),
       minecraftVersionIds: form.versionIds,
       tags: parseTags(form.tagsText),
+      widthX: parseDimension(form.widthX),
+      heightY: parseDimension(form.heightY),
+      depthZ: parseDimension(form.depthZ),
+      operatingConditions: form.operatingConditions.trim() || null,
     };
 
     setSaving(true);
@@ -215,6 +246,39 @@ export function FarmFormPage() {
             onChange={(e) => update("tagsText", e.target.value)}
           />
           <FieldError errors={fieldErrors} field="tags" />
+        </label>
+
+        <fieldset>
+          <legend>Dimensiones del montaje (bloques)</legend>
+          <div className="dimension-grid">
+            <label htmlFor="widthX">
+              Ancho (X)
+              <input id="widthX" inputMode="numeric" value={form.widthX} onChange={(e) => update("widthX", e.target.value)} />
+              <FieldError errors={fieldErrors} field="widthX" />
+            </label>
+            <label htmlFor="heightY">
+              Alto (Y)
+              <input id="heightY" inputMode="numeric" value={form.heightY} onChange={(e) => update("heightY", e.target.value)} />
+              <FieldError errors={fieldErrors} field="heightY" />
+            </label>
+            <label htmlFor="depthZ">
+              Profundidad (Z)
+              <input id="depthZ" inputMode="numeric" value={form.depthZ} onChange={(e) => update("depthZ", e.target.value)} />
+              <FieldError errors={fieldErrors} field="depthZ" />
+            </label>
+          </div>
+        </fieldset>
+
+        <label htmlFor="operatingConditions">
+          Condiciones de funcionamiento
+          <textarea
+            id="operatingConditions"
+            rows={3}
+            placeholder="p. ej. requiere agua en movimiento, iluminación exterior"
+            value={form.operatingConditions}
+            onChange={(e) => update("operatingConditions", e.target.value)}
+          />
+          <FieldError errors={fieldErrors} field="operatingConditions" />
         </label>
 
         <label htmlFor="description">

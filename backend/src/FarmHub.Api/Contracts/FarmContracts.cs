@@ -8,7 +8,11 @@ public sealed record FarmRequest(
     Difficulty Difficulty,
     int CategoryId,
     IReadOnlyList<int> MinecraftVersionIds,
-    IReadOnlyList<string> Tags);
+    IReadOnlyList<string> Tags,
+    int? WidthX = null,
+    int? HeightY = null,
+    int? DepthZ = null,
+    string? OperatingConditions = null);
 
 public sealed record FarmSummaryResponse(
     int Id,
@@ -27,7 +31,43 @@ public sealed record FarmDetailResponse(
     CategoryResponse Category,
     IReadOnlyList<MinecraftVersionResponse> MinecraftVersions,
     IReadOnlyList<string> Tags,
-    IReadOnlyList<FarmDesignSummary> Designs);
+    int? WidthX,
+    int? HeightY,
+    int? DepthZ,
+    string? OperatingConditions,
+    IReadOnlyList<FarmDesignSummary> Designs,
+    IReadOnlyList<FarmLinkResponse> Links,
+    IReadOnlyList<FarmProductionResponse> Productions,
+    IReadOnlyList<FarmRelationResponse> Requires,
+    IReadOnlyList<FarmRelationResponse> RequiredBy);
+
+public sealed record FarmLinkRequest(string Title, string Url, string Kind);
+
+public sealed record FarmLinkResponse(int Id, string Title, string Url, string Kind);
+
+public sealed record FarmProductionRequest(
+    string ResourceName,
+    decimal AmountPerHour,
+    string Unit,
+    bool RequiresAfk,
+    string? MeasurementConditions,
+    string? Source,
+    int? MeasuredInVersionId);
+
+public sealed record FarmProductionResponse(
+    int Id,
+    string ResourceName,
+    decimal AmountPerHour,
+    string Unit,
+    bool RequiresAfk,
+    string? MeasurementConditions,
+    string? Source,
+    int? MeasuredInVersionId,
+    string? MeasuredInVersion);
+
+public sealed record FarmDependencyRequest(int RequiredFarmId, string? Note);
+
+public sealed record FarmRelationResponse(int DependencyId, int FarmId, string FarmName, string? Note);
 
 public sealed record FarmDesignSummary(
     int Id,

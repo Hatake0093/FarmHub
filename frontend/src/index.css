@@ -333,3 +333,75 @@ section > .button,
 section > .design-form {
   align-self: flex-start;
 }
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.inline-form input,
+.inline-form select {
+  width: auto;
+  min-width: 10rem;
+}
+
+.inline-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.inline-add input {
+  width: auto;
+  min-width: 14rem;
+}
+
+.farm-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.farm-form-grid h3 {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.farm-form-grid .actions,
+.farm-form-grid .field-error,
+.farm-form-grid .error {
+  grid-column: 1 / -1;
+}
+
+.dimension-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+}
+
+.button-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.button-link.button-danger {
+  color: var(--danger);
+}
+
+.button-link:disabled {
+  opacity: 0.6;
+}

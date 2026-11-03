@@ -16,6 +16,7 @@ public sealed class FarmsController(FarmHubDbContext db, IFileStorage storage) :
     private const int MaxPageSize = 100;
     private const int MaxNameLength = 200;
     private const int MaxDescriptionLength = 4000;
+    private const int MaxDimension = 10_000;
 
     [HttpGet]
     public async Task<ActionResult<PagedResponse<FarmSummaryResponse>>> List(
@@ -87,15 +88,7 @@ public sealed class FarmsController(FarmHubDbContext db, IFileStorage storage) :
     [HttpGet("{id:int}")]
     public async Task<ActionResult<FarmDetailResponse>> GetById(int id, CancellationToken ct)
     {
-        var farm = await db.Farms
-            .AsNoTracking()
-            .Include(f => f.Category)
-            .Include(f => f.MinecraftVersions)
-            .Include(f => f.Tags)
-            .Include(f => f.Designs).ThenInclude(d => d.Files)
-            .Include(f => f.Designs).ThenInclude(d => d.Author)
-            .AsSplitQuery()
-            .FirstOrDefaultAsync(f => f.Id == id, ct);
+        var farm = await LoadDetailQuery().FirstOrDefaultAsync(f => f.Id == id, ct);
 
         return farm is null ? NotFound() : ToDetail(farm);
     }
@@ -115,6 +108,10 @@ public sealed class FarmsController(FarmHubDbContext db, IFileStorage storage) :
             Description = request.Description?.Trim(),
             Difficulty = request.Difficulty,
             CategoryId = request.CategoryId,
+            WidthX = request.WidthX,
+            HeightY = request.HeightY,
+            DepthZ = request.DepthZ,
+            OperatingConditions = request.OperatingConditions?.Trim(),
         };
         farm.MinecraftVersions.AddRange(validation.Versions!);
         farm.Tags.AddRange(await ResolveTagsAsync(validation.TagNames!, ct));
@@ -147,6 +144,10 @@ public sealed class FarmsController(FarmHubDbContext db, IFileStorage storage) :
         farm.Description = request.Description?.Trim();
         farm.Difficulty = request.Difficulty;
         farm.CategoryId = request.CategoryId;
+        farm.WidthX = request.WidthX;
+        farm.HeightY = request.HeightY;
+        farm.DepthZ = request.DepthZ;
+        farm.OperatingConditions = request.OperatingConditions?.Trim();
 
         farm.MinecraftVersions.Clear();
         farm.MinecraftVersions.AddRange(validation.Versions!);
@@ -199,6 +200,19 @@ public sealed class FarmsController(FarmHubDbContext db, IFileStorage storage) :
         if (request.Description is { Length: > MaxDescriptionLength })
         {
             errors["description"] = [$"La descripción no puede superar {MaxDescriptionLength} caracteres."];
+        }
+
+        foreach (var (field, value) in new[] { ("widthX", request.WidthX), ("heightY", request.HeightY), ("depthZ", request.DepthZ) })
+        {
+            if (value is { } size && (size < 1 || size > MaxDimension))
+            {
+                errors[field] = [$"La dimensión debe estar entre 1 y {MaxDimension} bloques."];
+            }
+        }
+
+        if (request.OperatingConditions is { Length: > MaxDescriptionLength })
+        {
+            errors["operatingConditions"] = [$"Las condiciones no pueden superar {MaxDescriptionLength} caracteres."];
         }
 
         if (!Enum.IsDefined(request.Difficulty))
@@ -256,17 +270,22 @@ public sealed class FarmsController(FarmHubDbContext db, IFileStorage storage) :
         return existing;
     }
 
+    private IQueryable<Farm> LoadDetailQuery() => db.Farms
+        .AsNoTracking()
+        .Include(f => f.Category)
+        .Include(f => f.MinecraftVersions)
+        .Include(f => f.Tags)
+        .Include(f => f.Designs).ThenInclude(d => d.Files)
+        .Include(f => f.Designs).ThenInclude(d => d.Author)
+        .Include(f => f.Links)
+        .Include(f => f.Productions).ThenInclude(p => p.MeasuredInVersion)
+        .Include(f => f.Requires).ThenInclude(r => r.RequiredFarm)
+        .Include(f => f.RequiredBy).ThenInclude(r => r.Farm)
+        .AsSplitQuery();
+
     private async Task<FarmDetailResponse?> LoadDetailAsync(int id, CancellationToken ct)
     {
-        var farm = await db.Farms
-            .AsNoTracking()
-            .Include(f => f.Category)
-            .Include(f => f.MinecraftVersions)
-            .Include(f => f.Tags)
-            .Include(f => f.Designs).ThenInclude(d => d.Files)
-            .Include(f => f.Designs).ThenInclude(d => d.Author)
-            .AsSplitQuery()
-            .FirstOrDefaultAsync(f => f.Id == id, ct);
+        var farm = await LoadDetailQuery().FirstOrDefaultAsync(f => f.Id == id, ct);
 
         return farm is null ? null : ToDetail(farm);
     }
@@ -288,11 +307,21 @@ public sealed class FarmsController(FarmHubDbContext db, IFileStorage storage) :
         new CategoryResponse(farm.Category.Id, farm.Category.Name, farm.Category.Description),
         farm.MinecraftVersions.OrderBy(v => v.Name).Select(v => new MinecraftVersionResponse(v.Id, v.Name)).ToList(),
         farm.Tags.Select(t => t.Name).OrderBy(t => t).ToList(),
+        farm.WidthX,
+        farm.HeightY,
+        farm.DepthZ,
+        farm.OperatingConditions,
         farm.Designs.OrderBy(d => d.Name).Select(d => new FarmDesignSummary(
             d.Id,
             d.Name,
             d.Description,
             d.AuthorId,
-            d.Author == null ? null : d.Author.Name,
-            d.Files.OrderBy(f => f.OriginalFileName).Select(DesignFileMapping.From).ToList())).ToList());
+            d.Author?.Name,
+            d.Files.OrderBy(f => f.OriginalFileName).Select(DesignFileMapping.From).ToList())).ToList(),
+        farm.Links.OrderBy(l => l.Title).Select(FarmLinkMapping.From).ToList(),
+        farm.Productions.OrderBy(p => p.ResourceName).Select(FarmProductionMapping.From).ToList(),
+        farm.Requires.OrderBy(r => r.RequiredFarm.Name)
+            .Select(r => new FarmRelationResponse(r.Id, r.RequiredFarmId, r.RequiredFarm.Name, r.Note)).ToList(),
+        farm.RequiredBy.OrderBy(r => r.Farm.Name)
+            .Select(r => new FarmRelationResponse(r.Id, r.FarmId, r.Farm.Name, r.Note)).ToList());
 }
