@@ -29,7 +29,7 @@ public static class StructureNbtReader
         var paletteTag = root.Get<NbtList>("palette")
             ?? throw new LitematicFormatException("Falta la paleta de la estructura.");
         var palette = paletteTag
-            .Select(entry => entry is NbtCompound c ? c.Get<NbtString>("Name")?.Value ?? Air : Air)
+            .Select(entry => entry is NbtCompound c ? NbtFileLoader.BlockStateName(c) : Air)
             .ToList();
 
         var blocks = root.Get<NbtList>("blocks")

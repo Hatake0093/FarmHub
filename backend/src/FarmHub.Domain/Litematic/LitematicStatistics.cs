@@ -11,6 +11,13 @@ public static class LitematicStatistics
         "minecraft:void_air",
     };
 
+    /// <summary>Nombre sin propiedades: "minecraft:oak_slab[type=top]" -> "minecraft:oak_slab".</summary>
+    public static string BaseName(string blockState)
+    {
+        var bracket = blockState.IndexOf('[');
+        return bracket < 0 ? blockState : blockState[..bracket];
+    }
+
     /// <summary>Cuenta los bloques de todas las regiones, sin aire, agrupados por nombre.</summary>
     public static IReadOnlyDictionary<string, long> CountBlocks(LitematicModel model)
     {
@@ -27,7 +34,8 @@ public static class LitematicStatistics
 
             for (int i = 0; i < perPalette.Length; i++)
             {
-                var name = region.Palette[i];
+                // Las variantes (losa de arriba y de abajo) cuentan como el mismo material.
+                var name = BaseName(region.Palette[i]);
                 if (perPalette[i] == 0 || AirBlocks.Contains(name))
                 {
                     continue;
