@@ -14,6 +14,9 @@ y además:
 * Recorta el primer fotograma de las texturas animadas (tiras verticales como
   magma.png o sea_lantern.png). Sin recortar, el servidor las aceptaría pero se
   verían estiradas, o las rechazaría si miden más de 256 px (water_still, kelp).
+* Tiñe las texturas que el juego colorea según el bioma (hierba, hojas, enredaderas,
+  agua) o la potencia (redstone), con los colores vanilla del bioma Llanuras.
+  Sin esto se verían en gris. Se desactiva con --sin-tinte.
 * Rellena bloques derivados con la textura de su material: escaleras, losas,
   muros, vallas, botones, placas de presión y carteles (oak_stairs -> oak_planks,
   stone_brick_wall -> stone_bricks…), más algunos casos sueltos (snow_block -> snow).
@@ -80,6 +83,36 @@ EXPLICIT_ALIASES: dict[str, dict[str, list[str]]] = {
     "dropper": {"side": ["dropper_front"], "top": ["furnace_top"], "bottom": ["furnace_top"]},
     "sign": {"side": ["oak_planks"]},
     "wall_sign": {"side": ["oak_planks"]},
+}
+
+# Texturas que vienen en gris porque el juego las colorea según el bioma (o la potencia,
+# en la redstone). Se multiplican por estos colores, los de vanilla en el bioma Llanuras.
+GRASS = "#91bd59"
+FOLIAGE = "#77ab2f"
+WATER = "#3f76e4"
+REDSTONE = "#ff3300"  # potencia 15
+TINTS: dict[str, str] = {
+    "grass_block_top": GRASS,
+    "short_grass": GRASS,
+    "tall_grass_top": GRASS,
+    "tall_grass_bottom": GRASS,
+    "fern": GRASS,
+    "large_fern_top": GRASS,
+    "large_fern_bottom": GRASS,
+    "oak_leaves": FOLIAGE,
+    "jungle_leaves": FOLIAGE,
+    "acacia_leaves": FOLIAGE,
+    "dark_oak_leaves": FOLIAGE,
+    "vine": FOLIAGE,
+    "mangrove_leaves": "#8db127",
+    "birch_leaves": "#80a755",
+    "spruce_leaves": "#619961",
+    "lily_pad": "#208030",
+    "water_still": WATER,
+    "water_flow": WATER,
+    "redstone_dust_dot": REDSTONE,
+    "redstone_dust_line0": REDSTONE,
+    "redstone_dust_line1": REDSTONE,
 }
 
 # Sufijos de bloques que en el juego usan la textura del material base.
@@ -177,11 +210,23 @@ def mime_of(data: bytes) -> str:
     raise SkipFile("formato no admitido (usa PNG, JPEG o WebP)")
 
 
-def prepare_image(path: Path) -> tuple[bytes, str, str]:
-    """Devuelve (bytes, mime, nota). Recorta el primer fotograma si es una tira animada."""
+def tint_png(data: bytes, color: str) -> bytes:
+    """Multiplica cada píxel por el color, como hace el juego. Conserva la transparencia."""
+    factors = [int(color[i:i + 2], 16) for i in (1, 3, 5)]
+    with Image.open(io.BytesIO(data)) as img:
+        red, green, blue, alpha = img.convert("RGBA").split()
+        channels = [band.point(lambda v, f=f: v * f // 255) for band, f in zip((red, green, blue), factors)]
+        out = io.BytesIO()
+        Image.merge("RGBA", (*channels, alpha)).save(out, format="PNG")
+    return out.getvalue()
+
+
+def prepare_image(path: Path, tint: bool = True) -> tuple[bytes, str, str]:
+    """Devuelve (bytes, mime, nota). Recorta el primer fotograma si es una tira animada
+    y tiñe las texturas que el juego colorea (hierba, hojas, agua, redstone)."""
     data = path.read_bytes()
     mime = mime_of(data)
-    note = ""
+    notes: list[str] = []
     size = png_size(data)
     if size is not None:
         width, height = size
@@ -193,13 +238,23 @@ def prepare_image(path: Path) -> tuple[bytes, str, str]:
                 out = io.BytesIO()
                 frame.save(out, format="PNG")
             data = out.getvalue()
-            note = f"recortada de {width}×{height} a {width}×{width}"
+            notes.append(f"recortada de {width}×{height} a {width}×{width}")
             width = height = width
         if width > MAX_SIDE or height > MAX_SIDE:
             raise SkipFile(f"mide {width}×{height}; el máximo es {MAX_SIDE}×{MAX_SIDE}")
+
+    color = TINTS.get(path.stem.lower()) if tint else None
+    if color:
+        if Image is None:
+            notes.append("sin teñir (falta Pillow)")
+        else:
+            data = tint_png(data, color)
+            mime = "image/png"
+            notes.append(f"teñida {color}")
+
     if len(data) > MAX_BYTES:
         raise SkipFile(f"pesa {len(data) // 1024} KB; el máximo es {MAX_BYTES // 1024} KB")
-    return data, mime, note
+    return data, mime, ", ".join(notes)
 
 
 # ---------------------------------------------------------------- API
@@ -253,6 +308,7 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="No sube nada: solo muestra qué haría")
     parser.add_argument("--sobrescribir", action="store_true", help="Reemplaza también las caras que ya tienen textura")
     parser.add_argument("--sin-alias", action="store_true", help="Solo nombre exacto, como el frontend")
+    parser.add_argument("--sin-tinte", action="store_true", help="Sube en gris la hierba, las hojas, el agua y la redstone")
     parser.add_argument("--reintentos", type=int, default=2, help="Reintentos ante errores de red o 5xx (por defecto %(default)s)")
     parser.add_argument("--informe", type=Path, default=Path("informe_texturas.csv"), help="CSV con el resultado de cada archivo")
     parser.add_argument("--insecure", action="store_true", help="No verifica el certificado HTTPS (solo para localhost de desarrollo)")
@@ -299,7 +355,7 @@ def main() -> int:
             continue
 
         try:
-            data, mime, note = prepare_image(item.path)
+            data, mime, note = prepare_image(item.path, tint=not args.sin_tinte)
             if args.dry_run:
                 print(f"{label}  (simulado) {note}")
                 rows.append({**row, "resultado": "simulado", "detalle": note})

@@ -146,7 +146,7 @@ python scripts/importar_texturas.py block --dry-run
 python scripts/importar_texturas.py block
 ```
 
-El script empareja cada imagen con su bloque por nombre (igual que la pantalla Bloques), recorta el primer fotograma de las texturas animadas y usa la textura del material para escaleras, losas, muros, vallas, botones, placas y carteles. Si un archivo falla, lo anota y sigue con el resto. No vuelve a subir caras que ya tienen textura, salvo con `--sobrescribir`. El resultado de cada archivo queda en `informe_texturas.csv`.
+El script empareja cada imagen con su bloque por nombre (igual que la pantalla Bloques), recorta el primer fotograma de las texturas animadas, tiñe las que el juego colorea (hierba, hojas, enredaderas, agua y redstone; se desactiva con `--sin-tinte`) y usa la textura del material para escaleras, losas, muros, vallas, botones, placas y carteles. Si un archivo falla, lo anota y sigue con el resto. No vuelve a subir caras que ya tienen textura, salvo con `--sobrescribir`. El resultado de cada archivo queda en `informe_texturas.csv`.
 
 ---
 
