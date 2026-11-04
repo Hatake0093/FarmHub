@@ -46,14 +46,41 @@ interface FaceDef {
   vInvert: boolean;
 }
 
+// La textura se ve derecha desde fuera de cada cara: v baja con la altura y u crece hacia la derecha
+// de quien mira la cara.
 const FACES: FaceDef[] = [
-  { face: "side", axis: 0, sign: 1, n: [1, 0, 0], corners: [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]], uAxis: 2, uInvert: false, vAxis: 1, vInvert: true },
-  { face: "side", axis: 0, sign: -1, n: [-1, 0, 0], corners: [[0, 0, 1], [0, 1, 1], [0, 1, 0], [0, 0, 0]], uAxis: 2, uInvert: true, vAxis: 1, vInvert: true },
-  { face: "top", axis: 1, sign: 1, n: [0, 1, 0], corners: [[0, 1, 0], [0, 1, 1], [1, 1, 1], [1, 1, 0]], uAxis: 0, uInvert: false, vAxis: 2, vInvert: true },
-  { face: "bottom", axis: 1, sign: -1, n: [0, -1, 0], corners: [[0, 0, 1], [0, 0, 0], [1, 0, 0], [1, 0, 1]], uAxis: 0, uInvert: false, vAxis: 2, vInvert: false },
-  { face: "side", axis: 2, sign: 1, n: [0, 0, 1], corners: [[0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]], uAxis: 1, uInvert: false, vAxis: 0, vInvert: true },
-  { face: "side", axis: 2, sign: -1, n: [0, 0, -1], corners: [[1, 0, 0], [0, 0, 0], [0, 1, 0], [1, 1, 0]], uAxis: 1, uInvert: false, vAxis: 0, vInvert: false },
+  { face: "side", axis: 0, sign: 1, n: [1, 0, 0], corners: [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]], uAxis: 2, uInvert: true, vAxis: 1, vInvert: true },
+  { face: "side", axis: 0, sign: -1, n: [-1, 0, 0], corners: [[0, 0, 1], [0, 1, 1], [0, 1, 0], [0, 0, 0]], uAxis: 2, uInvert: false, vAxis: 1, vInvert: true },
+  { face: "top", axis: 1, sign: 1, n: [0, 1, 0], corners: [[0, 1, 0], [0, 1, 1], [1, 1, 1], [1, 1, 0]], uAxis: 0, uInvert: false, vAxis: 2, vInvert: false },
+  { face: "bottom", axis: 1, sign: -1, n: [0, -1, 0], corners: [[0, 0, 1], [0, 0, 0], [1, 0, 0], [1, 0, 1]], uAxis: 0, uInvert: false, vAxis: 2, vInvert: true },
+  { face: "side", axis: 2, sign: 1, n: [0, 0, 1], corners: [[0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]], uAxis: 0, uInvert: false, vAxis: 1, vInvert: true },
+  { face: "side", axis: 2, sign: -1, n: [0, 0, -1], corners: [[1, 0, 0], [0, 0, 0], [0, 1, 0], [1, 1, 0]], uAxis: 0, uInvert: true, vAxis: 1, vInvert: true },
 ];
+
+const DIAG = Math.SQRT1_2;
+
+/**
+ * Las dos diagonales de una caja en cruz (plantas). Van de esquina a esquina de la caja y se ven por
+ * los dos lados, porque la vista no descarta caras traseras. axis no se usa: no se ocultan nunca.
+ */
+const CROSS_FACES: FaceDef[] = [
+  { face: "side", axis: 0, sign: 1, n: [DIAG, 0, -DIAG], corners: [[0, 0, 0], [1, 0, 1], [1, 1, 1], [0, 1, 0]], uAxis: 0, uInvert: false, vAxis: 1, vInvert: true },
+  { face: "side", axis: 0, sign: 1, n: [DIAG, 0, DIAG], corners: [[0, 0, 1], [1, 0, 0], [1, 1, 0], [0, 1, 1]], uAxis: 0, uInvert: false, vAxis: 1, vInvert: true },
+];
+
+/** Una caja sin grosor en un eje (un plano) solo dibuja una de las dos caras de ese eje, y ninguna de lado. */
+function skipFlatFace(box: Box, def: FaceDef): boolean {
+  for (let a = 0; a < 3; a++) {
+    if (box.lo[a] !== box.hi[a]) continue;
+    if (a !== def.axis || def.sign < 0) return true;
+  }
+  return false;
+}
+
+/** ¿Puede la caja tapar la cara de un vecino? Las plantas, los planos y las piezas que dependen de la textura, no. */
+function canCover(box: Box): boolean {
+  return !box.cross && !box.when && box.lo.every((v, a) => v < box.hi[a]);
+}
 
 /** Clave de atlas de la textura de una cara, según las caras que tienen textura. */
 function tileKeyFor(base: string, face: TextureFace, tiles: Map<string, TileRect>): TileRect | null {
@@ -106,12 +133,18 @@ function covers(neighbour: Box[], box: Box, def: FaceDef): boolean {
 function forEachFace(
   grid: VoxelGrid,
   part: "solid" | "glass",
+  textured: boolean[],
   onFace: (block: number, x: number, y: number, z: number, box: Box, def: FaceDef) => void,
 ): void {
   const { width, height, depth, blocks, palette } = grid;
   const transparent = palette.map((block) => isTransparent(block));
-  const boxesOf = palette.map((block) => (isAir(block) ? [] : shapeBoxes(block)));
-  const coverOf = boxesOf.map((boxes, i) => (transparent[i] ? [] : boxes));
+  // Las cajas que solo se dibujan con textura (o solo sin ella) se eligen según tenga o no el bloque.
+  const boxesOf = palette.map((block, i) =>
+    isAir(block)
+      ? []
+      : shapeBoxes(block).filter((b) => !b.when || (b.when === "textured") === textured[i]),
+  );
+  const coverOf = boxesOf.map((boxes, i) => (transparent[i] ? [] : boxes.filter(canCover)));
   const indexAt = (x: number, y: number, z: number) => blocks[(y * depth + z) * width + x];
 
   for (let y = 0; y < height; y++) {
@@ -120,7 +153,12 @@ function forEachFace(
         const block = indexAt(x, y, z);
         if (transparent[block] !== (part === "glass")) continue;
         for (const box of boxesOf[block]) {
+          if (box.cross) {
+            for (const def of CROSS_FACES) onFace(block, x, y, z, box, def);
+            continue;
+          }
           for (const def of FACES) {
+            if (skipFlatFace(box, def)) continue;
             const a = def.axis;
             const onBoundary = def.sign > 0 ? box.hi[a] === 1 : box.lo[a] === 0;
             if (onBoundary) {
@@ -146,11 +184,6 @@ function forEachFace(
 function buildPart(grid: VoxelGrid, tiles: Map<string, TileRect> | null, part: "solid" | "glass"): MeshData {
   const { width, height, depth, palette } = grid;
 
-  let faces = 0;
-  forEachFace(grid, part, () => {
-    faces++;
-  });
-
   const colors = palette.map((block) => blockRgb(block));
   // Por bloque, la textura de cada cara (o null si usa color). Las claves del atlas son "id#cara".
   const tileOf = palette.map((block) => {
@@ -159,6 +192,12 @@ function buildPart(grid: VoxelGrid, tiles: Map<string, TileRect> | null, part: "
     if (!tiles) return result;
     for (const f of TEXTURE_FACES) result[f] = tileKeyFor(base, f, tiles);
     return result;
+  });
+  const textured = tileOf.map((t) => t.side !== null || t.top !== null || t.bottom !== null);
+
+  let faces = 0;
+  forEachFace(grid, part, textured, () => {
+    faces++;
   });
 
   const vertices = new Float32Array(faces * 4 * FLOATS_PER_VERTEX);
@@ -169,9 +208,9 @@ function buildPart(grid: VoxelGrid, tiles: Map<string, TileRect> | null, part: "
 
   // Los vértices se escriben directamente en el búfer, sin crear arrays temporales por vértice:
   // con cientos de miles de caras, esa asignación es lo que más tarda.
-  forEachFace(grid, part, (block, x, y, z, box, def) => {
+  forEachFace(grid, part, textured, (block, x, y, z, box, def) => {
     const [r, g, b] = colors[block];
-    const tile = tileOf[block][def.face];
+    const tile = tileOf[block][box.face ?? def.face];
     const base = face * 4;
     const flag = tile ? 1 : 0;
     const { lo, hi } = box;
@@ -184,8 +223,10 @@ function buildPart(grid: VoxelGrid, tiles: Map<string, TileRect> | null, part: "
       const uRaw = def.uAxis === 0 ? lx : def.uAxis === 1 ? ly : lz;
       const vRaw = def.vAxis === 0 ? lx : def.vAxis === 1 ? ly : lz;
       // Con fit, la textura cubre la caja entera; si no, usa la posición dentro de la celda.
-      const uLocal = box.fit ? (uRaw - lo[def.uAxis]) / (hi[def.uAxis] - lo[def.uAxis]) : uRaw;
-      const vLocal = box.fit ? (vRaw - lo[def.vAxis]) / (hi[def.vAxis] - lo[def.vAxis]) : vRaw;
+      const uSpan = hi[def.uAxis] - lo[def.uAxis];
+      const vSpan = hi[def.vAxis] - lo[def.vAxis];
+      const uLocal = box.fit && uSpan > 0 ? (uRaw - lo[def.uAxis]) / uSpan : uRaw;
+      const vLocal = box.fit && vSpan > 0 ? (vRaw - lo[def.vAxis]) / vSpan : vRaw;
       const fu = def.uInvert ? 1 - uLocal : uLocal;
       const fv = def.vInvert ? 1 - vLocal : vLocal;
       vertices[v] = x + lx;
