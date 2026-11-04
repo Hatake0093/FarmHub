@@ -21,3 +21,6 @@ npm-debug.log*
 # Archivos subidos por la aplicación (copia local)
 backend/src/FarmHub.Api/storage/
 
+
+# Informe del script de texturas
+informe_texturas.csv

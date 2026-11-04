@@ -136,6 +136,18 @@ npm run dev
 
 Abre `http://localhost:5173`. Las llamadas a `/api` se reenvían a la API con el proxy de Vite.
 
+### 4. Texturas de bloques (opcional)
+
+La carpeta `block/` tiene las texturas de Minecraft. Para subirlas de una vez, con el backend levantado:
+
+```bash
+pip install requests pillow
+python scripts/importar_texturas.py block --dry-run
+python scripts/importar_texturas.py block
+```
+
+El script empareja cada imagen con su bloque por nombre (igual que la pantalla Bloques), recorta el primer fotograma de las texturas animadas y usa la textura del material para escaleras, losas, muros, vallas, botones, placas y carteles. Si un archivo falla, lo anota y sigue con el resto. No vuelve a subir caras que ya tienen textura, salvo con `--sobrescribir`. El resultado de cada archivo queda en `informe_texturas.csv`.
+
 ---
 
 ## Pruebas
