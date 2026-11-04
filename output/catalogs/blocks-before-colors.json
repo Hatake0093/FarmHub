@@ -1,0 +1,2312 @@
+[
+  {
+    "id": "minecraft:acacia_button",
+    "englishName": "Acacia Button",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:acacia_door",
+    "englishName": "Acacia Door",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:acacia_fence",
+    "englishName": "Acacia Fence",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:acacia_hanging_sign",
+    "englishName": "Acacia Hanging Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:acacia_planks",
+    "englishName": "Acacia Planks",
+    "spanishName": "madera de acacia",
+    "color": "#b65c3e",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:acacia_pressure_plate",
+    "englishName": "Acacia Pressure Plate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:acacia_sign",
+    "englishName": "Acacia Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:acacia_stairs",
+    "englishName": "Acacia Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:acacia_trapdoor",
+    "englishName": "Acacia Trapdoor",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:acacia_wall_sign",
+    "englishName": "Acacia Wall Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:activator_rail",
+    "englishName": "Activator Rail",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:amethyst_block",
+    "englishName": "Amethyst Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:amethyst_cluster",
+    "englishName": "Amethyst Cluster",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:andesite",
+    "englishName": "Andesite",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:andesite_wall",
+    "englishName": "Andesite Wall",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:anvil",
+    "englishName": "Anvil",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:azalea",
+    "englishName": "Azalea",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bamboo",
+    "englishName": "Bamboo",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bamboo_button",
+    "englishName": "Bamboo Button",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bamboo_door",
+    "englishName": "Bamboo Door",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bamboo_fence",
+    "englishName": "Bamboo Fence",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:bamboo_hanging_sign",
+    "englishName": "Bamboo Hanging Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bamboo_planks",
+    "englishName": "Bamboo Planks",
+    "spanishName": "madera de bamboo",
+    "color": "#a89a00",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bamboo_pressure_plate",
+    "englishName": "Bamboo Pressure Plate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bamboo_sign",
+    "englishName": "Bamboo Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bamboo_stairs",
+    "englishName": "Bamboo Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bamboo_trapdoor",
+    "englishName": "Bamboo Trapdoor",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bamboo_wall_sign",
+    "englishName": "Bamboo Wall Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:barrel",
+    "englishName": "Barrel",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:basalt",
+    "englishName": "Basalt",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bedrock",
+    "englishName": "Bedrock",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:beehive",
+    "englishName": "Beehive",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bee_nest",
+    "englishName": "Bee Nest",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bell",
+    "englishName": "Bell",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:birch_button",
+    "englishName": "Birch Button",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:birch_door",
+    "englishName": "Birch Door",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:birch_fence",
+    "englishName": "Birch Fence",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:birch_hanging_sign",
+    "englishName": "Birch Hanging Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:birch_leaves",
+    "englishName": "Birch Leaves",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:birch_log",
+    "englishName": "Birch Log",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:birch_planks",
+    "englishName": "Birch Planks",
+    "spanishName": "madera de abedul",
+    "color": "#e3dede",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:birch_pressure_plate",
+    "englishName": "Birch Pressure Plate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:birch_sign",
+    "englishName": "Birch Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:birch_slab",
+    "englishName": "Birch Slab",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:birch_stairs",
+    "englishName": "Birch Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:birch_trapdoor",
+    "englishName": "Birch Trapdoor",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:birch_wall_sign",
+    "englishName": "Birch Wall Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:black_concrete",
+    "englishName": "Black Concrete",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:black_stained_glass",
+    "englishName": "Black Stained Glass",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:blackstone",
+    "englishName": "Blackstone",
+    "spanishName": "piedra negra",
+    "color": "#171717",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:black_wool",
+    "englishName": "Black Wool",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:blast_furnace",
+    "englishName": "Blast Furnace",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:blue_concrete",
+    "englishName": "Blue Concrete",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:blue_ice",
+    "englishName": "Blue Ice",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:blue_stained_glass",
+    "englishName": "Blue Stained Glass",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:blue_wool",
+    "englishName": "Blue Wool",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bookshelf",
+    "englishName": "Bookshelf",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:brewing_stand",
+    "englishName": "Brewing Stand",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:bricks",
+    "englishName": "Bricks",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:brick_stairs",
+    "englishName": "Brick Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:brick_wall",
+    "englishName": "Brick Wall",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:brown_mushroom_block",
+    "englishName": "Brown Mushroom Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cactus",
+    "englishName": "Cactus",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:calcite",
+    "englishName": "Calcite",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:carved_pumpkin",
+    "englishName": "Carved Pumpkin",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cauldron",
+    "englishName": "Cauldron",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:chain",
+    "englishName": "Chain",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cherry_button",
+    "englishName": "Cherry Button",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cherry_door",
+    "englishName": "Cherry Door",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cherry_fence",
+    "englishName": "Cherry Fence",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:cherry_hanging_sign",
+    "englishName": "Cherry Hanging Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cherry_planks",
+    "englishName": "Cherry Planks",
+    "spanishName": "madera de cerezo",
+    "color": "#e232bc",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cherry_pressure_plate",
+    "englishName": "Cherry Pressure Plate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cherry_sign",
+    "englishName": "Cherry Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cherry_stairs",
+    "englishName": "Cherry Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cherry_trapdoor",
+    "englishName": "Cherry Trapdoor",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cherry_wall_sign",
+    "englishName": "Cherry Wall Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:chest",
+    "englishName": "Chest",
+    "spanishName": "cofre",
+    "color": "#865604",
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:chiseled_sandstone",
+    "englishName": "Chiseled Sandstone",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:chiseled_stone_bricks",
+    "englishName": "Chiseled Stone Bricks",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:chorus_flower",
+    "englishName": "Chorus Flower",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:chorus_plant",
+    "englishName": "Chorus Plant",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:clay",
+    "englishName": "Clay",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:coal_block",
+    "englishName": "Coal Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:coarse_dirt",
+    "englishName": "Coarse Dirt",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cobbled_deepslate",
+    "englishName": "Cobbled Deepslate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cobblestone",
+    "englishName": "Cobblestone",
+    "spanishName": "piedra",
+    "color": "#959393",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cobblestone_slab",
+    "englishName": "Cobblestone Slab",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cobblestone_stairs",
+    "englishName": "Cobblestone Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cobblestone_wall",
+    "englishName": "Cobblestone Wall",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cobweb",
+    "englishName": "Cobweb",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:comparator",
+    "englishName": "Comparator",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:composter",
+    "englishName": "Composter",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:copper_block",
+    "englishName": "Copper Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:cracked_stone_bricks",
+    "englishName": "Cracked Stone Bricks",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:crafting_table",
+    "englishName": "Crafting Table",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:crimson_button",
+    "englishName": "Crimson Button",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:crimson_door",
+    "englishName": "Crimson Door",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:crimson_fence",
+    "englishName": "Crimson Fence",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:crimson_hanging_sign",
+    "englishName": "Crimson Hanging Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:crimson_pressure_plate",
+    "englishName": "Crimson Pressure Plate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:crimson_sign",
+    "englishName": "Crimson Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:crimson_stairs",
+    "englishName": "Crimson Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:crimson_trapdoor",
+    "englishName": "Crimson Trapdoor",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:crimson_wall_sign",
+    "englishName": "Crimson Wall Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:crying_obsidian",
+    "englishName": "Crying Obsidian",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dark_oak_button",
+    "englishName": "Dark Oak Button",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dark_oak_door",
+    "englishName": "Dark Oak Door",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dark_oak_fence",
+    "englishName": "Dark Oak Fence",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:dark_oak_hanging_sign",
+    "englishName": "Dark Oak Hanging Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dark_oak_log",
+    "englishName": "Dark Oak Log",
+    "spanishName": "tronco de madera oscura",
+    "color": "#3d1800",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dark_oak_planks",
+    "englishName": "Dark Oak Planks",
+    "spanishName": "madera de roble oscuro",
+    "color": "#563106",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dark_oak_pressure_plate",
+    "englishName": "Dark Oak Pressure Plate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dark_oak_sign",
+    "englishName": "Dark Oak Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dark_oak_stairs",
+    "englishName": "Dark Oak Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dark_oak_trapdoor",
+    "englishName": "Dark Oak Trapdoor",
+    "spanishName": "trampilla de madera oscura",
+    "color": "#3d2a00",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dark_oak_wall_sign",
+    "englishName": "Dark Oak Wall Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dark_prismarine",
+    "englishName": "Dark Prismarine",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:daylight_detector",
+    "englishName": "Daylight Detector",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:deepslate",
+    "englishName": "Deepslate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:detector_rail",
+    "englishName": "Detector Rail",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:diamond_block",
+    "englishName": "Diamond Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:diorite",
+    "englishName": "Diorite",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dirt",
+    "englishName": "Dirt",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dispenser",
+    "englishName": "Dispenser",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dripstone_block",
+    "englishName": "Dripstone Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:dropper",
+    "englishName": "Dropper",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:emerald_block",
+    "englishName": "Emerald Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:enchanting_table",
+    "englishName": "Enchanting Table",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:end_stone",
+    "englishName": "End Stone",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:end_stone_bricks",
+    "englishName": "End Stone Bricks",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:furnace",
+    "englishName": "Furnace",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:glass",
+    "englishName": "Glass",
+    "spanishName": "vidrio",
+    "color": "#e3e3e3",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:glass_pane",
+    "englishName": "Glass Pane",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:glow_lichen",
+    "englishName": "Glow Lichen",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:glowstone",
+    "englishName": "Glowstone",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:gold_block",
+    "englishName": "Gold Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:granite",
+    "englishName": "Granite",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:grass_block",
+    "englishName": "Grass Block",
+    "spanishName": "Hierba",
+    "color": "#154e0d",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:gravel",
+    "englishName": "Gravel",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:gray_concrete",
+    "englishName": "Gray Concrete",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:gray_terracotta",
+    "englishName": "Gray Terracotta",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:green_concrete",
+    "englishName": "Green Concrete",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:green_stained_glass",
+    "englishName": "Green Stained Glass",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:green_wool",
+    "englishName": "Green Wool",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:hay_block",
+    "englishName": "Hay Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:honey_block",
+    "englishName": "Honey Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:honeycomb_block",
+    "englishName": "Honeycomb Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:hopper",
+    "englishName": "Hopper",
+    "spanishName": "tolva",
+    "color": "#363636",
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:ice",
+    "englishName": "Ice",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:iron_bars",
+    "englishName": "Iron Bars",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:iron_block",
+    "englishName": "Iron Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:jack_o_lantern",
+    "englishName": "Jack O Lantern",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:jukebox",
+    "englishName": "Jukebox",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:jungle_button",
+    "englishName": "Jungle Button",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:jungle_door",
+    "englishName": "Jungle Door",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:jungle_fence",
+    "englishName": "Jungle Fence",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:jungle_hanging_sign",
+    "englishName": "Jungle Hanging Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:jungle_leaves",
+    "englishName": "Jungle Leaves",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:jungle_log",
+    "englishName": "Jungle Log",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:jungle_planks",
+    "englishName": "Jungle Planks",
+    "spanishName": "madera de jungla",
+    "color": "#864904",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:jungle_pressure_plate",
+    "englishName": "Jungle Pressure Plate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:jungle_sign",
+    "englishName": "Jungle Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:jungle_stairs",
+    "englishName": "Jungle Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:jungle_trapdoor",
+    "englishName": "Jungle Trapdoor",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:jungle_wall_sign",
+    "englishName": "Jungle Wall Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:kelp",
+    "englishName": "Kelp",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:ladder",
+    "englishName": "Ladder",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:lantern",
+    "englishName": "Lantern",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:lapis_block",
+    "englishName": "Lapis Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:lava",
+    "englishName": "Lava",
+    "spanishName": "Lava",
+    "color": "#d90202",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:lectern",
+    "englishName": "Lectern",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:lever",
+    "englishName": "Lever",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:magma_block",
+    "englishName": "Magma Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mangrove_button",
+    "englishName": "Mangrove Button",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mangrove_door",
+    "englishName": "Mangrove Door",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mangrove_fence",
+    "englishName": "Mangrove Fence",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:mangrove_hanging_sign",
+    "englishName": "Mangrove Hanging Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mangrove_planks",
+    "englishName": "Mangrove Planks",
+    "spanishName": "madera de pantano",
+    "color": "#4d2e2e",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mangrove_pressure_plate",
+    "englishName": "Mangrove Pressure Plate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mangrove_sign",
+    "englishName": "Mangrove Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mangrove_stairs",
+    "englishName": "Mangrove Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mangrove_trapdoor",
+    "englishName": "Mangrove Trapdoor",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mangrove_wall_sign",
+    "englishName": "Mangrove Wall Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:melon",
+    "englishName": "Melon",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:moss_block",
+    "englishName": "Moss Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:moss_carpet",
+    "englishName": "Moss Carpet",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mossy_cobblestone",
+    "englishName": "Mossy Cobblestone",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mossy_stone_bricks",
+    "englishName": "Mossy Stone Bricks",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mud",
+    "englishName": "Mud",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mud_bricks",
+    "englishName": "Mud Bricks",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mushroom_stem",
+    "englishName": "Mushroom Stem",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:mycelium",
+    "englishName": "Mycelium",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:nether_bricks",
+    "englishName": "Nether Bricks",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:netherite_block",
+    "englishName": "Netherite Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:netherrack",
+    "englishName": "Netherrack",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:note_block",
+    "englishName": "Note Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:oak_button",
+    "englishName": "Oak Button",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:oak_door",
+    "englishName": "Oak Door",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:oak_fence",
+    "englishName": "Oak Fence",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:oak_fence_gate",
+    "englishName": "Oak Fence Gate",
+    "spanishName": "puerta de valla",
+    "color": "#5c3100",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:oak_hanging_sign",
+    "englishName": "Oak Hanging Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:oak_leaves",
+    "englishName": "Oak Leaves",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:oak_log",
+    "englishName": "Oak Log",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:oak_planks",
+    "englishName": "Oak Planks",
+    "spanishName": "madera de roble",
+    "color": "#8c4503",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:oak_pressure_plate",
+    "englishName": "Oak Pressure Plate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:oak_sign",
+    "englishName": "Oak Sign",
+    "spanishName": "Letrero de roble",
+    "color": "#e49d3a",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:oak_slab",
+    "englishName": "Oak Slab",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:oak_stairs",
+    "englishName": "Oak Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:oak_trapdoor",
+    "englishName": "Oak Trapdoor",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:oak_wall_sign",
+    "englishName": "Oak Wall Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:oak_wood",
+    "englishName": "Oak Wood",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:observer",
+    "englishName": "Observer",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:obsidian",
+    "englishName": "Obsidian",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:orange_terracotta",
+    "englishName": "Orange Terracotta",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:packed_ice",
+    "englishName": "Packed Ice",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:packed_mud",
+    "englishName": "Packed Mud",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:piston",
+    "englishName": "Piston",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:piston_head",
+    "englishName": "Piston Head",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:podzol",
+    "englishName": "Podzol",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:polished_andesite",
+    "englishName": "Polished Andesite",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:polished_basalt",
+    "englishName": "Polished Basalt",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:polished_blackstone",
+    "englishName": "Polished Blackstone",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:polished_deepslate",
+    "englishName": "Polished Deepslate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:polished_diorite",
+    "englishName": "Polished Diorite",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:polished_granite",
+    "englishName": "Polished Granite",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:powder_snow",
+    "englishName": "Powder Snow",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:powered_rail",
+    "englishName": "Powered Rail",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:prismarine",
+    "englishName": "Prismarine",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:prismarine_bricks",
+    "englishName": "Prismarine Bricks",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:pumpkin",
+    "englishName": "Pumpkin",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:purpur_block",
+    "englishName": "Purpur Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:purpur_stairs",
+    "englishName": "Purpur Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:quartz_block",
+    "englishName": "Quartz Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:quartz_bricks",
+    "englishName": "Quartz Bricks",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:quartz_stairs",
+    "englishName": "Quartz Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:rail",
+    "englishName": "Rail",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:red_concrete",
+    "englishName": "Red Concrete",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:red_mushroom_block",
+    "englishName": "Red Mushroom Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:red_nether_bricks",
+    "englishName": "Red Nether Bricks",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:red_sand",
+    "englishName": "Red Sand",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:red_sandstone",
+    "englishName": "Red Sandstone",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:red_stained_glass",
+    "englishName": "Red Stained Glass",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:redstone_block",
+    "englishName": "Redstone Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:redstone_lamp",
+    "englishName": "Redstone Lamp",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:redstone_torch",
+    "englishName": "Redstone Torch",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:redstone_wire",
+    "englishName": "Redstone Wire",
+    "spanishName": "redstone",
+    "color": "#d71414",
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:red_terracotta",
+    "englishName": "Red Terracotta",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:red_wool",
+    "englishName": "Red Wool",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:repeater",
+    "englishName": "Repeater",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:rooted_dirt",
+    "englishName": "Rooted Dirt",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:sand",
+    "englishName": "Sand",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:sandstone",
+    "englishName": "Sandstone",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:sandstone_slab",
+    "englishName": "Sandstone Slab",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:sandstone_stairs",
+    "englishName": "Sandstone Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:scaffolding",
+    "englishName": "Scaffolding",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:sculk",
+    "englishName": "Sculk",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:sculk_catalyst",
+    "englishName": "Sculk Catalyst",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:sculk_sensor",
+    "englishName": "Sculk Sensor",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:sculk_shrieker",
+    "englishName": "Sculk Shrieker",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:sea_lantern",
+    "englishName": "Sea Lantern",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:sea_pickle",
+    "englishName": "Sea Pickle",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:sign",
+    "englishName": "Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:slime_block",
+    "englishName": "Slime Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:smoker",
+    "englishName": "Smoker",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:smooth_basalt",
+    "englishName": "Smooth Basalt",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:smooth_quartz",
+    "englishName": "Smooth Quartz",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:smooth_red_sandstone",
+    "englishName": "Smooth Red Sandstone",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:smooth_sandstone",
+    "englishName": "Smooth Sandstone",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:smooth_stone",
+    "englishName": "Smooth Stone",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:smooth_stone_slab",
+    "englishName": "Smooth Stone Slab",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:snow",
+    "englishName": "Snow",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:snow_block",
+    "englishName": "Snow Block",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:soul_lantern",
+    "englishName": "Soul Lantern",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:soul_sand",
+    "englishName": "Soul Sand",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:soul_soil",
+    "englishName": "Soul Soil",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:soul_torch",
+    "englishName": "Soul Torch",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:spore_blossom",
+    "englishName": "Spore Blossom",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:spruce_button",
+    "englishName": "Spruce Button",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:spruce_door",
+    "englishName": "Spruce Door",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:spruce_fence",
+    "englishName": "Spruce Fence",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:spruce_hanging_sign",
+    "englishName": "Spruce Hanging Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:spruce_leaves",
+    "englishName": "Spruce Leaves",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:spruce_log",
+    "englishName": "Spruce Log",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:spruce_planks",
+    "englishName": "Spruce Planks",
+    "spanishName": "creo que es brote",
+    "color": "#8e4c01",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:spruce_pressure_plate",
+    "englishName": "Spruce Pressure Plate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:spruce_sign",
+    "englishName": "Spruce Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:spruce_slab",
+    "englishName": "Spruce Slab",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:spruce_stairs",
+    "englishName": "Spruce Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:spruce_trapdoor",
+    "englishName": "Spruce Trapdoor",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:spruce_wall_sign",
+    "englishName": "Spruce Wall Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:sticky_piston",
+    "englishName": "Sticky Piston",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:stone",
+    "englishName": "Stone",
+    "spanishName": "Piedra lisa",
+    "color": "#8c8c8c",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:stone_bricks",
+    "englishName": "Stone Bricks",
+    "spanishName": "ladrillos",
+    "color": "#737373",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:stone_brick_slab",
+    "englishName": "Stone Brick Slab",
+    "spanishName": "medio bloque de piedra",
+    "color": "#3d3d3d",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:stone_brick_stairs",
+    "englishName": "Stone Brick Stairs",
+    "spanishName": "escalera de ladrillos",
+    "color": "#737373",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:stone_brick_wall",
+    "englishName": "Stone Brick Wall",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:stone_button",
+    "englishName": "Stone Button",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:stone_pressure_plate",
+    "englishName": "Stone Pressure Plate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:stone_slab",
+    "englishName": "Stone Slab",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:stone_stairs",
+    "englishName": "Stone Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:stripped_oak_log",
+    "englishName": "Stripped Oak Log",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:sugar_cane",
+    "englishName": "Sugar Cane",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:target",
+    "englishName": "Target",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:terracotta",
+    "englishName": "Terracotta",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:tinted_glass",
+    "englishName": "Tinted Glass",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:tnt",
+    "englishName": "Tnt",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:torch",
+    "englishName": "Torch",
+    "spanishName": "antorcha",
+    "color": "#c1cd13",
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:trapped_chest",
+    "englishName": "Trapped Chest",
+    "spanishName": "cofre con trampa",
+    "color": "#654a01",
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:tripwire_hook",
+    "englishName": "Tripwire Hook",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:tuff",
+    "englishName": "Tuff",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:vine",
+    "englishName": "Vine",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:wall_sign",
+    "englishName": "Wall Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:warped_button",
+    "englishName": "Warped Button",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:warped_door",
+    "englishName": "Warped Door",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:warped_fence",
+    "englishName": "Warped Fence",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": true
+  },
+  {
+    "id": "minecraft:warped_hanging_sign",
+    "englishName": "Warped Hanging Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:warped_pressure_plate",
+    "englishName": "Warped Pressure Plate",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:warped_sign",
+    "englishName": "Warped Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:warped_stairs",
+    "englishName": "Warped Stairs",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:warped_trapdoor",
+    "englishName": "Warped Trapdoor",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:warped_wall_sign",
+    "englishName": "Warped Wall Sign",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:water",
+    "englishName": "Water",
+    "spanishName": "agua",
+    "color": "#003cb3",
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:white_concrete",
+    "englishName": "White Concrete",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:white_concrete_powder",
+    "englishName": "White Concrete Powder",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:white_stained_glass",
+    "englishName": "White Stained Glass",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:white_terracotta",
+    "englishName": "White Terracotta",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:white_wool",
+    "englishName": "White Wool",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:yellow_concrete",
+    "englishName": "Yellow Concrete",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  },
+  {
+    "id": "minecraft:yellow_wool",
+    "englishName": "Yellow Wool",
+    "spanishName": null,
+    "color": null,
+    "hasTexture": false
+  }
+]

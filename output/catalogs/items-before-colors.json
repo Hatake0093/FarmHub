@@ -1,0 +1,842 @@
+[
+  {
+    "id": "minecraft:amethyst_shard",
+    "englishName": "Amethyst Shard",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:apple",
+    "englishName": "Apple",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:arrow",
+    "englishName": "Arrow",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:baked_potato",
+    "englishName": "Baked Potato",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:bamboo",
+    "englishName": "Bamboo",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:beetroot",
+    "englishName": "Beetroot",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:beetroot_seeds",
+    "englishName": "Beetroot Seeds",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:bell",
+    "englishName": "Bell",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:blaze_powder",
+    "englishName": "Blaze Powder",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:blaze_rod",
+    "englishName": "Blaze Rod",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:boat",
+    "englishName": "Boat",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:bone",
+    "englishName": "Bone",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:bone_meal",
+    "englishName": "Bone Meal",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:book",
+    "englishName": "Book",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:bow",
+    "englishName": "Bow",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:bread",
+    "englishName": "Bread",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:brick",
+    "englishName": "Brick",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:bricks",
+    "englishName": "Bricks",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:bucket",
+    "englishName": "Bucket",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:cactus",
+    "englishName": "Cactus",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:cake",
+    "englishName": "Cake",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:carrot",
+    "englishName": "Carrot",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:chain",
+    "englishName": "Chain",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:charcoal",
+    "englishName": "Charcoal",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:chest_minecart",
+    "englishName": "Chest Minecart",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:clay_ball",
+    "englishName": "Clay Ball",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:clock",
+    "englishName": "Clock",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:coal",
+    "englishName": "Coal",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:cobblestone",
+    "englishName": "Cobblestone",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:cocoa_beans",
+    "englishName": "Cocoa Beans",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:comparator",
+    "englishName": "Comparator",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:compass",
+    "englishName": "Compass",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:cookie",
+    "englishName": "Cookie",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:copper_ingot",
+    "englishName": "Copper Ingot",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:crossbow",
+    "englishName": "Crossbow",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:daylight_detector",
+    "englishName": "Daylight Detector",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:diamond",
+    "englishName": "Diamond",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:diamond_chestplate",
+    "englishName": "Diamond Chestplate",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:diamond_pickaxe",
+    "englishName": "Diamond Pickaxe",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:diamond_sword",
+    "englishName": "Diamond Sword",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:dirt",
+    "englishName": "Dirt",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:dispenser",
+    "englishName": "Dispenser",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:dried_kelp",
+    "englishName": "Dried Kelp",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:dropper",
+    "englishName": "Dropper",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:egg",
+    "englishName": "Egg",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:elytra",
+    "englishName": "Elytra",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:emerald",
+    "englishName": "Emerald",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:enchanted_golden_apple",
+    "englishName": "Enchanted Golden Apple",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:ender_pearl",
+    "englishName": "Ender Pearl",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:experience_bottle",
+    "englishName": "Experience Bottle",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:feather",
+    "englishName": "Feather",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:fishing_rod",
+    "englishName": "Fishing Rod",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:flint",
+    "englishName": "Flint",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:flint_and_steel",
+    "englishName": "Flint And Steel",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:ghast_tear",
+    "englishName": "Ghast Tear",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:glass",
+    "englishName": "Glass",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:glass_bottle",
+    "englishName": "Glass Bottle",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:glow_berries",
+    "englishName": "Glow Berries",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:glowstone_dust",
+    "englishName": "Glowstone Dust",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:golden_apple",
+    "englishName": "Golden Apple",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:golden_carrot",
+    "englishName": "Golden Carrot",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:gold_ingot",
+    "englishName": "Gold Ingot",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:gravel",
+    "englishName": "Gravel",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:gunpowder",
+    "englishName": "Gunpowder",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:honey_block",
+    "englishName": "Honey Block",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:honey_bottle",
+    "englishName": "Honey Bottle",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:hopper",
+    "englishName": "Hopper",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:hopper_minecart",
+    "englishName": "Hopper Minecart",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:ice",
+    "englishName": "Ice",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:iron_axe",
+    "englishName": "Iron Axe",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:iron_bars",
+    "englishName": "Iron Bars",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:iron_chestplate",
+    "englishName": "Iron Chestplate",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:iron_helmet",
+    "englishName": "Iron Helmet",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:iron_hoe",
+    "englishName": "Iron Hoe",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:iron_ingot",
+    "englishName": "Iron Ingot",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:iron_pickaxe",
+    "englishName": "Iron Pickaxe",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:iron_shovel",
+    "englishName": "Iron Shovel",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:iron_sword",
+    "englishName": "Iron Sword",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:kelp",
+    "englishName": "Kelp",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:lantern",
+    "englishName": "Lantern",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:lapis_lazuli",
+    "englishName": "Lapis Lazuli",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:lava_bucket",
+    "englishName": "Lava Bucket",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:lead",
+    "englishName": "Lead",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:leather",
+    "englishName": "Leather",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:lever",
+    "englishName": "Lever",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:magma_cream",
+    "englishName": "Magma Cream",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:map",
+    "englishName": "Map",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:melon_seeds",
+    "englishName": "Melon Seeds",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:melon_slice",
+    "englishName": "Melon Slice",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:milk_bucket",
+    "englishName": "Milk Bucket",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:minecart",
+    "englishName": "Minecart",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:name_tag",
+    "englishName": "Name Tag",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:netherite_ingot",
+    "englishName": "Netherite Ingot",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:nether_star",
+    "englishName": "Nether Star",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:note_block",
+    "englishName": "Note Block",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:oak_log",
+    "englishName": "Oak Log",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:oak_planks",
+    "englishName": "Oak Planks",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:oak_sapling",
+    "englishName": "Oak Sapling",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:observer",
+    "englishName": "Observer",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:paper",
+    "englishName": "Paper",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:phantom_membrane",
+    "englishName": "Phantom Membrane",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:piston",
+    "englishName": "Piston",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:potato",
+    "englishName": "Potato",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:powered_rail",
+    "englishName": "Powered Rail",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:prismarine_crystals",
+    "englishName": "Prismarine Crystals",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:prismarine_shard",
+    "englishName": "Prismarine Shard",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:pumpkin_pie",
+    "englishName": "Pumpkin Pie",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:pumpkin_seeds",
+    "englishName": "Pumpkin Seeds",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:quartz",
+    "englishName": "Quartz",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:rail",
+    "englishName": "Rail",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:raw_copper",
+    "englishName": "Raw Copper",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:raw_gold",
+    "englishName": "Raw Gold",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:raw_iron",
+    "englishName": "Raw Iron",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:redstone",
+    "englishName": "Redstone",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:redstone_torch",
+    "englishName": "Redstone Torch",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:repeater",
+    "englishName": "Repeater",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:rotten_flesh",
+    "englishName": "Rotten Flesh",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:saddle",
+    "englishName": "Saddle",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:sand",
+    "englishName": "Sand",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:shears",
+    "englishName": "Shears",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:shield",
+    "englishName": "Shield",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:slime_ball",
+    "englishName": "Slime Ball",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:slime_block",
+    "englishName": "Slime Block",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:snowball",
+    "englishName": "Snowball",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:soul_lantern",
+    "englishName": "Soul Lantern",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:spider_eye",
+    "englishName": "Spider Eye",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:stick",
+    "englishName": "Stick",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:stone",
+    "englishName": "Stone",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:string",
+    "englishName": "String",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:sugar",
+    "englishName": "Sugar",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:sugar_cane",
+    "englishName": "Sugar Cane",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:sweet_berries",
+    "englishName": "Sweet Berries",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:target",
+    "englishName": "Target",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:tnt",
+    "englishName": "Tnt",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:torch",
+    "englishName": "Torch",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:totem_of_undying",
+    "englishName": "Totem Of Undying",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:tripwire_hook",
+    "englishName": "Tripwire Hook",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:water_bucket",
+    "englishName": "Water Bucket",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:wheat",
+    "englishName": "Wheat",
+    "spanishName": null,
+    "color": null
+  },
+  {
+    "id": "minecraft:wheat_seeds",
+    "englishName": "Wheat Seeds",
+    "spanishName": null,
+    "color": null
+  }
+]
