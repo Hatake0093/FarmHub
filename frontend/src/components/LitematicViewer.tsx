@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import type { LitematicLayer, LitematicSummary } from "../api/litematic";
 import { errorMessage } from "../api/client";
 import { blockColor, blockLabel, isAir } from "../lib/litematicView";
@@ -17,6 +17,8 @@ interface Props {
   title: string;
   /** Si no se pasa, el visor no muestra el botón de cerrar (por ejemplo, en la página de vista previa). */
   onClose?: () => void;
+  /** Controles para cambiar de archivo; se muestran también dentro de la vista 3D y en pantalla completa. */
+  navigation?: ReactNode;
 }
 
 const MIN_CELL = 4;
@@ -54,8 +56,11 @@ function saveMode(mode: ViewMode) {
   }
 }
 
-export function LitematicViewer({ source, title, onClose }: Props) {
+export function LitematicViewer({ source, title, onClose, navigation }: Props) {
   const [summary, setSummary] = useState<LitematicSummary | null>(null);
+  // Fuente a la que pertenece el resumen cargado. Mientras llega el de un archivo nuevo se sigue mostrando el anterior.
+  const [summarySource, setSummarySource] = useState<ViewerSource | null>(null);
+  const summaryFresh = summarySource === source;
   const [regionName, setRegionName] = useState<string>("");
   const [y, setY] = useState(0);
   const [layer, setLayer] = useState<LitematicLayer | null>(null);
@@ -112,8 +117,13 @@ export function LitematicViewer({ source, title, onClose }: Props) {
       .summary()
       .then((data) => {
         if (!active) return;
+        // Al cambiar de archivo sin desmontar el visor (vista previa), se vuelve a la primera capa.
+        setError(null);
+        setSelected(null);
+        setY(0);
         setSummary(data);
-        setRegionName(data.regions[0]?.name ?? "");
+        setSummarySource(source);
+        setRegionName((current) => (data.regions.some((r) => r.name === current) ? current : data.regions[0]?.name ?? ""));
       })
       .catch((err: unknown) => active && setError(errorMessage(err)));
     return () => {
@@ -124,7 +134,7 @@ export function LitematicViewer({ source, title, onClose }: Props) {
   const region = summary?.regions.find((r) => r.name === regionName);
 
   useEffect(() => {
-    if (!regionName) return;
+    if (!summaryFresh || !regionName || !region || y >= region.height) return;
     let active = true;
     setError(null);
     source
@@ -134,7 +144,7 @@ export function LitematicViewer({ source, title, onClose }: Props) {
     return () => {
       active = false;
     };
-  }, [source, regionName, y]);
+  }, [source, summaryFresh, regionName, region, y]);
 
   // Recorte por rango para la vista 3D: se calcula solo cuando cambian el volumen o el rango.
   const clipped3d = useMemo(() => {
@@ -146,7 +156,8 @@ export function LitematicViewer({ source, title, onClose }: Props) {
 
   // Vistas isométrica y de corte: una sola petición con el volumen completo de la región.
   useEffect(() => {
-    if (mode === "layer" || !region) return;
+    // Hasta que llega el resumen del archivo nuevo, la región es la del anterior: se espera.
+    if (mode === "layer" || !region || !summaryFresh) return;
     const volume = region.width * region.height * region.depth;
     if (volume > MAX_ISOMETRIC_VOLUME) {
       setIsoGrid(null);
@@ -166,7 +177,7 @@ export function LitematicViewer({ source, title, onClose }: Props) {
     return () => {
       active = false;
     };
-  }, [mode, source, regionName, region]);
+  }, [mode, source, summaryFresh, regionName, region]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -324,7 +335,7 @@ export function LitematicViewer({ source, title, onClose }: Props) {
                 to={Math.min(rangeTo ?? isoGrid.height - 1, isoGrid.height - 1)}
                 onChange={(f, t) => { setRangeFrom(f); setRangeTo(t); }}
               />
-              <Voxel3DView grid={clipped3d!} useTextures={texOn3d} />
+              <Voxel3DView grid={clipped3d!} useTextures={texOn3d} toolbar={navigation} />
             </>
           )}
 

@@ -18,7 +18,12 @@ void main() {
   vColor = aColor;
   vUv = aUv;
   vTex = aTex;
-  vLight = 0.4 + 0.6 * max(dot(aNormal, normalize(uLight)), 0.0);
+  // Sombreado por cara al estilo de Minecraft (arriba claro, abajo oscuro, lados intermedios)
+  // más un toque de luz direccional, para que las caras se distingan sin quedar negras.
+  vec3 n = normalize(aNormal);
+  float face = n.y > 0.5 ? 1.0 : (n.y < -0.5 ? 0.55 : (abs(n.z) > 0.5 ? 0.82 : 0.68));
+  float sun = max(dot(n, normalize(uLight)), 0.0);
+  vLight = face * (0.85 + 0.15 * sun);
 }`;
 
 const FRAGMENT_SHADER = `#version 300 es
@@ -36,7 +41,11 @@ void main() {
   if (uUseTex > 0.5 && vTex > 0.5) {
     base = texture(uAtlas, vUv).rgb;
   }
-  outColor = vec4(base * vLight, uAlpha);
+  // Un poco de saturación y una corrección gamma suave: los colores planos se veían apagados.
+  vec3 lit = base * vLight;
+  float grey = dot(lit, vec3(0.299, 0.587, 0.114));
+  lit = mix(vec3(grey), lit, 1.12);
+  outColor = vec4(pow(clamp(lit, 0.0, 1.0), vec3(0.92)), uAlpha);
 }`;
 
 /** Opacidad del vidrio: se ve el interior de la granja a través de él. */
@@ -132,7 +141,7 @@ export class Renderer {
   draw(mvp: Float32Array, light: [number, number, number], useTex: boolean): void {
     const gl = this.gl;
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-    gl.clearColor(0.11, 0.12, 0.1, 1);
+    gl.clearColor(0.53, 0.67, 0.85, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     if (this.indexCount === 0 && this.glassIndexCount === 0) return;

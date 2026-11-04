@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import { structurePreviewApi, type StructurePreview } from "../api/structurePreviews";
 import { errorMessage } from "../api/client";
@@ -14,7 +14,10 @@ export function StructurePreviewPage() {
   useDocumentTitle("Explorar archivos");
   const [files, setFiles] = useState<File[]>([]);
   const [index, setIndex] = useState(0);
+  // Vista previa mostrada y archivo al que pertenece: al pasar al siguiente se mantiene la anterior hasta que llega la nueva,
+  // así el visor no se desmonta (y la pantalla completa y la cámara 3D se conservan).
   const [preview, setPreview] = useState<StructurePreview | null>(null);
+  const [previewName, setPreviewName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,15 +27,19 @@ export function StructurePreviewPage() {
   useEffect(() => {
     if (!current) {
       setPreview(null);
+      setPreviewName(null);
       return;
     }
     let active = true;
     setLoading(true);
     setError(null);
-    setPreview(null);
     structurePreviewApi
       .preview(current)
-      .then((data) => active && setPreview(data))
+      .then((data) => {
+        if (!active) return;
+        setPreview(data);
+        setPreviewName(current.name);
+      })
       .catch((err: unknown) => active && setError(errorMessage(err)))
       .finally(() => active && setLoading(false));
     return () => {
@@ -60,7 +67,18 @@ export function StructurePreviewPage() {
     setIndex(0);
   }
 
-  const source = preview ? previewSource(preview) : null;
+  const source = useMemo(() => (preview ? previewSource(preview) : null), [preview]);
+  const goPrev = () => setIndex((i) => Math.max(0, i - 1));
+  const goNext = () => setIndex((i) => Math.min(files.length - 1, i + 1));
+
+  // Versión compacta de la navegación para la barra de la vista 3D (sigue visible en pantalla completa).
+  const compactNav = files.length > 1 && (
+    <span className="voxel3d-nav">
+      <button type="button" className="button" onClick={goPrev} disabled={index === 0} aria-label="Archivo anterior">←</button>
+      <span>{index + 1}/{files.length}{loading ? " · cargando…" : ""}</span>
+      <button type="button" className="button" onClick={goNext} disabled={index === files.length - 1} aria-label="Archivo siguiente">→</button>
+    </span>
+  );
 
   return (
     <section>
@@ -89,7 +107,7 @@ export function StructurePreviewPage() {
 
       {files.length > 0 && (
         <nav className="preview-nav" aria-label="Archivos">
-          <button type="button" className="button" onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={index === 0}>
+          <button type="button" className="button" onClick={goPrev} disabled={index === 0}>
             ← Anterior
           </button>
           <span className="preview-counter">
@@ -98,7 +116,7 @@ export function StructurePreviewPage() {
           <button
             type="button"
             className="button"
-            onClick={() => setIndex((i) => Math.min(files.length - 1, i + 1))}
+            onClick={goNext}
             disabled={index === files.length - 1}
           >
             Siguiente →
@@ -118,7 +136,7 @@ export function StructurePreviewPage() {
         </div>
       )}
 
-      {source && current && <LitematicViewer key={current.name + index} source={source} title={current.name} />}
+      {source && previewName && <LitematicViewer source={source} title={previewName} navigation={compactNav} />}
     </section>
   );
 }

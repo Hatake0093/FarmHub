@@ -799,14 +799,35 @@ section > .design-form {
 }
 
 .voxel3d-canvas {
+  display: block;
   width: 100%;
-  height: auto;
-  aspect-ratio: 880 / 520;
+  /* Cabe en la pantalla junto con la barra de controles: así se ve el modelo y los botones a la vez. */
+  height: clamp(280px, calc(100vh - 220px), 760px);
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #1b1e1a;
+  background: #87abd9;
   cursor: grab;
   touch-action: none;
+}
+
+.voxel3d .rotate-bar {
+  flex-wrap: wrap;
+}
+
+.voxel3d-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.voxel3d-fullscreen .voxel3d-help {
+  color: #d8dcd4;
+}
+
+.voxel3d-fullscreen .voxel3d-nav {
+  color: #f2f4ef;
 }
 
 .voxel3d-fullscreen {
@@ -821,8 +842,9 @@ section > .design-form {
 
 .voxel3d-fullscreen .voxel3d-canvas {
   width: 100%;
-  height: calc(100vh - 48px);
-  aspect-ratio: auto;
+  height: auto;
+  flex: 1;
+  min-height: 0;
   border: none;
   border-radius: 0;
 }
@@ -946,6 +968,11 @@ section > .design-form {
 }
 
 .preview-nav {
+  position: sticky;
+  top: 4.5rem;
+  z-index: 30;
+  background: var(--bg, var(--surface));
+  padding: 0.35rem 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1158,6 +1185,10 @@ textarea[aria-invalid="true"] {
 @media (max-width: 640px) {
   .app-header {
     position: static;
+  }
+
+  .preview-nav {
+    top: 0;
   }
 
   .container {
@@ -1647,4 +1678,72 @@ input[type="search"] {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
+}
+
+/* Modal de atajos y materiales del editor de esquemáticos */
+.editor-heading-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.help-dialog {
+  width: min(60rem, calc(100vw - 2rem));
+}
+
+.help-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+}
+
+.help-columns h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.shortcut-list {
+  margin: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.shortcut-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.shortcut-list dt {
+  white-space: nowrap;
+}
+
+.shortcut-list dd {
+  margin: 0;
+  text-align: right;
+}
+
+kbd {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+}
+
+@media (max-width: 640px) {
+  .help-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .editor-heading-side {
+    align-items: flex-start;
+  }
 }

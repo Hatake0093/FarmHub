@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { VoxelGrid } from "../lib/isometric";
 import { buildMeshes, type MeshData } from "../lib/mesh3d";
 import { buildAtlas } from "../lib/atlas";
@@ -13,6 +13,8 @@ interface Props {
   grid: VoxelGrid;
   /** Si es false, la vista usa solo colores: es más rápida porque no construye el atlas. */
   useTextures: boolean;
+  /** Controles extra para la barra de la vista (por ejemplo, Anterior y Siguiente). Siguen visibles en pantalla completa. */
+  toolbar?: ReactNode;
 }
 
 /** Distancia que encuadra la esfera del modelo (radio 1) con un margen, para un campo de visión de 45°. */
@@ -22,9 +24,11 @@ const DEFAULT_VIEW = { yaw: 0.7, pitch: 0.5, dist: FIT_DIST };
 type Target = [number, number, number];
 const WIDTH = 880;
 const HEIGHT = 520;
+/** Límite de píxeles del lienzo por lado, para no saturar GPUs modestas en pantallas grandes. */
+const MAX_PIXELS = 4096;
 
 /** Vista 3D con WebGL: arrastrar gira, la rueda acerca y aleja, y las caras se ordenan con el buffer de profundidad. */
-export function Voxel3DView({ grid, useTextures }: Props) {
+export function Voxel3DView({ grid, useTextures, toolbar }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<Renderer | null>(null);
   const meshRef = useRef<MeshData | null>(null);
@@ -185,23 +189,30 @@ export function Voxel3DView({ grid, useTextures }: Props) {
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
 
+  // El lienzo se dibuja al tamaño con el que se ve, multiplicado por la densidad de la pantalla: así no se ve borroso.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const size = () => {
-      if (fullscreen) {
-        canvas.width = Math.max(320, window.innerWidth);
-        canvas.height = Math.max(240, window.innerHeight - 48);
-      } else {
-        canvas.width = WIDTH;
-        canvas.height = HEIGHT;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.min(MAX_PIXELS, Math.round(rect.width * dpr));
+      const height = Math.min(MAX_PIXELS, Math.round(rect.height * dpr));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
       }
       draw();
     };
     size();
-    if (!fullscreen) return;
-    window.addEventListener("resize", size);
-    return () => window.removeEventListener("resize", size);
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", size);
+      return () => window.removeEventListener("resize", size);
+    }
+    const observer = new ResizeObserver(size);
+    observer.observe(canvas);
+    return () => observer.disconnect();
   }, [fullscreen, draw]);
 
   function toggleFullscreen() {
@@ -225,8 +236,9 @@ export function Voxel3DView({ grid, useTextures }: Props) {
       <div className="rotate-bar">
         <button type="button" className="button" onClick={reset}>Reiniciar vista</button>
         <button type="button" className="button" onClick={toggleFullscreen}>{fullscreen ? "Salir de pantalla completa (Esc)" : "Pantalla completa"}</button>
+        {toolbar}
         {error && <span className="field-error" role="alert">{error}</span>}
-        <span className="muted small">Arrastra para girar · botón derecho (o Mayús + arrastrar) para desplazar · rueda para acercar y alejar · {useTextures ? "con texturas" : "solo colores"}</span>
+        <span className="muted small voxel3d-help">Arrastra para girar · botón derecho (o Mayús + arrastrar) para desplazar · rueda para acercar y alejar · {useTextures ? "con texturas" : "solo colores"}</span>
       </div>
       <canvas ref={canvasRef} className="voxel3d-canvas" width={WIDTH} height={HEIGHT} aria-label="Vista 3D" />
     </div>
