@@ -39,7 +39,10 @@ out vec4 outColor;
 void main() {
   vec3 base = vColor;
   if (uUseTex > 0.5 && vTex > 0.5) {
-    base = texture(uAtlas, vUv).rgb;
+    vec4 texel = texture(uAtlas, vUv);
+    // Los huecos transparentes de la textura (plantas, el soporte de pociones) no se pintan.
+    if (texel.a < 0.1) discard;
+    base = texel.rgb;
   }
   // Un poco de saturación y una corrección gamma suave: los colores planos se veían apagados.
   vec3 lit = base * vLight;

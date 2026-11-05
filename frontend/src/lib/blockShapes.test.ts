@@ -100,4 +100,58 @@ describe("blockShapes", () => {
     expect(boxes[0].lo[0]).toBeCloseTo(0);
     expect(boxes[1].hi[0]).toBeCloseTo(1);
   });
+  it("una puerta de valla cerrada va de lado a lado y, al abrirse, sus hojas giran hacia facing", () => {
+    const closed = shapeBoxes("minecraft:oak_fence_gate[facing=south,in_wall=false,open=false]");
+    expect(closed).toHaveLength(8);
+    // Cerrada y mirando al sur, la hoja ocupa todo x en la franja central de z.
+    expect(Math.min(...closed.map((b) => b.lo[0]))).toBe(0);
+    expect(Math.max(...closed.map((b) => b.hi[0]))).toBe(1);
+    expect(closed.every((b) => b.lo[2] >= 7 / 16 && b.hi[2] <= 9 / 16)).toBe(true);
+
+    const open = shapeBoxes("minecraft:oak_fence_gate[facing=south,open=true]");
+    expect(Math.max(...open.map((b) => b.hi[2]))).toBeCloseTo(15 / 16);
+    // Mirando al este, la hoja abierta sale hacia +x.
+    const east = shapeBoxes("minecraft:oak_fence_gate[facing=east,open=true]");
+    expect(Math.max(...east.map((b) => b.hi[0]))).toBeCloseTo(15 / 16);
+    expect(Math.min(...east.map((b) => b.lo[0]))).toBeCloseTo(7 / 16);
+  });
+
+  it("una puerta de valla cerrada mirando al este va a lo largo de z", () => {
+    const boxes = shapeBoxes("minecraft:oak_fence_gate[facing=east,open=false]");
+    expect(boxes.every((b) => b.lo[0] >= 7 / 16 && b.hi[0] <= 9 / 16)).toBe(true);
+    expect(Math.max(...boxes.map((b) => b.hi[2]))).toBe(1);
+  });
+
+  it("una puerta de valla en un muro baja 3/16", () => {
+    const normal = shapeBoxes("minecraft:oak_fence_gate[facing=north,in_wall=false]");
+    const low = shapeBoxes("minecraft:oak_fence_gate[facing=north,in_wall=true]");
+    expect(Math.max(...normal.map((b) => b.hi[1]))).toBe(1);
+    expect(Math.max(...low.map((b) => b.hi[1]))).toBeCloseTo(13 / 16);
+  });
+
+  it("la caña de azúcar es una cruz con textura y tallos finos sin ella", () => {
+    const boxes = shapeBoxes("minecraft:sugar_cane[age=0]");
+    expect(boxes.filter((b) => b.when === "textured").every((b) => b.cross)).toBe(true);
+    const stalks = boxes.filter((b) => b.when === "untextured");
+    expect(stalks.length).toBeGreaterThan(0);
+    expect(stalks.every((b) => b.hi[0] - b.lo[0] <= 2 / 16 && b.hi[1] === 1)).toBe(true);
+    expect(isFullCell("minecraft:sugar_cane")).toBe(false);
+  });
+
+  it("el yunque tiene la pieza larga arriba, girada según facing", () => {
+    const south = shapeBoxes("minecraft:anvil[facing=south]");
+    const east = shapeBoxes("minecraft:anvil[facing=east]");
+    expect(south).toHaveLength(4);
+    const topOf = (boxes: ReturnType<typeof shapeBoxes>) => boxes.find((b) => b.hi[1] === 1)!;
+    expect(topOf(south).hi[2] - topOf(south).lo[2]).toBe(1);
+    expect(topOf(east).hi[0] - topOf(east).lo[0]).toBe(1);
+    expect(isFullCell("minecraft:anvil[facing=north]")).toBe(false);
+  });
+
+  it("el soporte de pociones tiene vara, tres bases con la textura de abajo y el plano de los brazos", () => {
+    const boxes = shapeBoxes("minecraft:brewing_stand[has_bottle_0=false]");
+    expect(boxes.filter((b) => b.face === "bottom")).toHaveLength(3);
+    const plane = boxes.find((b) => b.when === "textured")!;
+    expect(plane.lo[2]).toBe(plane.hi[2]);
+  });
 });

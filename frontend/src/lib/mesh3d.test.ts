@@ -161,4 +161,41 @@ describe("buildMesh con texturas por cara", () => {
     expect(Math.min(...us)).toBeCloseTo(0);
     expect(Math.max(...us)).toBeCloseTo(1);
   });
+  it("la caña de azúcar con textura son dos planos en diagonal; sin textura, tallos", () => {
+    const g: VoxelGrid = {
+      width: 1,
+      height: 1,
+      depth: 1,
+      palette: ["minecraft:air", "minecraft:sugar_cane"],
+      blocks: new Uint16Array([1]),
+    };
+    expect(buildMesh(g, new Map([["minecraft:sugar_cane#side", { u0: 0, v0: 0, u1: 1, v1: 1 }]])).faces).toBe(2);
+    expect(buildMesh(g, null).faces).toBe(4 * 6);
+  });
+
+  it("el plano del soporte de pociones dibuja una sola cara", () => {
+    const g: VoxelGrid = {
+      width: 1,
+      height: 1,
+      depth: 1,
+      palette: ["minecraft:air", "minecraft:brewing_stand"],
+      blocks: new Uint16Array([1]),
+    };
+    const tiles = new Map([["minecraft:brewing_stand#side", { u0: 0, v0: 0, u1: 1, v1: 1 }]]);
+    // Vara y tres bases (6 caras cada una) y el plano (1).
+    expect(buildMesh(g, tiles).faces).toBe(4 * 6 + 1);
+    expect(buildMesh(g, null).faces).toBe(4 * 6);
+  });
+
+  it("una caña de azúcar no oculta la cara del bloque de al lado", () => {
+    const g: VoxelGrid = {
+      width: 2,
+      height: 1,
+      depth: 1,
+      palette: ["minecraft:air", "minecraft:stone", "minecraft:sugar_cane"],
+      blocks: new Uint16Array([1, 2]),
+    };
+    const tiles = new Map([["minecraft:sugar_cane#side", { u0: 0, v0: 0, u1: 1, v1: 1 }]]);
+    expect(buildMesh(g, tiles).faces).toBe(6 + 2);
+  });
 });

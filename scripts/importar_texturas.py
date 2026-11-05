@@ -85,6 +85,12 @@ EXPLICIT_ALIASES: dict[str, dict[str, list[str]]] = {
     "wall_sign": {"side": ["oak_planks"]},
 }
 
+# Caras extra para bloques que ya tienen su textura por nombre. El visor 3D usa la de abajo del
+# soporte de pociones para sus tres bases.
+EXTRA_FACES: dict[str, dict[str, list[str]]] = {
+    "brewing_stand": {"bottom": ["brewing_stand_base"]},
+}
+
 # Texturas que vienen en gris porque el juego las colorea según el bioma (o la potencia,
 # en la redstone). Se multiplican por estos colores, los de vanilla en el bioma Llanuras.
 GRASS = "#91bd59"
@@ -171,7 +177,12 @@ def alias_uploads(block_ids: set[str], files: dict[str, Path], covered: set[tupl
     for block_id in sorted(block_ids):
         name = short_name(block_id)
         if any((block_id, f) in covered for f in FACES):
-            continue  # ya tiene alguna cara por nombre: no se mezcla con alias
+            # Ya tiene alguna cara por nombre: no se mezcla con alias, salvo las caras extra que falten.
+            for face, options in EXTRA_FACES.get(name, {}).items():
+                found = next((files[o] for o in options if o in files), None)
+                if found is not None and (block_id, face) not in covered:
+                    uploads.append(Upload(block_id, face, found, "alias"))
+            continue
 
         faces: dict[str, list[str]] = dict(EXPLICIT_ALIASES.get(name, {}))
         if not faces:
